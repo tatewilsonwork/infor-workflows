@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "infor-workflows",
-      "source": ".",
+      "source": "./infor-workflows",
       "description": "INFOR Financial Group workflows for capitalization table analysis, public comparable companies tables, and expense report automation"
     }
   ]
