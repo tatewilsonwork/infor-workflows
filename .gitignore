@@ -1,0 +1,11 @@
+# Temp plugin archives
+*.plugin
+*.zip
+zifcAjvV
+zigpexWE
+
+# Local Claude settings
+.claude/
+
+# Empty folders
+templates/
