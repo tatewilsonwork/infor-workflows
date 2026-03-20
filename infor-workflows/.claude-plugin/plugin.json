@@ -4,22 +4,5 @@
   "description": "INFOR Financial Group workflows for capitalization table analysis, public comparable companies tables, and expense report automation",
   "author": {
     "name": "INFOR Financial Group"
-  },
-  "skills": [
-    {
-      "name": "cap-table",
-      "path": "skills/cap-table/SKILL.md",
-      "description": "Populate the INFOR capitalization table template from a CapIQ ticker and financial statements"
-    },
-    {
-      "name": "comps-infor",
-      "path": "skills/comps-infor/SKILL.md",
-      "description": "Build a public comparable companies table with 8 CapIQ tickers grouped by geography or sector"
-    },
-    {
-      "name": "expenses-extraction",
-      "path": "skills/expenses-extraction/SKILL.md",
-      "description": "Extract and automate expense report data"
-    }
-  ]
+  }
 }
