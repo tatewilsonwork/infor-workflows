@@ -1,7 +1,7 @@
 ---
 name: cap-table
 description: Use this skill when extracting financial data from MD&A, 10-K, 10-Q, annual reports, or financial statements to populate a capitalization table. Activates for tasks involving shares outstanding, debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances, preferred shares, or non-controlling interest sourced from company filings.
-version: 1.4.0
+version: 1.4.1
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
@@ -44,19 +44,26 @@ The template path is shown in the Context section above. If the path is blank, s
 find "$HOME" -name "INFOR Cap Table Template.xlsx" -path "*/excel-templates/*" 2>/dev/null | head -1
 ```
 
-If still not found, use the known location:
-```
-"$HOME/OneDrive - Infor Financial Group/Desktop/Claude - INFOR/excel-templates/INFOR Cap Table Template.xlsx"
-```
+If still not found, use the known location.
 
 Sanitize the ticker for use as a filename by replacing `:` with `-` (e.g., `NasdaqGS:MSFT` → `NasdaqGS-MSFT`).
 
-Copy the template to the current working directory:
+Copy the template to the current working directory using this exact shell pattern (note the quoting — required because the path contains spaces):
 ```bash
-cp "[template_path]" "./[SANITIZED_TICKER] - Capitalization Table.xlsx"
+TEMPLATE="$HOME/OneDrive - Infor Financial Group/Desktop/Claude - INFOR/excel-templates/INFOR Cap Table Template.xlsx"
+OUTPUT="./$SANITIZED_TICKER - Capitalization Table.xlsx"
+cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```
 
-Confirm the copy succeeded before proceeding.
+Then verify the output file exists and has non-zero size:
+```bash
+ls -lh "$OUTPUT"
+```
+
+**If the result is `COPY_FAILED`, the file is missing, or its size is 0 bytes — STOP immediately. Do NOT proceed. Do NOT create a manual cap table or output data in any other format. Tell the user:**
+
+> "I could not copy the INFOR Cap Table Template. Please confirm the file exists at:
+> `C:\Users\[username]\OneDrive - Infor Financial Group\Desktop\Claude - INFOR\excel-templates\INFOR Cap Table Template.xlsx`"
 
 ---
 
@@ -85,6 +92,8 @@ You will attach these as cell comments in Step 5.
 ---
 
 ### Step 5 — Write Extracted Data to Excel
+
+**CRITICAL: All extracted data must be written into the copied INFOR template .xlsx file using openpyxl. Never output the data as a markdown table, plain text, or any format other than the .xlsx file. If openpyxl is not available, stop and tell the user: "Please install openpyxl: `pip install openpyxl`"**
 
 Using openpyxl (write mode, preserve formulas — do NOT use data_only=True):
 
