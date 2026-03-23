@@ -1,8 +1,9 @@
 # Temp plugin archives
 *.plugin
 *.zip
-zifcAjvV
-zigpexWE
+
+# Skill outputs
+outputs/
 
 # Local Claude settings
 .claude/

@@ -1,6 +1,6 @@
 {
   "name": "infor-workflows",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "INFOR Financial Group workflows for capitalization table analysis, public comparable companies tables, and expense report automation",
   "author": {
     "name": "INFOR Financial Group"
