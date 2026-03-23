@@ -15,7 +15,7 @@ Allowed tools: Read, Bash, Write, Glob, WebSearch
 ## Context
 
 - Today's date: !`date +%Y-%m-%d`
-- Template location: !`find "$HOME" -name "INFOR Comps Template.xlsx" -path "*/excel-templates/*" 2>/dev/null | head -1`
+- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "$REPO_ROOT/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1`
 - Current working directory: !`pwd`
 
 ---
@@ -69,19 +69,23 @@ Wait for confirmation or revisions before writing to the file.
 
 ### Step 3 — Locate and Copy the Template
 
-The template path is shown in the Context section above. If blank, use the known location:
-```
-"C:/Users/twilson/OneDrive - Infor Financial Group/Desktop/Claude - INFOR/excel-templates/INFOR Comps Template.xlsx"
+The template path is shown in the Context section above. If blank, search for it — check the repo's templates directory first, then fall back to $HOME:
+```bash
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+find "$REPO_ROOT/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1
 ```
 
 Sanitize the target company name for use as a filename (remove special characters, replace spaces with hyphens).
 
 Copy the template to the current working directory:
 ```bash
-cp "[template_path]" "./[SANITIZED_COMPANY_NAME] - Comparable Companies.xlsx"
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+TEMPLATE=$(find "$REPO_ROOT/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1)
+OUTPUT="./$SANITIZED_COMPANY_NAME - Comparable Companies.xlsx"
+cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```
 
-Confirm the copy succeeded before proceeding.
+**If the result is `COPY_FAILED` or the file is missing — STOP immediately. Do NOT create a manual comps table. Tell the user the template could not be found.**
 
 ---
 

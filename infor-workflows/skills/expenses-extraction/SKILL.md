@@ -15,7 +15,7 @@ Allowed tools: Read, Bash, Write, Glob
 ## Context
 
 - Today's date: !`date +%Y-%m-%d`
-- Template location: !`find "$HOME/.claude" -name "Expense Report.xlsx" -path "*/infor-workflows/*" 2>/dev/null | head -1`
+- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "$REPO_ROOT/templates" "$HOME" -name "Expense Report.xlsx" 2>/dev/null | head -1`
 - Current working directory: !`pwd`
 
 ---
@@ -34,19 +34,23 @@ Wait for at least one receipt image before proceeding.
 
 ### Step 2 — Locate and Copy the Template
 
-Use the template path shown in the Context section above. If blank, search for it:
+Use the template path shown in the Context section above. If blank, search for it — check the repo's templates directory first:
 
 ```bash
-find "$HOME" -name "Expense Report.xlsx" -path "*/infor-workflows/*" 2>/dev/null | head -1
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+find "$REPO_ROOT/templates" "$HOME" -name "Expense Report.xlsx" 2>/dev/null | head -1
 ```
 
 Copy the template to the current working directory:
 
 ```bash
-cp "[template_path]" "./[YYYY-MM-DD] Expense Report.xlsx"
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+TEMPLATE=$(find "$REPO_ROOT/templates" "$HOME" -name "Expense Report.xlsx" 2>/dev/null | head -1)
+OUTPUT="./[YYYY-MM-DD] Expense Report.xlsx"
+cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```
 
-Use today's date for the filename. Confirm the copy succeeded before continuing.
+Use today's date for the filename. **If the result is `COPY_FAILED` — STOP immediately. Do NOT proceed. Tell the user the template could not be found.**
 
 ---
 
