@@ -10,7 +10,7 @@ version: 1.0.0
 
 # INFOR Precedent Transactions Table — Workflow
 
-This skill builds a precedent transactions table by researching 8 relevant M&A deals and writing the transaction data into the INFOR Precedents Template (cells B7:K14 only).
+This skill builds a precedent transactions table by researching 8 relevant M&A deals and writing the transaction data into the INFOR Precedents Template (cells B7:M14 only).
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch
 
@@ -54,7 +54,7 @@ Use WebSearch to confirm the company's sector if not obvious from the name/websi
 Search for 8 relevant M&A transactions where the **target company** is comparable to the input company.
 
 **Prioritise transactions with fully disclosed financials** — select them in this order of preference:
-1. Publicly traded targets (their annual filings are public — Revenue and EBITDA are always available)
+1. Publicly traded targets (their annual filings are public — LTM Revenue and EBITDA are always available; NTM estimates often in analyst reports or deal press releases)
 2. Private targets where the acquiror's press release discloses LTM Revenue and EBITDA
 3. Private targets with disclosed deal value only (include if deal value is confirmed and strategic fit is strong)
 
@@ -65,10 +65,11 @@ Never include a transaction where deal value is undisclosed — a blank TEV make
 - `"[sector] M&A [year range] press release LTM revenue EBITDA disclosed"`
 - `"[company name] comparable transactions precedents investment banking"`
 - `"[target name] acquired [year] annual report financial statements"`
+- `"[target name] acquired [year] NTM forward estimates consensus analyst"`
 
 **For each candidate transaction — retrieve financials as follows:**
-- **If the target was publicly traded:** search for its last annual report (10-K, AIF, or annual MD&A) filed before the deal announcement. LTM Revenue and EBITDA will be in the income statement or MD&A section. These are always verifiable — do not leave them blank for public targets.
-- **If the target was private:** search the acquiror's deal press release or investor presentation for disclosed metrics. Phrases to look for: "LTM Revenue of $X", "trailing twelve months EBITDA of $X", "pro forma revenue", "annualised revenue".
+- **LTM Revenue and EBITDA:** If the target was publicly traded, use the most recent annual filing (10-K, AIF, annual MD&A) before deal announcement. If private, look in the acquiror's deal press release for phrases like "LTM Revenue of $X", "trailing twelve months EBITDA of $X".
+- **NTM Revenue and EBITDA:** Forward estimates at the time of deal announcement. Sources in order of preference: (1) acquiror's deal press release or investor presentation quoting "forward revenue of $X" or "NTM EBITDA of $X"; (2) analyst consensus estimates cited in deal commentary; (3) company guidance issued before or concurrent with the announcement. Leave as `None` if no forward estimate is disclosed — NTM is best-effort only.
 - **AUM:** typically disclosed in the deal announcement PR for financial services transactions — look for "$X billion in assets under management" or "AUM of $X".
 
 **Selection criteria:**
@@ -94,9 +95,9 @@ Before writing to the file, present the 8 transactions to the user in this forma
 ```
 **Proposed Precedent Transactions — [Input Company Name]**
 
-| # | Announce Date | Target | Acquiror | Deal Value ($MM) | Revenue ($MM) | EBITDA ($MM) | AUM ($MM) | Description |
-|---|---|---|---|---|---|---|---|---|
-| 1 | [date] | [target] | [acquiror] | [value] | [rev] | [ebitda] | [aum or —] | [description ≤50 chars] |
+| # | Announce Date | Target | Acquiror | Deal Value ($MM) | LTM Rev ($MM) | NTM Rev ($MM) | LTM EBITDA ($MM) | NTM EBITDA ($MM) | AUM ($MM) | Description |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | [date] | [target] | [acquiror] | [value] | [ltm rev] | [ntm rev or —] | [ltm ebitda] | [ntm ebitda or —] | [aum or —] | [description ≤50 chars] |
 ...
 
 Sources: [brief note on where each financial figure was sourced]
@@ -135,7 +136,7 @@ Confirm the copy succeeded before proceeding.
 
 Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve all formulas.
 
-Write to the `Sheet1` sheet only. **Write exactly the 8 data rows, columns B through K (B7:K14). Touch no other cells.**
+Write to the `Sheet1` sheet only. **Write exactly the 8 data rows, columns B through M (B7:M14). Touch no other cells.**
 
 For each of rows 7 through 14, write the following columns:
 
@@ -147,10 +148,12 @@ For each of rows 7 through 14, write the following columns:
 | E | Acquiror | `str` | Full legal name of acquiror |
 | F | Deal Value | `float` or `int` | $MM numeric, no currency symbol |
 | G | Target HQ | `str` | ISO 2-letter country code (e.g., `"CA"`, `"US"`, `"GB"`) |
-| H | Target Revenue | `float` or `int` or `None` | LTM Revenue in $MM; `None` if undisclosed |
-| I | Target EBITDA | `float` or `int` or `None` | LTM EBITDA in $MM; `None` if undisclosed |
-| J | Target AUM | `float` or `int` or `None` | AUM in $MM; `None` if not applicable or undisclosed |
-| K | Target Description | `str` | ≤50 characters — see description rules below |
+| H | LTM Revenue | `float` or `int` or `None` | LTM Revenue in $MM; `None` if undisclosed |
+| I | NTM Revenue | `float` or `int` or `None` | NTM Revenue in $MM; `None` if undisclosed |
+| J | LTM EBITDA | `float` or `int` or `None` | LTM EBITDA in $MM; `None` if undisclosed |
+| K | NTM EBITDA | `float` or `int` or `None` | NTM EBITDA in $MM; `None` if undisclosed |
+| L | Target AUM | `float` or `int` or `None` | AUM in $MM; `None` if not applicable or undisclosed |
+| M | Target Description | `str` | ≤50 characters — see description rules below |
 
 **Description rules (column K):**
 - Column K has a cell width of 50 characters — descriptions that exceed this will overflow or be cut off visually
@@ -168,7 +171,7 @@ For each of rows 7 through 14, write the following columns:
 
 **Writing None values:** If a field is `None` (undisclosed), skip writing that cell entirely — do not write `None` or empty string, just leave it unset so the cell remains blank.
 
-**Do NOT write to** columns L through Y — these contain CapIQ formulas that auto-populate when the file is opened in Excel.
+**Do NOT write to** columns N through AE — these contain CapIQ formulas that auto-populate when the file is opened in Excel.
 
 Save the file after writing all rows.
 
@@ -179,9 +182,9 @@ Save the file after writing all rows.
 After saving, re-open the file and spot-check:
 1. All 8 rows (7–14) have values in columns B, C, D, E
 2. Dates are `datetime.date` objects (not strings)
-3. Numeric fields (F, H, I, J) are numeric types (not strings)
-4. Column K values are all ≤50 characters
-5. No values were written to columns L or beyond
+3. Numeric fields (F, H, I, J, K, L) are numeric types (not strings)
+4. Column M values are all ≤50 characters
+5. No values were written to columns N or beyond
 
 Report any issues found and fix before delivering.
 
@@ -193,9 +196,9 @@ Report to the user:
 
 1. **Output file:** computer:// link to the saved file
 2. **Transactions populated:** list of 8 deals with target, acquiror, and deal value
-3. **Missing data:** note any Revenue, EBITDA, or AUM fields left blank due to non-disclosure
+3. **Missing data:** note any LTM/NTM Revenue, LTM/NTM EBITDA, or AUM fields left blank due to non-disclosure
 4. **Sources:** brief summary of where financial figures were sourced
-5. **Reminder:** Open in Excel with the CapIQ add-in active — columns N onward (TEV, multiples) will auto-populate via CapIQ FX conversion formulas
+5. **Reminder:** Open in Excel with the CapIQ add-in active — columns P onward (TEV, multiples) will auto-populate via CapIQ FX conversion formulas
 
 ---
 
@@ -205,10 +208,9 @@ Report to the user:
 
 | Cells | Purpose | Notes |
 |-------|---------|-------|
-| B7:K14 | 8 transaction data rows — **write here only** | 8 rows × 10 input columns |
-| L7:L14 | FX conversion — CapIQ array formula | **Never overwrite** |
-| N7:Y14 | Output columns (TEV, multiples, formatted fields) | **Never overwrite — all formulas** |
-| R16, V16:X16 | Average rows | **Never overwrite — formula** |
+| B7:M14 | 8 transaction data rows — **write here only** | 8 rows × 12 input columns |
+| N7:N14 | FX conversion — CapIQ array formula | **Never overwrite** |
+| P7:AE14 | Output columns (TEV, multiples, formatted fields) | **Never overwrite — all formulas** |
 
 ### Column Reference
 
@@ -220,10 +222,12 @@ Report to the user:
 | E | Acquiror | String | — |
 | F | Deal Value | Numeric | $MM in currency of col B |
 | G | Target HQ | String | ISO 2-letter country code (CA, US, GB, AU, etc.) |
-| H | Target Revenue | Numeric | $MM LTM; None if undisclosed |
-| I | Target EBITDA | Numeric | $MM LTM; None if undisclosed |
-| J | Target AUM | Numeric | $MM; None if N/A or undisclosed |
-| K | Target Description | String | ≤50 chars |
+| H | LTM Revenue | Numeric | $MM LTM; None if undisclosed |
+| I | NTM Revenue | Numeric | $MM NTM; None if undisclosed |
+| J | LTM EBITDA | Numeric | $MM LTM; None if undisclosed |
+| K | NTM EBITDA | Numeric | $MM NTM; None if undisclosed |
+| L | Target AUM | Numeric | $MM; None if N/A or undisclosed |
+| M | Target Description | String | ≤50 chars |
 
 ### AUM Sectors Reference
 
