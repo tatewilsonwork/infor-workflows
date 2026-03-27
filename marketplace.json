@@ -1,0 +1,14 @@
+{
+  "name": "infor-workflows",
+  "owner": {
+    "name": "INFOR Financial Group"
+  },
+  "plugins": [
+    {
+      "name": "infor-workflows",
+      "source": "./infor-workflows",
+      "description": "INFOR Financial Group workflows for capitalization table analysis, public comparable companies tables, precedent transactions analysis, and expense report automation",
+      "version": "0.4.2"
+    }
+  ]
+}
