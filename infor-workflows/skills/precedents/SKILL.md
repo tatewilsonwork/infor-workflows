@@ -19,8 +19,8 @@ Allowed tools: Read, Bash, Write, Glob, WebSearch
 ## Context
 
 - Today's date: !`date +%Y-%m-%d`
-- Template location: !`find /sessions/keen-hopeful-tesla/mnt -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1`
-- Outputs folder: !`find /sessions/keen-hopeful-tesla/mnt -type d -name "outputs" 2>/dev/null | head -1`
+- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "$REPO_ROOT/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1`
+- Outputs folder: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); echo "$REPO_ROOT/outputs"`
 - Current working directory: !`pwd`
 
 ---
@@ -110,14 +110,14 @@ Wait for confirmation or revisions before writing to the file.
 
 ### Step 5 — Locate and Copy the Template
 
-The template path is shown in the Context section above. If blank, use the known location:
-```
-/sessions/keen-hopeful-tesla/mnt/infor-workflows/templates/INFOR Precedents Template.xlsx
+The template path is shown in the Context section above. If blank, locate it dynamically:
+```bash
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "$REPO_ROOT/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1
 ```
 
 The output folder path is also in the Context section. If blank, use:
-```
-/sessions/keen-hopeful-tesla/mnt/infor-workflows/outputs/
+```bash
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); echo "$REPO_ROOT/outputs"
 ```
 
 Sanitize the company name for use as a filename (remove special characters, replace spaces with hyphens).
