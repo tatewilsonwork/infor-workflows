@@ -15,7 +15,7 @@ Allowed tools: Read, Bash, Write, Glob, WebSearch
 ## Context
 
 - Today's date: !`date +%Y-%m-%d`
-- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "$REPO_ROOT/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1`
+- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1`
 - Current working directory: !`pwd`
 
 ---
@@ -69,10 +69,10 @@ Wait for confirmation or revisions before writing to the file.
 
 ### Step 3 — Locate and Copy the Template
 
-The template path is shown in the Context section above. If blank, search for it — check the repo's templates directory first, then fall back to $HOME:
+The template path is shown in the Context section above. If blank, search for it — check the repo's templates directory first, then the plugin cache, then fall back to $HOME:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "$REPO_ROOT/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1
+find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1
 ```
 
 Sanitize the target company name for use as a filename (remove special characters, replace spaces with hyphens).
@@ -80,7 +80,7 @@ Sanitize the target company name for use as a filename (remove special character
 Copy the template to the current working directory:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-TEMPLATE=$(find "$REPO_ROOT/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1)
+TEMPLATE=$(find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1)
 OUTPUT="./$SANITIZED_COMPANY_NAME - Comparable Companies.xlsx"
 cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```

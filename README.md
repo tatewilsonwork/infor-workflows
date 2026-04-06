@@ -24,18 +24,22 @@ Invoke any skill by name, command, or by describing what you want:
 "Fill in my expense report" (attach receipt images)
 ```
 
+## Installation
+
+In Co-work, open the **Customize** panel → **Add plugin** → type the repo name. Co-work will install all skills and templates automatically. No manual setup required.
+
 ## Templates
 
-All four Excel templates are bundled inside the plugin and located automatically at runtime. No manual setup required.
+All four Excel templates are included in the plugin source tree (`infor-workflows/templates/`) and are installed automatically when you add the plugin. Skills locate them at runtime — no manual path configuration needed.
 
-Source templates are also kept in `templates/` for reference and future updates.
+Source templates are also kept in the root `templates/` folder for reference and version control.
 
 ## Folder Structure
 
 ```
 infor-workflows/
-├── infor-workflows-v4.plugin   # Current plugin — share this with other INFOR employees
-├── infor-workflows/            # Plugin source tree
+├── infor-workflows-v4.plugin   # Compiled plugin (alternative install method)
+├── infor-workflows/            # Plugin source tree (installed via "Add plugin")
 │   ├── commands/
 │   │   └── precedents.md
 │   ├── skills/
@@ -43,10 +47,10 @@ infor-workflows/
 │   │   ├── comps-infor/
 │   │   ├── expenses-extraction/
 │   │   └── precedents/
-│   ├── templates/
+│   ├── templates/              # Excel templates bundled with the plugin
 │   └── hooks/
-├── templates/                  # Source Excel templates
-├── outputs/                    # Deal outputs
+├── templates/                  # Source Excel templates (reference copy)
+├── outputs/                    # Deal outputs (gitignored)
 └── README.md
 ```
 

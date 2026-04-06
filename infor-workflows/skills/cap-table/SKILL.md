@@ -15,7 +15,7 @@ Allowed tools: Read, Bash, Write, Glob
 ## Context
 
 - Today's date: !`date +%Y-%m-%d`
-- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "$REPO_ROOT/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1`
+- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1`
 - Current working directory: !`pwd`
 
 ---
@@ -39,10 +39,10 @@ Wait for both the ticker and at least one attached document before proceeding.
 
 ### Step 2 — Locate and Copy the Template
 
-The template path is shown in the Context section above. If the path is blank, search for it — check the repo's templates directory first, then fall back to $HOME:
+The template path is shown in the Context section above. If the path is blank, search for it — check the repo's templates directory first, then the plugin cache, then fall back to $HOME:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "$REPO_ROOT/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1
+find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1
 ```
 
 Sanitize the ticker for use as a filename by replacing `:` with `-` (e.g., `NasdaqGS:MSFT` → `NasdaqGS-MSFT`).
@@ -50,7 +50,7 @@ Sanitize the ticker for use as a filename by replacing `:` with `-` (e.g., `Nasd
 Copy the template to the current working directory using this exact shell pattern (note the quoting — required because the path contains spaces):
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-TEMPLATE=$(find "$REPO_ROOT/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1)
+TEMPLATE=$(find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1)
 OUTPUT="./$SANITIZED_TICKER - Capitalization Table.xlsx"
 cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```
@@ -62,8 +62,7 @@ ls -lh "$OUTPUT"
 
 **If the result is `COPY_FAILED`, the file is missing, or its size is 0 bytes — STOP immediately. Do NOT proceed. Do NOT create a manual cap table or output data in any other format. Tell the user:**
 
-> "I could not copy the INFOR Cap Table Template. Please confirm the file exists at:
-> `C:\Users\[username]\OneDrive - Infor Financial Group\Desktop\Claude - INFOR\excel-templates\INFOR Cap Table Template.xlsx`"
+> "I could not copy the INFOR Cap Table Template. Please confirm the file `INFOR Cap Table Template.xlsx` exists in the `templates/` folder at the root of the `infor-workflows` plugin repository."
 
 ---
 
