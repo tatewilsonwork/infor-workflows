@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin with four automated workflows for analysts.
 
-Current version: **0.5.1**
+Current version: **0.6.0**
 
 ## Skills
 
@@ -52,6 +52,7 @@ infor-workflows/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.6.0 | 2026-04-07 | Repo cleanup: removed duplicate templates, stale .plugin file, and commands/ directory; fixed template discovery path; version history and README tidied |
 | 0.5.1 | 2026-04-07 | comps-infor skill now writes one-line descriptions (≤50 chars) into column AM for each comparable company |
 | 0.5.0 | 2026-04-07 | Bundled Excel templates in plugin source for cross-machine installs; fixed template discovery to check plugin cache paths; fixed precedents outputs folder fallback; added Installation section to README |
 | v4 / 0.4.2 | 2026-03-26 | Added `/precedents` command and skill; bundled INFOR Precedents Template; HQ field uses ISO 2-letter country codes; improved financial data sourcing logic for public targets |
