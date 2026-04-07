@@ -2,12 +2,13 @@
 
 INFOR Financial Group plugin with four automated workflows for analysts.
 
-Current version: **0.6.0**
+Current version: **0.7.0**
 
 ## Skills
 
 | Skill | Description |
 |-------|-------------|
+| buyerslist-infor | Builds a strategic and financial buyer universe for a sell-side M&A process, tiered A/B/C, and populates the INFOR Buyers List Template |
 | precedents | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template (cells B7:K14) with verified Revenue, EBITDA, AUM, and deal metrics |
 | comps-infor | Builds a public comparable companies table with 8 CapIQ tickers split into two labelled groups, with a short description for each company, written into the INFOR Comps Template |
 | cap-table | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A). Covers debt, leases, options/RSUs/warrants, convertible debentures, cash, and shares outstanding |
@@ -52,6 +53,7 @@ infor-workflows/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.0 | 2026-04-07 | Added buyerslist-infor skill and INFOR Buyers List Template; builds strategic and financial buyer universe for sell-side M&A, tiered A/B/C |
 | 0.6.0 | 2026-04-07 | Repo cleanup: removed duplicate templates, stale .plugin file, and commands/ directory; fixed template discovery path; version history and README tidied |
 | 0.5.1 | 2026-04-07 | comps-infor skill now writes one-line descriptions (≤50 chars) into column AM for each comparable company |
 | 0.5.0 | 2026-04-07 | Bundled Excel templates in plugin source for cross-machine installs; fixed template discovery to check plugin cache paths; fixed precedents outputs folder fallback; added Installation section to README |
