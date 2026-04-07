@@ -32,13 +32,10 @@ In Co-work, open the **Customize** panel → **Add plugin** → type the repo na
 
 All four Excel templates are included in the plugin source tree (`infor-workflows/templates/`) and are installed automatically when you add the plugin. Skills locate them at runtime — no manual path configuration needed.
 
-Source templates are also kept in the root `templates/` folder for reference and version control.
-
 ## Folder Structure
 
 ```
 infor-workflows/
-├── infor-workflows-v4.plugin   # Compiled plugin (alternative install method)
 ├── infor-workflows/            # Plugin source tree (installed via "Add plugin")
 │   ├── commands/
 │   │   └── precedents.md
@@ -49,7 +46,6 @@ infor-workflows/
 │   │   └── precedents/
 │   ├── templates/              # Excel templates bundled with the plugin
 │   └── hooks/
-├── templates/                  # Source Excel templates (reference copy)
 ├── outputs/                    # Deal outputs (gitignored)
 └── README.md
 ```
