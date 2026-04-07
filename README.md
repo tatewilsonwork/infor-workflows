@@ -2,14 +2,14 @@
 
 INFOR Financial Group plugin with four automated workflows for analysts.
 
-Current version: **v4** (`infor-workflows-v4.plugin`)
+Current version: **0.5.1**
 
 ## Skills & Commands
 
 | Command | Skill | Description |
 |---------|-------|-------------|
 | `/precedents [company]` | precedents | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template (cells B7:K14) with verified Revenue, EBITDA, AUM, and deal metrics |
-| — | comps-infor | Builds a public comparable companies table with 8 CapIQ tickers split into two labelled groups, written into the INFOR Comps Template |
+| — | comps-infor | Builds a public comparable companies table with 8 CapIQ tickers split into two labelled groups, with a short description for each company, written into the INFOR Comps Template |
 | — | cap-table | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A). Covers debt, leases, options/RSUs/warrants, convertible debentures, cash, and shares outstanding |
 | — | expenses-extraction | Fills in the INFOR Expense Report template from attached receipt images |
 
@@ -58,6 +58,8 @@ infor-workflows/
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v4 | 2026-03-26 | Added `/precedents` command and skill; bundled INFOR Precedents Template; HQ field uses ISO 2-letter country codes; improved financial data sourcing logic for public targets |
+| 0.5.1 | 2026-04-07 | comps-infor skill now writes one-line descriptions (≤50 chars) into column AM for each comparable company |
+| 0.5.0 | 2026-04-07 | Bundled Excel templates in plugin source for cross-machine installs; fixed template discovery to check plugin cache paths; fixed precedents outputs folder fallback; added Installation section to README |
+| v4 / 0.4.2 | 2026-03-26 | Added `/precedents` command and skill; bundled INFOR Precedents Template; HQ field uses ISO 2-letter country codes; improved financial data sourcing logic for public targets |
 | v3 | 2026-03-23 | Added comps-infor skill; bundled all templates into plugin; removed hardcoded file paths for cross-machine compatibility |
 | v2 | 2026-03-18 | Revised version with cap-table and expenses-extraction |
