@@ -1,5 +1,5 @@
 ---
-name: cap-table
+name: captable-infor
 description: Use this skill when extracting financial data from MD&A, 10-K, 10-Q, annual reports, or financial statements to populate a capitalization table. Activates for tasks involving shares outstanding, debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances, preferred shares, or non-controlling interest sourced from company filings.
 version: 1.4.2
 ---

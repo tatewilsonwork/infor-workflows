@@ -2,16 +2,16 @@
 
 INFOR Financial Group plugin with four automated workflows for analysts.
 
-Current version: **0.7.0**
+Current version: **0.7.1**
 
 ## Skills
 
 | Skill | Description |
 |-------|-------------|
 | buyerslist-infor | Builds a strategic and financial buyer universe for a sell-side M&A process, tiered A/B/C, and populates the INFOR Buyers List Template |
-| precedents | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template (cells B7:K14) with verified Revenue, EBITDA, AUM, and deal metrics |
+| precedents-infor | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template (cells B7:K14) with verified Revenue, EBITDA, AUM, and deal metrics |
 | comps-infor | Builds a public comparable companies table with 8 CapIQ tickers split into two labelled groups, with a short description for each company, written into the INFOR Comps Template |
-| cap-table | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A). Covers debt, leases, options/RSUs/warrants, convertible debentures, cash, and shares outstanding |
+| captable-infor | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A). Covers debt, leases, options/RSUs/warrants, convertible debentures, cash, and shares outstanding |
 | expenses-extraction | Fills in the INFOR Expense Report template from attached receipt images |
 
 ## Usage
@@ -20,7 +20,7 @@ Invoke any skill by name, command, or by describing what you want:
 
 ```
 /comps-infor Rogers Communications
-"Build a precedents table for CI Financial Corp"
+/precedents-infor CI Financial Corp
 "Fill in the cap table for NasdaqGS:MSFT"
 "Fill in my expense report" (attach receipt images)
 ```
@@ -39,10 +39,11 @@ All four Excel templates are included in the plugin source tree (`infor-workflow
 infor-workflows/
 ├── infor-workflows/            # Plugin source tree (installed via "Add plugin")
 │   ├── skills/
-│   │   ├── cap-table/
+│   │   ├── buyerslist-infor/
+│   │   ├── captable-infor/
 │   │   ├── comps-infor/
 │   │   ├── expenses-extraction/
-│   │   └── precedents/
+│   │   └── precedents-infor/
 │   ├── templates/              # Excel templates bundled with the plugin
 │   └── hooks/
 ├── outputs/                    # Deal outputs (gitignored)
@@ -53,6 +54,7 @@ infor-workflows/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.7.1 | 2026-04-07 | Renamed cap-table → captable-infor and precedents → precedents-infor for naming consistency |
 | 0.7.0 | 2026-04-07 | Added buyerslist-infor skill and INFOR Buyers List Template; builds strategic and financial buyer universe for sell-side M&A, tiered A/B/C |
 | 0.6.0 | 2026-04-07 | Repo cleanup: removed duplicate templates, stale .plugin file, and commands/ directory; fixed template discovery path; version history and README tidied |
 | 0.5.1 | 2026-04-07 | comps-infor skill now writes one-line descriptions (≤50 chars) into column AM for each comparable company |

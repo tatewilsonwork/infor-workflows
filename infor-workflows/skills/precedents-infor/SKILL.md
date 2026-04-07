@@ -1,5 +1,5 @@
 ---
-name: precedents
+name: precedents-infor
 description: >
   Use this skill when the user asks to build a precedent transactions table
   for a company. Researches 8 relevant M&A precedent transactions with disclosed Revenue, EBITDA,
