@@ -4,14 +4,14 @@ INFOR Financial Group plugin with four automated workflows for analysts.
 
 Current version: **0.5.1**
 
-## Skills & Commands
+## Skills
 
-| Command | Skill | Description |
-|---------|-------|-------------|
-| — | precedents | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template (cells B7:K14) with verified Revenue, EBITDA, AUM, and deal metrics |
-| — | comps-infor | Builds a public comparable companies table with 8 CapIQ tickers split into two labelled groups, with a short description for each company, written into the INFOR Comps Template |
-| — | cap-table | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A). Covers debt, leases, options/RSUs/warrants, convertible debentures, cash, and shares outstanding |
-| — | expenses-extraction | Fills in the INFOR Expense Report template from attached receipt images |
+| Skill | Description |
+|-------|-------------|
+| precedents | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template (cells B7:K14) with verified Revenue, EBITDA, AUM, and deal metrics |
+| comps-infor | Builds a public comparable companies table with 8 CapIQ tickers split into two labelled groups, with a short description for each company, written into the INFOR Comps Template |
+| cap-table | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A). Covers debt, leases, options/RSUs/warrants, convertible debentures, cash, and shares outstanding |
+| expenses-extraction | Fills in the INFOR Expense Report template from attached receipt images |
 
 ## Usage
 
