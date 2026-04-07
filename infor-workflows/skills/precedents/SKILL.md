@@ -19,7 +19,7 @@ Allowed tools: Read, Bash, Write, Glob, WebSearch
 ## Context
 
 - Today's date: !`date +%Y-%m-%d`
-- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1`
+- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1`
 - Outputs folder: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); echo "${REPO_ROOT:-.}/outputs"`
 - Current working directory: !`pwd`
 
@@ -114,7 +114,7 @@ Wait for confirmation or revisions before writing to the file.
 The template path is shown in the Context section above. If blank, locate it dynamically:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1
+find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1
 ```
 
 The output folder path is also in the Context section. If blank, use:

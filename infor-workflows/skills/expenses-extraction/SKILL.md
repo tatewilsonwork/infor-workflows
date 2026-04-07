@@ -15,7 +15,7 @@ Allowed tools: Read, Bash, Write, Glob
 ## Context
 
 - Today's date: !`date +%Y-%m-%d`
-- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Expense Report Template.xlsx" 2>/dev/null | head -1`
+- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Expense Report Template.xlsx" 2>/dev/null | head -1`
 - Current working directory: !`pwd`
 
 ---
@@ -38,14 +38,14 @@ Use the template path shown in the Context section above. If blank, search for i
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Expense Report Template.xlsx" 2>/dev/null | head -1
+find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Expense Report Template.xlsx" 2>/dev/null | head -1
 ```
 
 Copy the template to the current working directory:
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-TEMPLATE=$(find "${REPO_ROOT:+$REPO_ROOT/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Expense Report Template.xlsx" 2>/dev/null | head -1)
+TEMPLATE=$(find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Expense Report Template.xlsx" 2>/dev/null | head -1)
 OUTPUT="./[YYYY-MM-DD] Expense Report.xlsx"
 cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```
