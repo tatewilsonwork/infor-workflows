@@ -1,7 +1,7 @@
 ---
 name: precedents
 description: >
-  Use this skill when the user invokes /precedents or asks to build a precedent transactions table
+  Use this skill when the user asks to build a precedent transactions table
   for a company. Researches 8 relevant M&A precedent transactions with disclosed Revenue, EBITDA,
   and AUM (where applicable) sourced from company press releases, financial statements, or reputable
   news sources, and populates the INFOR Precedents Template with the results.

@@ -8,7 +8,7 @@ Current version: **0.5.1**
 
 | Command | Skill | Description |
 |---------|-------|-------------|
-| `/precedents [company]` | precedents | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template (cells B7:K14) with verified Revenue, EBITDA, AUM, and deal metrics |
+| — | precedents | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template (cells B7:K14) with verified Revenue, EBITDA, AUM, and deal metrics |
 | — | comps-infor | Builds a public comparable companies table with 8 CapIQ tickers split into two labelled groups, with a short description for each company, written into the INFOR Comps Template |
 | — | cap-table | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A). Covers debt, leases, options/RSUs/warrants, convertible debentures, cash, and shares outstanding |
 | — | expenses-extraction | Fills in the INFOR Expense Report template from attached receipt images |
@@ -18,8 +18,8 @@ Current version: **0.5.1**
 Invoke any skill by name, command, or by describing what you want:
 
 ```
-/precedents CI Financial Corp
 /comps-infor Rogers Communications
+"Build a precedents table for CI Financial Corp"
 "Fill in the cap table for NasdaqGS:MSFT"
 "Fill in my expense report" (attach receipt images)
 ```
@@ -37,8 +37,6 @@ All four Excel templates are included in the plugin source tree (`infor-workflow
 ```
 infor-workflows/
 ├── infor-workflows/            # Plugin source tree (installed via "Add plugin")
-│   ├── commands/
-│   │   └── precedents.md
 │   ├── skills/
 │   │   ├── cap-table/
 │   │   ├── comps-infor/
