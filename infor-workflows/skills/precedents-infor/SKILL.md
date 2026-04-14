@@ -88,28 +88,7 @@ Never include a transaction where deal value is undisclosed — a blank TEV make
 
 ---
 
-### Step 4 — Present Proposed Transactions for Confirmation
-
-Before writing to the file, present the 8 transactions to the user in this format and ask for confirmation:
-
-```
-**Proposed Precedent Transactions — [Input Company Name]**
-
-| # | Announce Date | Target | Acquiror | Deal Value ($MM) | LTM Rev ($MM) | NTM Rev ($MM) | LTM EBITDA ($MM) | NTM EBITDA ($MM) | AUM ($MM) | Description |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | [date] | [target] | [acquiror] | [value] | [ltm rev] | [ntm rev or —] | [ltm ebitda] | [ntm ebitda or —] | [aum or —] | [description ≤50 chars] |
-...
-
-Sources: [brief note on where each financial figure was sourced]
-
-Proceed with these transactions, or let me know of any changes.
-```
-
-Wait for confirmation or revisions before writing to the file.
-
----
-
-### Step 5 — Locate and Copy the Template
+### Step 4 — Locate and Copy the Template
 
 The template path is shown in the Context section above. If blank, locate it dynamically:
 ```bash
@@ -134,7 +113,7 @@ Confirm the copy succeeded before proceeding.
 
 ---
 
-### Step 6 — Write Transaction Data to Excel (openpyxl)
+### Step 5 — Write Transaction Data to Excel (openpyxl)
 
 Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve all formulas.
 
@@ -179,7 +158,7 @@ Save the file after writing all rows.
 
 ---
 
-### Step 7 — Verify Output
+### Step 6 — Verify Output
 
 After saving, re-open the file and spot-check:
 1. All 8 rows (7–14) have values in columns B, C, D, E
@@ -192,7 +171,7 @@ Report any issues found and fix before delivering.
 
 ---
 
-### Step 8 — Summary
+### Step 7 — Summary
 
 Report to the user:
 

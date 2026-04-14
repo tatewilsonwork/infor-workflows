@@ -45,25 +45,7 @@ Split the 8 comparables into **two groups of exactly 4**. Each group must have a
 
 **Ticker format:** Use CapIQ format — `Exchange:Ticker` (e.g., `NasdaqGS:MSFT`, `TSX:RY`, `NYSE:JPM`).
 
-For each company, draft a short description (see Description Rules in the Domain Reference). Then present the proposed comps to the user in this format and ask for confirmation:
-
-```
-**Group 1 — [Label]**
-1. Company Name — NasdaqGS:TICK — Short description here
-2. Company Name — NYSE:TICK — Short description here
-3. Company Name — TSX:TICK — Short description here
-4. Company Name — NasdaqGS:TICK — Short description here
-
-**Group 2 — [Label]**
-5. Company Name — NasdaqGS:TICK — Short description here
-6. Company Name — NYSE:TICK — Short description here
-7. Company Name — NasdaqGS:TICK — Short description here
-8. Company Name — NYSE:TICK — Short description here
-
-Proceed with these comparables, or let me know of any changes.
-```
-
-Wait for confirmation or revisions before writing to the file.
+For each company, draft a short description (see Description Rules in the Domain Reference). Proceed directly to writing the file — do not pause for user confirmation.
 
 ---
 
