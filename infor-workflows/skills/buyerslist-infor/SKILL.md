@@ -5,7 +5,7 @@ description: >
   for a company in a sell-side M&A process. Activates on "buyer list", "buyer universe",
   "potential acquirers", "who would buy", "strategic buyers", "financial sponsors", or "sell-side process".
   Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C.
-version: 1.0.0
+version: 1.0.1
 ---
 
 # INFOR Buyers List — Workflow & Domain Knowledge
@@ -118,33 +118,7 @@ Total buyers across both sheets must not exceed **40** (20 strategic + 20 financ
 
 ---
 
-### Step 6 — Present for Confirmation
-
-Before writing to the file, present the proposed buyers in this format and ask for confirmation:
-
-```
-**Strategic Buyers**
-
-| Tier | Buyer | HQ | Vertical | Rev. (C$MM) | M&A Activity | Rationale |
-|------|-------|----|----------|-------------|--------------|-----------|
-| A    | ...   | ...| ...      | ...         | ...          | ...       |
-...
-
-**Financial Buyers**
-
-| Tier | Buyer | HQ | Fund Size (C$B) | Avg Deal (C$MM) | Sector Focus | Portfolio Overlap |
-|------|-------|----|-----------------|-----------------|--------------|-------------------|
-| A    | ...   | ...| ...             | ...             | ...          | ...               |
-...
-
-Proceed with this buyer list, or let me know of any changes.
-```
-
-Wait for confirmation or revisions before writing to the file.
-
----
-
-### Step 7 — Locate and Copy the Template
+### Step 6 — Locate and Copy the Template
 
 The template path is shown in the Context section above. If blank, search for it:
 ```bash
@@ -168,7 +142,7 @@ cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 
 ---
 
-### Step 8 — Write to Excel (openpyxl)
+### Step 7 — Write to Excel (openpyxl)
 
 Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve all formulas.
 
@@ -220,7 +194,7 @@ Save the file after writing all three sheets.
 
 ---
 
-### Step 9 — Summary
+### Step 8 — Summary
 
 Report to the user:
 
