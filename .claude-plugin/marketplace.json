@@ -8,7 +8,7 @@
       "name": "infor-workflows",
       "source": "./infor-workflows",
       "description": "INFOR Financial Group workflows for capitalization table analysis, public comparable companies tables, precedent transactions analysis, expense report automation, and buyers list generation",
-      "version": "0.7.1"
+      "version": "1.0.2"
     }
   ]
 }
