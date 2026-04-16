@@ -1,14 +1,14 @@
 ---
 name: deckcheck-infor
-description: Use this skill when the user invokes /deckcheck-infor or asks to review, proofread, or QC a PowerPoint deck. Checks grammar, spelling, tone, INFOR brand formatting (fonts, colors, alignment, sizing), and verifies factual claims (HQ locations, company descriptions, event dates) via web search. Produces a tiered review (Tier I / II / III) where each suggestion is scored 1–10 on Confidence and Impact. Activates on "deck check", "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request to review a PowerPoint for errors.
-version: 1.1.0
+description: Use this skill when the user invokes /deckcheck-infor or asks to review, proofread, or QC a PowerPoint deck. Checks grammar, spelling, tone, INFOR brand formatting (fonts, colors, alignment, sizing), and verifies factual claims (HQ locations, company descriptions, event dates) via web search. Produces a tiered review (Tier I / II / III) where each suggestion is scored 1–10 on Confidence and Impact, delivered as a Microsoft Word (.docx) document. Activates on "deck check", "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request to review a PowerPoint for errors.
+version: 1.2.1
 ---
 
 # INFOR Deck Check — Workflow
 
 This skill reviews an attached PowerPoint presentation for three categories of issues: (1) language quality — grammar, spelling, and tone; (2) formatting compliance — alignment, fonts, sizes, colors, and layout against INFOR brand standards; and (3) factual accuracy — verifiable claims like headquarters locations, company descriptions, dates of events, and other publicly available facts.
 
-The output is a cleanly formatted review organized by category and slide, with specific, actionable suggestions.
+The output is a cleanly formatted Microsoft Word (.docx) document organized into three tiers, with specific, actionable suggestions scored on Confidence and Impact.
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch, Agent
 
@@ -212,79 +212,97 @@ Combine Confidence and Impact into a **Priority Score = Confidence + Impact** (r
 
 ---
 
-### Step 8 — Output the Review
+### Step 8 — Output the Review as a Microsoft Word Document
 
-Produce the review as a markdown response using the structure below. **Only three sections — Tier I, Tier II, Tier III.** Do not group by slide or category in the top-level structure; tier comes first.
+Produce the review as a **Microsoft Word (.docx) file** using `python-docx`. **Only three sections — Tier I, Tier II, Tier III.** Do not group by slide or category in the top-level structure; tier comes first.
 
 Within each tier, sort suggestions by Priority Score descending (highest first).
 
-**Structure:**
+**File naming & location:**
+- Save to the `outputs/` directory at the repo root (create it if it does not exist)
+- Filename: `DeckReview_<OriginalDeckStem>_<YYYY-MM-DD>.docx` — strip the `.pptx` extension, keep the stem, append today's date
+- If a file with that name already exists, append `_v2`, `_v3`, etc.
 
+**Document structure (in this order):**
+
+1. **Title** — "Deck Review: [Deck Filename]" (Heading 1)
+2. **Metadata line** — "Reviewed: [Today's Date]" (italic, below the title)
+3. **Executive Summary** (Heading 2) — 2–3 sentences: total suggestions across tiers, the most critical issue, overall quality read
+4. **Tier I — Fix Before Sending** (Heading 2)
+5. **Tier II — Strong Recommendation** (Heading 2)
+6. **Tier III — Optional Polish** (Heading 2)
+7. **Summary** (Heading 2) — table + category breakdown line
+
+**Within each tier**, render every suggestion as a numbered block:
+
+- Heading 3 line: `N. [Slide N] — [One-line description of what needs to change]`
+- Bulleted bold label lines under that heading:
+  - **Change:** [Specifically what to fix — quoted original text or element, followed by the corrected version. For Accuracy, include the source URL.]
+  - **Category:** [Grammar & Spelling / Formatting / Accuracy / Inconsistency / Tone & Style / Unverified]
+  - **Confidence:** X/10 · **Impact:** Y/10
+
+If a tier has no suggestions, write *"No suggestions in this tier."* in italic.
+
+**Summary section** — render as a proper Word table with two columns (Tier, Count) and rows for Tier I, Tier II, Tier III, Total. Below the table, one line listing category counts: `Grammar & Spelling (n) · Formatting (n) · Accuracy (n) · Inconsistency (n) · Tone & Style (n) · Unverified (n)`.
+
+**Styling:**
+- Default font: Calibri 11 pt
+- Headings: Word's built-in Heading 1 / 2 / 3 styles
+- Summary table: use the "Light Grid Accent 1" or equivalent built-in table style for clean gridlines
+- Page margins: 1 inch on all sides (Word default is fine)
+
+**Implementation:**
+
+Write a single Python script via Bash using `python-docx`. Example pattern:
+
+```python
+from docx import Document
+from docx.shared import Pt, Inches
+from pathlib import Path
+
+doc = Document()
+doc.add_heading(f"Deck Review: {deck_filename}", level=1)
+meta = doc.add_paragraph()
+meta.add_run(f"Reviewed: {today}").italic = True
+
+doc.add_heading("Executive Summary", level=2)
+doc.add_paragraph(exec_summary_text)
+
+for tier_label, suggestions in [("Tier I — Fix Before Sending", tier1),
+                                 ("Tier II — Strong Recommendation", tier2),
+                                 ("Tier III — Optional Polish", tier3)]:
+    doc.add_heading(tier_label, level=2)
+    if not suggestions:
+        p = doc.add_paragraph()
+        p.add_run("No suggestions in this tier.").italic = True
+        continue
+    for i, s in enumerate(suggestions, 1):
+        doc.add_heading(f"{i}. [Slide {s['slide']}] — {s['headline']}", level=3)
+        for label, value in [("Change", s["change"]),
+                             ("Category", s["category"]),
+                             ("Confidence/Impact", f"{s['confidence']}/10 · Impact: {s['impact']}/10")]:
+            p = doc.add_paragraph(style="List Bullet")
+            run = p.add_run(f"{label}: ")
+            run.bold = True
+            p.add_run(value)
+
+doc.add_heading("Summary", level=2)
+table = doc.add_table(rows=5, cols=2)
+table.style = "Light Grid Accent 1"
+# ...populate tier counts + total row
+doc.add_paragraph(category_breakdown_line)
+
+out_path = Path("outputs") / f"DeckReview_{stem}_{today}.docx"
+out_path.parent.mkdir(exist_ok=True)
+doc.save(out_path)
 ```
-## Deck Review: [Deck Filename]
-Reviewed: [Today's Date]
 
-### Executive Summary
-[2-3 sentences: total suggestions across tiers, the most critical issue, overall quality read]
+**After saving, tell the user:**
+- The absolute path to the saved .docx
+- Total suggestions and tier counts
+- The single most critical item (top Tier I entry)
 
----
-
-### Tier I — Fix Before Sending
-
-**1. [Slide N] — [One-line description of what needs to change]**
-- **Change:** [Specifically what to fix — quoted original text or element, followed by the corrected version]
-- **Category:** [Grammar & Spelling / Formatting / Accuracy / Inconsistency / Tone & Style / Unverified]
-- **Confidence:** X/10 · **Impact:** Y/10
-
-**2. [Slide N] — [description]**
-- **Change:** ...
-- **Category:** ...
-- **Confidence:** X/10 · **Impact:** Y/10
-
-[...etc]
-
----
-
-### Tier II — Strong Recommendation
-
-**1. [Slide N] — [description]**
-- **Change:** ...
-- **Category:** ...
-- **Confidence:** X/10 · **Impact:** Y/10
-
-[...etc]
-
----
-
-### Tier III — Optional Polish
-
-**1. [Slide N] — [description]**
-- **Change:** ...
-- **Category:** ...
-- **Confidence:** X/10 · **Impact:** Y/10
-
-[...etc]
-
----
-
-### Summary
-
-| Tier | Count |
-|------|-------|
-| Tier I | [count] |
-| Tier II | [count] |
-| Tier III | [count] |
-| **Total** | **[count]** |
-
-Category breakdown: Grammar & Spelling ([n]) · Formatting ([n]) · Accuracy ([n]) · Inconsistency ([n]) · Tone & Style ([n]) · Unverified ([n])
-```
-
-**Formatting rules for the output:**
-- Each suggestion is numbered within its tier (1, 2, 3...)
-- "Change" must be concrete and actionable — quote the original text or name the specific shape/slide element, then state the fix
-- For Accuracy category corrections, include the source URL in the Change field
-- If a tier is empty, write "*No suggestions in this tier.*" under the heading
-- Do not include slide-by-slide breakdowns or category-grouped sections — the tiered list is the only view
+Do not paste the full review content into the chat response — the Word document is the deliverable.
 
 ---
 
