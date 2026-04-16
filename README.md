@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin for analysts — automated deal workflows, branded presentations, and deck QC.
 
-Current version: **1.2.0**
+Current version: **1.2.1**
 
 ## Skills
 
@@ -61,6 +61,7 @@ infor-workflows/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.1 | 2026-04-16 | deckcheck-infor now delivers the tiered review as a Microsoft Word (.docx) document saved to `outputs/` instead of an inline markdown response |
 | 1.2.0 | 2026-04-16 | deckcheck-infor output restructured into three tiers (I/II/III) with Confidence and Impact scores (1–10) and edit category tagging per suggestion |
 | 1.1.0 | 2026-04-16 | Added deckcheck-infor skill — reviews decks for grammar/spelling, INFOR brand formatting, and factual accuracy via web search |
 | 1.0.5 | 2026-04-15 | Added brand-guidelines-infor skill and INFOR logo asset; defines all PowerPoint formatting rules for INFOR presentations |
