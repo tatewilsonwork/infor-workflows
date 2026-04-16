@@ -1,7 +1,7 @@
 ---
 name: deckcheck-infor
-description: Use this skill when the user invokes /deckcheck-infor or asks to review, proofread, or QC a PowerPoint deck. Checks grammar, spelling, tone, INFOR brand formatting (fonts, colors, alignment, sizing), and verifies factual claims (HQ locations, company descriptions, event dates) via web search. Activates on "deck check", "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request to review a PowerPoint for errors.
-version: 1.0.0
+description: Use this skill when the user invokes /deckcheck-infor or asks to review, proofread, or QC a PowerPoint deck. Checks grammar, spelling, tone, INFOR brand formatting (fonts, colors, alignment, sizing), and verifies factual claims (HQ locations, company descriptions, event dates) via web search. Produces a tiered review (Tier I / II / III) where each suggestion is scored 1–10 on Confidence and Impact. Activates on "deck check", "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request to review a PowerPoint for errors.
+version: 1.1.0
 ---
 
 # INFOR Deck Check — Workflow
@@ -158,11 +158,65 @@ For each fact checked, record whether it was confirmed, could not be verified, o
 
 ---
 
-### Step 6 — Compile and Output the Review
+### Step 6 — Score Every Suggestion
 
-Produce a cleanly formatted review as a markdown response. Organize as follows:
+For every issue identified in Steps 3, 4, and 5, assign two scores from **1 to 10**:
+
+#### Confidence (1–10) — how sure you are that this is actually a mistake
+
+| Score | Meaning |
+|-------|---------|
+| 9–10 | Certain — objectively wrong (misspelling, font is measurably non-Palatino, HQ city is verifiably incorrect, a number contradicts another number on the same slide) |
+| 7–8 | High confidence — strong indication of an error but minor ambiguity (grammar call that depends on style, color that is close to but not exactly the brand hex) |
+| 5–6 | Moderate — plausible issue but could be intentional (tone shift, unusual phrasing, a date that couldn't be fully verified online) |
+| 3–4 | Low — a hunch worth flagging but easily defensible |
+| 1–2 | Speculative — stylistic preference only |
+
+#### Impact (1–10) — how much the mistake affects the reader / client perception
+
+| Score | Meaning |
+|-------|---------|
+| 9–10 | Severe — factual error that undermines credibility (wrong HQ, wrong deal date, misspelled client name, wrong company description on cover) |
+| 7–8 | High — visible error in prominent location (spelling error in a title, wrong font on every slide, brand color off) |
+| 5–6 | Medium — noticeable but not prominent (grammar in body text, minor alignment off in a non-focal shape, color off on one chart series) |
+| 3–4 | Low — small polish issue (sub-pixel alignment, 7pt footnote tweak, inconsistent comma usage) |
+| 1–2 | Trivial — only noticed on close inspection |
+
+#### Edit Categories
+
+Bucket every suggestion into **one** of these categories:
+
+- **Grammar & Spelling** — misspellings, typos, punctuation, subject-verb agreement
+- **Formatting** — font, font size, color, bold/italic, alignment, shape position, spacing, bullet style
+- **Accuracy** — a claim that is factually incorrect (HQ, date, description, executive name, etc.)
+- **Inconsistency** — same thing stated differently across slides, numbers that don't reconcile, capitalization drift, tense shift
+- **Tone & Style** — wording that is overly casual, inconsistent voice, or unclear phrasing
+- **Unverified** — factual claim that could not be confirmed via web search (flag for analyst to double-check)
 
 ---
+
+### Step 7 — Tier the Suggestions
+
+Combine Confidence and Impact into a **Priority Score = Confidence + Impact** (range 2–20). Assign each suggestion to one of three tiers:
+
+| Tier | Priority Score | Meaning |
+|------|----------------|---------|
+| **Tier I** | 15–20 | Fix before sending — high confidence AND high impact |
+| **Tier II** | 10–14 | Strong recommendation — either very confident OR high impact (not both) |
+| **Tier III** | 2–9 | Optional polish — low confidence or low impact |
+
+**Override rules:**
+- Any **Accuracy** issue with Confidence ≥ 8 is always **Tier I** regardless of impact score
+- Any **Grammar & Spelling** issue with Confidence ≥ 9 is always at least **Tier II**
+- Suggestions with Confidence ≤ 3 AND Impact ≤ 3 should be dropped entirely, not reported
+
+---
+
+### Step 8 — Output the Review
+
+Produce the review as a markdown response using the structure below. **Only three sections — Tier I, Tier II, Tier III.** Do not group by slide or category in the top-level structure; tier comes first.
+
+Within each tier, sort suggestions by Priority Score descending (highest first).
 
 **Structure:**
 
@@ -171,77 +225,66 @@ Produce a cleanly formatted review as a markdown response. Organize as follows:
 Reviewed: [Today's Date]
 
 ### Executive Summary
-[2-3 sentence overview: total issues found by category, overall quality assessment]
+[2-3 sentences: total suggestions across tiers, the most critical issue, overall quality read]
 
 ---
 
-### 1. Language Issues
-[Group by slide. For each issue:]
+### Tier I — Fix Before Sending
 
-**Slide [N] — "[Slide Title]"**
-- **[Issue Type]:** "[quoted text]" → [suggestion]
+**1. [Slide N] — [One-line description of what needs to change]**
+- **Change:** [Specifically what to fix — quoted original text or element, followed by the corrected version]
+- **Category:** [Grammar & Spelling / Formatting / Accuracy / Inconsistency / Tone & Style / Unverified]
+- **Confidence:** X/10 · **Impact:** Y/10
 
----
+**2. [Slide N] — [description]**
+- **Change:** ...
+- **Category:** ...
+- **Confidence:** X/10 · **Impact:** Y/10
 
-### 2. Formatting Issues
-[Group by issue type, then by slide]
-
-**Fonts**
-- Slide [N]: [shape name] uses [wrong font] instead of Palatino Linotype
-- Slide [N]: [element] is [X] pt, expected [Y] pt
-
-**Colors**
-- Slide [N]: [element] uses [#hex] — expected [#correct hex] ([color name])
-
-**Alignment & Layout**
-- Slide [N]: [shape] is offset by [X]in from expected position
-- Slide [N]: [shapes A and B] appear misaligned (top edge differs by [X]in)
-
-**Tables**
-- Slide [N]: [specific table issue]
-
-**Charts**
-- Slide [N]: [specific chart issue]
+[...etc]
 
 ---
 
-### 3. Factual Verification
-[For each fact checked:]
+### Tier II — Strong Recommendation
 
-**Slide [N] — "[Slide Title]"**
-- **[Claim]:** [Confirmed / Could not verify / Incorrect]
-  - [If incorrect: "Found: [correct info] (Source: [URL])"]
-  - [If unverified: "Could not find a reliable source to confirm this"]
+**1. [Slide N] — [description]**
+- **Change:** ...
+- **Category:** ...
+- **Confidence:** X/10 · **Impact:** Y/10
+
+[...etc]
 
 ---
 
-### Summary Table
+### Tier III — Optional Polish
 
-| Category | Issues Found |
-|----------|-------------|
-| Grammar & Spelling | [count] |
-| Tone & Style | [count] |
-| Font Issues | [count] |
-| Color Issues | [count] |
-| Alignment & Layout | [count] |
-| Table / Chart Issues | [count] |
-| Factual Corrections | [count] |
-| Unverified Facts | [count] |
+**1. [Slide N] — [description]**
+- **Change:** ...
+- **Category:** ...
+- **Confidence:** X/10 · **Impact:** Y/10
+
+[...etc]
+
+---
+
+### Summary
+
+| Tier | Count |
+|------|-------|
+| Tier I | [count] |
+| Tier II | [count] |
+| Tier III | [count] |
 | **Total** | **[count]** |
+
+Category breakdown: Grammar & Spelling ([n]) · Formatting ([n]) · Accuracy ([n]) · Inconsistency ([n]) · Tone & Style ([n]) · Unverified ([n])
 ```
 
----
-
-### Severity Guidance
-
-When reporting issues, prioritize by impact:
-
-1. **Factual errors** — wrong HQ, wrong dates, incorrect descriptions (high impact — these undermine credibility)
-2. **Spelling / grammar errors** — visible to the reader, embarrassing in a client-facing document
-3. **Font violations** — non-Palatino fonts are immediately noticeable
-4. **Color / branding violations** — wrong palette colors break visual consistency
-5. **Alignment issues** — only flag if visually noticeable (>0.05in offset); minor sub-pixel differences are not worth reporting
-6. **Tone / style** — flag only clear inconsistencies, not subjective preferences
+**Formatting rules for the output:**
+- Each suggestion is numbered within its tier (1, 2, 3...)
+- "Change" must be concrete and actionable — quote the original text or name the specific shape/slide element, then state the fix
+- For Accuracy category corrections, include the source URL in the Change field
+- If a tier is empty, write "*No suggestions in this tier.*" under the heading
+- Do not include slide-by-slide breakdowns or category-grouped sections — the tiered list is the only view
 
 ---
 
