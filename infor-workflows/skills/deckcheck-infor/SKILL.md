@@ -1,7 +1,7 @@
 ---
 name: deckcheck-infor
 description: Use this skill when the user invokes /deckcheck-infor or asks to review, proofread, or QC a PowerPoint deck. Checks grammar, spelling, tone, INFOR brand formatting (fonts, colors, alignment, sizing), and verifies factual claims (HQ locations, company descriptions, event dates) via web search. Produces a tiered review (Tier I / II / III) where each suggestion is scored 1–10 on Confidence and Impact, delivered as a Microsoft Word (.docx) document. Activates on "deck check", "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request to review a PowerPoint for errors.
-version: 1.2.1
+version: 1.3.0
 ---
 
 # INFOR Deck Check — Workflow
@@ -37,7 +37,10 @@ Wait for the file before proceeding.
 
 Use python-pptx to extract the full contents of every slide. For each slide, capture:
 
-- **Slide number and title** (from the title placeholder or first text box)
+- **Slide title** (from the title placeholder or first text box)
+- **Visible slide number** — the page number printed in the bottom-right corner of the slide (typically a small text box near left≥8.5in, top≥7.0in containing just a numeral, e.g. "1", "2", "3"). This is the number the skill must use when referring to slides in the output.
+  - The **title/cover slide** is expected to have no visible page number — do not flag it and refer to it as "Cover" in the output.
+  - For every **non-title slide**, if no visible page number is found in the bottom-right, emit a **Formatting** suggestion: *"Slide is missing a page number in the bottom-right corner."* Use the slide's positional index (e.g. "Slide at position N") to identify it in that one case only, and give it Confidence 9 / Impact 6.
 - **All text content** from every shape (text boxes, tables, grouped shapes, chart titles, notes)
 - **Shape metadata** for formatting audit:
   - Font name, font size, bold/italic, font color (hex)
@@ -235,11 +238,12 @@ Within each tier, sort suggestions by Priority Score descending (highest first).
 
 **Within each tier**, render every suggestion as a numbered block:
 
-- Heading 3 line: `N. [Slide N] — [One-line description of what needs to change]`
+- Heading 3 line: `N. [Slide X] — [One-line description of what needs to change]`
+  - `X` is the **visible page number** printed on the slide (from the bottom-right corner), not the positional index in the file. The cover slide is labelled `[Cover]`. For a non-title slide missing its page number, use `[Slide at position N]` where N is the positional index.
 - Bulleted bold label lines under that heading:
   - **Change:** [Specifically what to fix — quoted original text or element, followed by the corrected version. For Accuracy, include the source URL.]
   - **Category:** [Grammar & Spelling / Formatting / Accuracy / Inconsistency / Tone & Style / Unverified]
-  - **Confidence:** X/10 · **Impact:** Y/10
+  - **Confidence / Impact:** X/10 & Y/10
 
 If a tier has no suggestions, write *"No suggestions in this tier."* in italic.
 
@@ -277,10 +281,10 @@ for tier_label, suggestions in [("Tier I — Fix Before Sending", tier1),
         p.add_run("No suggestions in this tier.").italic = True
         continue
     for i, s in enumerate(suggestions, 1):
-        doc.add_heading(f"{i}. [Slide {s['slide']}] — {s['headline']}", level=3)
+        doc.add_heading(f"{i}. [{s['slide_label']}] — {s['headline']}", level=3)
         for label, value in [("Change", s["change"]),
                              ("Category", s["category"]),
-                             ("Confidence/Impact", f"{s['confidence']}/10 · Impact: {s['impact']}/10")]:
+                             ("Confidence / Impact", f"{s['confidence']}/10 & {s['impact']}/10")]:
             p = doc.add_paragraph(style="List Bullet")
             run = p.add_run(f"{label}: ")
             run.bold = True
