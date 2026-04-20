@@ -1,12 +1,14 @@
 ---
 name: brand-guidelines-infor
 description: Use this skill when creating, formatting, or reviewing any PowerPoint presentation that must follow INFOR Financial Group brand guidelines. Activates on "brand guidelines", "INFOR formatting", "format this deck", "branded presentation", "INFOR style", "make a deck", "pitch book", "discussion materials", or any request to create or fix a PowerPoint using INFOR branding. Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout standards.
-version: 1.0.0
+version: 1.3.0
 ---
 
 # INFOR Brand Guidelines — PowerPoint
 
 This skill defines the visual identity and formatting rules for all INFOR Financial Group PowerPoint presentations. Use it as the authoritative reference when generating or reviewing any deck.
+
+**Always start from the INFOR Deck Template** (see Section 11). The template carries the branded slide master, theme colors, fonts, and example slides for every common layout. Starting from scratch almost always loses master-level formatting (title bars, footers, page numbers, bullet styles, theme font) and produces off-brand output.
 
 Allowed tools: Read, Bash, Write, Glob
 
@@ -16,6 +18,8 @@ Allowed tools: Read, Bash, Write, Glob
 
 - Today's date: !`date +%Y-%m-%d`
 - INFOR logo location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Logo - 1.png" 2>/dev/null | head -1`
+- INFOR deck template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Deck Template.pptx" 2>/dev/null | head -1`
+- INFOR theme location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFORFG.thmx" 2>/dev/null | head -1`
 - Current working directory: !`pwd`
 
 ---
@@ -236,21 +240,26 @@ When generating or reviewing a PowerPoint:
 ### Step 1 — Confirm Scope
 
 Determine what is being created or reviewed:
-- New deck from scratch
-- Formatting check on an existing deck
-- Specific slide type (cover, content, charts, tables)
+- New deck from scratch → **open the INFOR Deck Template** (Section 11)
+- Formatting check on an existing deck → open the existing file; do not rebuild it from the template unless asked
+- Specific slide type (cover, content, charts, tables) → clone the matching template slide as a starting point
 
-### Step 2 — Locate Logo
+### Step 2 — Locate Assets
 
-The INFOR logo path is shown in the Context section above. If blank, search for it:
+The INFOR logo, deck template, and theme paths are shown in the Context section above. If any is blank, search for it:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Logo - 1.png" 2>/dev/null | head -1
+# Repeat with "INFOR Deck Template.pptx" and "INFORFG.thmx"
 ```
 
-### Step 3 — Apply Standards
+### Step 3 — Build from Template
 
-When generating slides, enforce every rule in sections 2 through 9 above. Key checkpoints:
+For any new deck, follow Section 11 — open the template, clone the sample slides that match the content you need, then edit the clones. This is the default path.
+
+### Step 4 — Apply Standards
+
+Enforce every rule in sections 2 through 9 above. Most of these are pre-applied by the template master, but verify on every slide you add or modify:
 
 - [ ] All text is Palatino Linotype
 - [ ] Correct font sizes per element type (title 22, header 14, bullets 11-12, sub-bullets 10-11, footnotes 7)
@@ -267,9 +276,126 @@ When generating slides, enforce every rule in sections 2 through 9 above. Key ch
 - [ ] Tables: white gridlines (0.75pt), alternating light grey, no vertical lines
 - [ ] Number formats: C$MM default, correct period notation
 
-### Step 4 — Summary
+### Step 5 — Summary
 
 Report what was created or fixed, listing any deviations from the guidelines that could not be resolved and why.
+
+---
+
+## 11 — Starting from the INFOR Deck Template
+
+**Default workflow for every new deck.** The template file (`INFOR Deck Template.pptx`) ships with the branded slide master, theme (`INFORFG.thmx`), Palatino Linotype theme font, accent colors, footer/page-number placeholders, and nine sample slides covering every common layout. Opening the template with `python-pptx` inherits all of this automatically. Building the same slides from a blank `Presentation()` almost always produces off-brand output because master-level settings are lost.
+
+### 11.1 — Sample Slides in the Template
+
+Reference these when deciding which slide to clone as a starting point:
+
+| # | Layout | Purpose | Use When |
+|---|--------|---------|----------|
+| 1 | Title Slide | Cover slide with `[CLIENT NAME]`, "Internal Discussion Materials", INFOR logo, date, "Private and Confidential" | First slide of every deck |
+| 2 | Main | Executive summary — full-page paragraph under the title bar | Any full-page text/bullet slide |
+| 3 | Main | Two-column layout: Overview + Capitalization Summary (top), LTM Revenue Breakdown + pie chart (bottom) | Company introduction, split overview/financials |
+| 4 | Main | Earnings summary — Business Updates, financial highlights comparison blocks, BBG Comparison, Management Guidance | Quarterly/earnings review, KPI comparison |
+| 5 | Main | Section divider — stack of rounded rectangles listing all sections | Between major deck sections |
+| 6 | With Tagline | 2×2 matrix (Gartner Magic Quadrant style) with axes, quadrant labels, Honourable Mentions sidebar | Competitive positioning, market maps |
+| 7 | Main | Full-page table | Comps tables, data tables |
+| 8 | Main | Disclaimer — full-page legal text | End of every external deck |
+| 9 | Main | Contact page — tables for bankers with a photo placeholder | Back cover / team page |
+
+### 11.2 — Recommended Approach: Clone-and-Edit
+
+Open the template, **clone the sample slide whose layout matches your content**, then edit the clone's text and shapes. This preserves every master-level detail — title bar, footer line, page number placeholder, section-header proportions, table styles, bullet indentation — that you cannot cleanly reproduce from code.
+
+```python
+import copy
+from pptx import Presentation
+
+TEMPLATE = r"<path from Context 'INFOR deck template location'>"
+
+prs = Presentation(TEMPLATE)
+
+def clone_slide(prs, source_slide):
+    """Duplicate a slide from the same presentation, preserving all shapes and layout."""
+    new_slide = prs.slides.add_slide(source_slide.slide_layout)
+    # Remove placeholders that the layout auto-adds, so only the source's shapes remain
+    for shp in list(new_slide.shapes):
+        new_slide.shapes._spTree.remove(shp._element)
+    for shp in source_slide.shapes:
+        new_slide.shapes._spTree.append(copy.deepcopy(shp._element))
+    return new_slide
+
+def delete_slide(prs, index):
+    """Remove a slide by index."""
+    xml_slides = prs.slides._sldIdLst
+    slides = list(xml_slides)
+    xml_slides.remove(slides[index])
+
+# Example: build a deck with a cover + exec summary + section divider + disclaimer
+# Clone first, then delete the sample slides at the end.
+cover = clone_slide(prs, prs.slides[0])          # slide 1: Title Slide
+exec_summary = clone_slide(prs, prs.slides[1])   # slide 2: Executive Summary
+divider = clone_slide(prs, prs.slides[4])        # slide 5: Section divider
+disclaimer = clone_slide(prs, prs.slides[7])     # slide 8: Disclaimer
+
+# Now edit text in each cloned slide (see 11.4), then delete the 9 originals.
+for _ in range(9):
+    delete_slide(prs, 0)
+
+prs.save("output.pptx")
+```
+
+### 11.3 — Alternative: Build from Template Layouts
+
+If no sample slide matches, call `add_slide` with one of the template's named layouts. You still inherit the master (theme font, colors, footer, page number) but you must add content shapes yourself — follow the positions in Section 6.
+
+```python
+prs = Presentation(TEMPLATE)
+
+# Available layouts (from the template's slide masters):
+#   "Title Slide"    — cover
+#   "2_Main"         — content slide with title placeholder
+#   "Main"           — content slide with title + footer + page number
+#   "With Tagline"   — content slide with tagline band under title
+
+layout = next(l for m in prs.slide_masters for l in m.slide_layouts if l.name == "Main")
+slide = prs.slides.add_slide(layout)
+# ... add shapes per Section 6 positions ...
+```
+
+### 11.4 — Editing Cloned Slide Content
+
+After cloning, locate shapes by their `name` or by their text placeholders. The template uses conventional names: `Title 1`, `Rectangle 14` (section header), `Text Placeholder 1` (footnote/source), `Slide Number Placeholder` (page number). Common placeholder tokens in sample text are `[CLIENT NAME]`, `[Client Name]`, `[x]`, `[QX 202X]`, `[Cap Table Placeholder]` — replace these in place, preserving run-level formatting.
+
+```python
+def replace_text(shape, new_text):
+    """Replace shape text while preserving the first run's font/color/size."""
+    if not shape.has_text_frame:
+        return
+    tf = shape.text_frame
+    p0 = tf.paragraphs[0]
+    if p0.runs:
+        p0.runs[0].text = new_text
+        for r in p0.runs[1:]:
+            r.text = ""
+    else:
+        p0.text = new_text
+    for para in tf.paragraphs[1:]:
+        para.clear()
+
+for shape in cover.shapes:
+    if shape.name == "Title 1":
+        # "[CLIENT NAME]\nInternal Discussion Materials" — edit the runs individually
+        ...
+```
+
+### 11.5 — Rules When Using the Template
+
+- **Never** call `Presentation()` with no arguments for an INFOR deck. Always pass the template path.
+- **Do not** modify the slide master or theme from code — the master is the source of truth for every master-level rule in Sections 2, 3, 4, 5.
+- **Do** keep the Disclaimer slide (sample #8) for every external deck.
+- **Do** clone the cover slide (sample #1) rather than building a cover from scratch — the navy decorative bar behind the title is an XML construct that is painful to recreate.
+- **Do not** delete the template's sample slides until after you've cloned everything you need — deleting them first removes the source shapes you wanted to copy.
+- If the user supplies their own base deck, open that file instead of the template and apply only the edits requested. Do not rebuild from the template unless the user asks.
 
 ---
 
