@@ -1,7 +1,7 @@
 ---
 name: brand-guidelines-infor
 description: Use this skill when creating, formatting, or reviewing any PowerPoint presentation that must follow INFOR Financial Group brand guidelines. Activates on "brand guidelines", "INFOR formatting", "format this deck", "branded presentation", "INFOR style", "make a deck", "pitch book", "discussion materials", or any request to create or fix a PowerPoint using INFOR branding. Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout standards.
-version: 1.3.0
+version: 1.3.1
 ---
 
 # INFOR Brand Guidelines — PowerPoint
@@ -257,6 +257,15 @@ find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflo
 
 For any new deck, follow Section 11 — open the template, clone the sample slides that match the content you need, then edit the clones. This is the default path.
 
+**Required slide order** (see Section 11.6):
+1. Cover (clone sample #1) — leave INFOR logo untouched
+2. Executive Summary (clone #2) — full-page text OK
+3. Content slide(s) — must include graphical elements; preserve placeholder rectangles and grouped graphics
+4. Disclaimer (clone #8) — full-page text OK
+5. Contact page (clone #9) — always last; Neil + 3 `[x]` placeholders by default
+
+Only the Executive Summary and Disclaimer may be text-only. Every other slide needs at least one graphic, table, chart, placeholder rectangle, or grouped infographic.
+
 ### Step 4 — Apply Standards
 
 Enforce every rule in sections 2 through 9 above. Most of these are pre-applied by the template master, but verify on every slide you add or modify:
@@ -309,19 +318,45 @@ Open the template, **clone the sample slide whose layout matches your content**,
 ```python
 import copy
 from pptx import Presentation
+from pptx.oxml.ns import qn
 
 TEMPLATE = r"<path from Context 'INFOR deck template location'>"
 
 prs = Presentation(TEMPLATE)
 
 def clone_slide(prs, source_slide):
-    """Duplicate a slide from the same presentation, preserving all shapes and layout."""
+    """Duplicate a slide, preserving shapes, layout, AND all relationships (images, charts, hyperlinks).
+
+    Copying only the shape XML is not enough — shapes that reference relationships (pictures,
+    charts, hyperlinks) carry r:embed / r:link / r:id attributes whose rIds point into the
+    source slide's rels file. Without copying the rels and remapping rIds, those references
+    dangle in the new slide and PowerPoint shows a red X with "The picture can't be displayed."
+    """
     new_slide = prs.slides.add_slide(source_slide.slide_layout)
-    # Remove placeholders that the layout auto-adds, so only the source's shapes remain
+    # Remove placeholders that the layout auto-adds
     for shp in list(new_slide.shapes):
         new_slide.shapes._spTree.remove(shp._element)
+
+    # Copy every non-notes relationship from the source slide and build an old→new rId map
+    rid_map = {}
+    for rel in source_slide.part.rels.values():
+        if "notesSlide" in rel.reltype:
+            continue
+        if rel.is_external:
+            new_rid = new_slide.part.relate_to(rel.target_ref, rel.reltype, is_external=True)
+        else:
+            new_rid = new_slide.part.relate_to(rel.target_part, rel.reltype)
+        rid_map[rel.rId] = new_rid
+
+    # Deep-copy shape XML and rewrite r:embed / r:link / r:id attributes so they point at the new rIds
+    RID_ATTRS = (qn('r:embed'), qn('r:link'), qn('r:id'))
     for shp in source_slide.shapes:
-        new_slide.shapes._spTree.append(copy.deepcopy(shp._element))
+        new_el = copy.deepcopy(shp._element)
+        for el in new_el.iter():
+            for attr in RID_ATTRS:
+                if attr in el.attrib and el.attrib[attr] in rid_map:
+                    el.attrib[attr] = rid_map[el.attrib[attr]]
+        new_slide.shapes._spTree.append(new_el)
     return new_slide
 
 def delete_slide(prs, index):
@@ -330,12 +365,13 @@ def delete_slide(prs, index):
     slides = list(xml_slides)
     xml_slides.remove(slides[index])
 
-# Example: build a deck with a cover + exec summary + section divider + disclaimer
+# Example: build a standard deck — cover, exec summary, content, disclaimer, contact
 # Clone first, then delete the sample slides at the end.
-cover = clone_slide(prs, prs.slides[0])          # slide 1: Title Slide
-exec_summary = clone_slide(prs, prs.slides[1])   # slide 2: Executive Summary
-divider = clone_slide(prs, prs.slides[4])        # slide 5: Section divider
-disclaimer = clone_slide(prs, prs.slides[7])     # slide 8: Disclaimer
+cover        = clone_slide(prs, prs.slides[0])  # slide 1: Title Slide
+exec_summary = clone_slide(prs, prs.slides[1])  # slide 2: Executive Summary
+earnings     = clone_slide(prs, prs.slides[3])  # slide 4: Earnings / content w/ graphics
+disclaimer   = clone_slide(prs, prs.slides[7])  # slide 8: Disclaimer
+contact      = clone_slide(prs, prs.slides[8])  # slide 9: Contact page (ALWAYS INCLUDE)
 
 # Now edit text in each cloned slide (see 11.4), then delete the 9 originals.
 for _ in range(9):
@@ -395,7 +431,34 @@ for shape in cover.shapes:
 - **Do** keep the Disclaimer slide (sample #8) for every external deck.
 - **Do** clone the cover slide (sample #1) rather than building a cover from scratch — the navy decorative bar behind the title is an XML construct that is painful to recreate.
 - **Do not** delete the template's sample slides until after you've cloned everything you need — deleting them first removes the source shapes you wanted to copy.
+- **Always** use `clone_slide` exactly as shown in 11.2. The naive `deepcopy`-only version drops image/chart/hyperlink relationships and produces red-X picture placeholders in PowerPoint.
+- **Do not** touch the INFOR logo on the cover (shape `Picture 1` at (7.65, 6.21)). The template embeds it correctly — leave it alone. Only edit the `Title 1`, `Subtitle 2` text, and date.
+- **Do not** replace placeholder rectangles (`[Cap Table Placeholder]`, `[BBG Comparison Placeholder]`, `[Pie Chart Placeholder]`). These are intentional sizing stubs for the analyst to paste an Excel table, chart, or image into manually. Leave the rectangle and its placeholder text unchanged — resize or reposition only if the user asks.
+- **Do not** flatten grouped graphics (`Group 1070`, `Group 1086`, quote-paper groups, etc.) into plain text boxes. Edit the text **inside** the group's child shape — keep the group wrapper, the paper/callout graphic, and all decorative elements.
 - If the user supplies their own base deck, open that file instead of the template and apply only the edits requested. Do not rebuild from the template unless the user asks.
+
+### 11.6 — Slide-Specific Conventions
+
+These rules come from analyst review of generated decks. They override any generic inference:
+
+**Required deck structure.** Every deck must include, in order:
+1. Cover (clone sample #1)
+2. Executive Summary (clone sample #2)
+3. Content slides — one or more, using samples #3, #4, #6, or #7
+4. Disclaimer (clone sample #8) — second-to-last
+5. Contact page (clone sample #9) — **always the final slide**
+
+**Text-only slides are restricted to exactly two:** the Executive Summary (#2) and the Disclaimer (#8). Every other content slide must include at least one graphical element — a table, chart, placeholder rectangle for manual insertion, grouped infographic, metric callout blocks, or quote-paper group. If the content you want to present is inherently prose (e.g., "Recent Business Developments"), restructure it into a visual format: a two-column layout with section headers (clone #3), a timeline, bullet callouts, or a combination of placeholder boxes and short commentary.
+
+**Cover slide (#1).** Edit only: company name, subtitle ("Internal Discussion Materials" or "Confidential Discussion Materials"), date, and (optionally) the "Private and Confidential" text. Do not move or modify `Picture 1` (INFOR logo).
+
+**Earnings slide (#4) — specific rules.**
+- **Business Updates box** (top-left, `Rectangle 5` section header + adjacent text): write 2–3 short paragraphs of **professional investment-banking commentary**, not bullet-pointed metrics. Tone: observational, analytical, forward-looking. Example opener: *"Company continues to execute on its long-term strategic plan, with Q1 results reflecting momentum across core verticals..."* Metrics belong in the financial-highlights comparison blocks on the right, not here.
+- **Financial highlights blocks** (top-right): keep the template's structure intact — prior-period callout, current-period callout, delta rectangle with up/down triangle, and the horizontal connector line between rows. Edit only the numbers and metric labels (Revenue, EBITDA, Gross Margin, EPS, etc.).
+- **Bottom-left placeholder** (`Rectangle 2` at (0.35, 4.55), labelled `[BBG Comparison Placeholder]` or similar): **leave the placeholder rectangle in place**. Do not replace it with metrics, text, or a backlog/KPI block. The analyst pastes the Excel/BBG table in manually after generation.
+- **Bottom-right quote-paper groups** (`Group 1070` at (5.14, 4.55) and `Group 1086` at (5.08, 5.72)): these are two decorative "paper" graphics holding management/analyst quotes. **Always include two quotes** (e.g., CEO + CFO, or CEO + analyst). Edit the text *inside* each group — never replace the groups with a plain `TextBox`, which deletes the paper graphic.
+
+**Contact page (#9) — default content.** Unless the user specifies otherwise, the contact page shows **Neil Selfe** (Chief Executive Officer) with three `[x]` placeholders for additional team members to be filled in manually. Edit the first table/photo block with Neil's details; leave the other three blocks as `[x]` placeholders so the analyst can populate them.
 
 ---
 
