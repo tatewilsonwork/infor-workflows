@@ -1,7 +1,7 @@
 ---
 name: expenses-extraction
 description: Fill in the INFOR expense report template from attached receipt images. Activates when the user wants to log expenses, submit receipts, or fill out the INFOR expense report.
-version: 1.1.0
+version: 1.3.4
 ---
 
 # INFOR Expense Report — Workflow & Domain Knowledge

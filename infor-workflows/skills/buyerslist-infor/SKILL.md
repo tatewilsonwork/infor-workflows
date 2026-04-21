@@ -5,7 +5,7 @@ description: >
   for a company in a sell-side M&A process. Activates on "buyer list", "buyer universe",
   "potential acquirers", "who would buy", "strategic buyers", "financial sponsors", or "sell-side process".
   Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C.
-version: 1.0.1
+version: 1.3.4
 ---
 
 # INFOR Buyers List — Workflow & Domain Knowledge

@@ -1,7 +1,12 @@
 ---
 name: brand-guidelines-infor
-description: Use this skill when creating, formatting, or reviewing any PowerPoint presentation that must follow INFOR Financial Group brand guidelines. Activates on "brand guidelines", "INFOR formatting", "format this deck", "branded presentation", "INFOR style", "make a deck", "pitch book", "discussion materials", or any request to create or fix a PowerPoint using INFOR branding. Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout standards.
-version: 1.3.1
+description: >
+  Use this skill when creating, formatting, or reviewing any PowerPoint presentation that must
+  follow INFOR Financial Group brand guidelines. Activates on "brand guidelines", "INFOR formatting",
+  "format this deck", "branded presentation", "INFOR style", "make a deck", "pitch book",
+  "discussion materials", or any request to create or fix a PowerPoint using INFOR branding.
+  Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout standards.
+version: 1.3.4
 ---
 
 # INFOR Brand Guidelines — PowerPoint

@@ -7,8 +7,8 @@
     {
       "name": "infor-workflows",
       "source": "./infor-workflows",
-      "description": "INFOR Financial Group workflows for capitalization table analysis, public comparable companies tables, precedent transactions analysis, expense report automation, buyers list generation, PowerPoint brand guidelines, and deck review/QC",
-      "version": "1.2.1"
+      "description": "INFOR Financial Group analyst workflows — deal tables, branded decks, and QC tooling",
+      "version": "1.3.4"
     }
   ]
 }
