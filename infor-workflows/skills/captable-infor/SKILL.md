@@ -5,7 +5,7 @@ description: >
   statements to populate a capitalization table. Activates for tasks involving shares outstanding,
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
-version: 1.3.9
+version: 1.4.1
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
@@ -197,13 +197,14 @@ Examples:
 
 **Leases:** ASC 842 or IFRS 16 footnote. Use the discounted lease liability balance, not undiscounted payments.
 
-**Options/Warrants/RSUs/DSUs:** Stock-based compensation footnote. Enter one row per exercise-price tranche for options — do NOT aggregate to WAEP. RSUs/DSUs use $0 strike. **Always exclude PSUs.**
+**Options/Warrants/RSUs/DSUs:** Stock-based compensation footnote. Enter one row per exercise-price tranche for options — do NOT aggregate to WAEP. RSUs/DSUs use $0 strike. **Always exclude PSUs, and exclude any RSUs/DSUs that are exclusively cash-settled** (they pay out in cash rather than shares, so they don't factor into ITM dilutive share count). Check the equity comp footnote for settlement terms — language like "settled in cash," "cash-settled only," or "no share issuance" signals exclusion. If an RSU/DSU plan allows share OR cash settlement at the company's discretion, include it.
 
-**Convertible Debentures:** Face amount (col C), shares per $1,000 face = 1,000 / conversion price (col D), conversion price (col E).
-
-**Convertibles / Preferred included in debt — ITM check with FX:** When a convertible debenture or preferred is conditionally included in the debt section via an IF statement that checks whether it is in-the-money (share price vs. strike price), the comparison **must be in the same currency**. The share price is stated in the Output currency (cell F5); the strike price is typically in the filing's reporting currency. Use the FX rate in cell F7 to convert one side to match the other — multiply or divide as needed so both values are expressed in the same currency before the ITM comparison. Failing to FX-adjust will produce false ITM/OTM classifications whenever F5 and the filing currency differ.
-
-**Debt Schedule col E (date):** Column E is the **as-of date of the information** (typically the balance sheet date of the financial statement being used), not the maturity date of the debt instrument.
+**Convertible Debentures / Convertible Preferreds:** Face amount (col C), shares per $1,000 face = 1,000 / conversion price (col D), conversion price (col E). **Also add a matching row in Section IV (Debt)** so the face is captured as debt only when the convert is out-of-the-money:
+- Label col B: `"[Convert name] (if OTM)"`
+- Date col E: the as-of date of the financial statement the convert face amount is sourced from (NOT the maturity of the convert — col E is an as-of date throughout Section IV).
+- Amount col F: enter as an **IF formula** referencing the Section III row. If strike < share price (ITM) the convert will convert to shares and contributes $0 to debt; otherwise the face (C[row]) flows into total debt.
+  - **FX-aware comparison — required whenever filing currency ≠ Output currency (F5):** share price (F$16) is stated in the Output currency (F5); strike (col E in Section III) is in the filing's reporting currency. F7 holds the FX rate. You MUST align the two sides before comparing, or the ITM/OTM classification will be wrong whenever F5 and the filing currency differ. Pick the direction based on F7's definition (multiply or divide) so both sides land in the same currency. Same-currency example (row 81): `=IF(E81<F$16,0,C81)`. Cross-currency example (row 81) converting the strike into F5 currency: `=IF(E81*F$7<F$16,0,C81)` — flip to `/F$7` if F7 is inverted.
+- Apply blue font to col B, E, and F (the F cell holds a hardcoded formula you authored, not a template formula, so color it).
 
 **Preferred Shares / NCI:** Balance sheet equity section. Enter 0 if none.
 
@@ -220,18 +221,22 @@ Examples:
 | Revolver at $0 | Always include — label "Revolving Credit Facility (undrawn)" |
 | IFRS leases | Write F103 as formula, not scalar; leave row 104 blank |
 | PSUs | Always exclude from Section II |
+| Cash-settled RSUs/DSUs | Exclude from Section II — they pay in cash, not shares |
 | Options aggregated | Enter one row per tranche, not single WAEP row |
 | Shares date | Use capital stock note subsequent-event date, not balance sheet date |
 | RSU/DSU strike | Use $0 |
 | Convertible preferred | If convertible → Section III; if not → F52 |
+| Convertibles & debt | Every Section III row needs a matching Section IV row with `=IF(E[row]<F$16,0,C[row])` so OTM converts flow into debt — apply F$7 to align strike and share price whenever filing currency ≠ F5 |
+| Debt col E | Column E in Section IV is the **as-of date** of the information (financial statement date), NOT the debt's maturity date |
 
 ### Cross-Checks
 
 1. F17 (Basic Shares) = F137 — formula-linked
 2. F99 (Total Debt) should tie to balance sheet carrying value
 3. F123 (Total Cash) should be positive
-4. Section II contains no PSUs
+4. Section II contains no PSUs and no cash-settled RSUs/DSUs
 5. Revolver appears in Section IV even at $0
 6. IFRS: only row 103 populated in Section V; row 104 blank
 7. Options appear as one row per tranche, not single WAEP row
 8. Section VII col E dates reflect capital stock note subsequent-event date
+9. Every row populated in Section III has a matching `=IF(E[row]<F$16,0,C[row])` row in Section IV, with F$7 applied to the strike or share price whenever filing currency ≠ Output currency (F5)
