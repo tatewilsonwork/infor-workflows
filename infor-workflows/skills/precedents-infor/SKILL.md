@@ -5,7 +5,7 @@ description: >
   for a company. Researches 8 relevant M&A precedent transactions with disclosed Revenue, EBITDA,
   and AUM (where applicable) sourced from company press releases, financial statements, or reputable
   news sources, and populates the INFOR Precedents Template with the results.
-version: 1.3.6
+version: 1.3.8
 ---
 
 # INFOR Precedent Transactions Table — Workflow
