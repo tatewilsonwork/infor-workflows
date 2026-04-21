@@ -1,7 +1,14 @@
 ---
 name: deckcheck-infor
-description: Use this skill when the user invokes /deckcheck-infor or asks to review, proofread, or QC a PowerPoint deck. Checks grammar, spelling, tone, INFOR brand formatting (fonts, colors, alignment, sizing), and verifies factual claims (HQ locations, company descriptions, event dates) via web search. Produces a tiered review (Tier I / II / III) where each suggestion is scored 1–10 on Confidence and Impact, delivered as a Microsoft Word (.docx) document. Activates on "deck check", "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request to review a PowerPoint for errors.
-version: 1.3.0
+description: >
+  Use this skill when the user invokes /deckcheck-infor or asks to review, proofread, or QC a
+  PowerPoint deck. Checks grammar, spelling, tone, INFOR brand formatting (fonts, colors, alignment,
+  sizing), and verifies factual claims (HQ locations, company descriptions, event dates) via web
+  search. Produces a tiered review (Tier I / II / III) where each suggestion is scored 1–10 on
+  Confidence and Impact, delivered as a Microsoft Word (.docx) document. Activates on "deck check",
+  "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request
+  to review a PowerPoint for errors.
+version: 1.3.4
 ---
 
 # INFOR Deck Check — Workflow

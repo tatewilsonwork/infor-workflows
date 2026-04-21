@@ -1,7 +1,10 @@
 ---
 name: comps-infor
-description: Use this skill when the user invokes /comps-infor or asks to build a public comparables table (comps, trading comps, public comps) for a company. Populates the INFOR Comps Template with 8 CapIQ tickers split into two labelled groups, plus a short description for each company.
-version: 1.0.0
+description: >
+  Use this skill when the user invokes /comps-infor or asks to build a public comparables table
+  (comps, trading comps, public comps) for a company. Populates the INFOR Comps Template with
+  8 CapIQ tickers split into two labelled groups, plus a short description for each company.
+version: 1.3.4
 ---
 
 # INFOR Public Comparables Table — Workflow

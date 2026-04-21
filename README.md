@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin for analysts — automated deal workflows, branded presentations, and deck QC.
 
-Current version: **1.3.1**
+Current version: **1.3.4**
 
 ## Skills
 
@@ -51,8 +51,7 @@ infor-workflows/
 │   │   ├── deckcheck-infor/
 │   │   ├── expenses-extraction/
 │   │   └── precedents-infor/
-│   ├── templates/              # Excel templates and INFOR logo
-│   └── hooks/
+│   └── templates/              # Excel templates and INFOR logo
 ├── outputs/                    # Deal outputs (gitignored)
 └── README.md
 ```
@@ -61,6 +60,7 @@ infor-workflows/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3.4 | 2026-04-21 | Repo cleanup: unified all skills and plugin manifests to v1.3.4; removed empty `hooks/` directory; pruned stale entries from `.claude/settings.local.json`; standardized SKILL.md frontmatter style; tightened plugin description |
 | 1.3.1 | 2026-04-20 | brand-guidelines-infor: fixed `clone_slide` helper to copy slide relationships (was dropping image rels, causing broken red-X logo on cover); added slide-specific conventions from test-output review — required deck structure (cover → exec summary → graphical content → disclaimer → contact page), text-only slides restricted to exec summary and disclaimer, preserve placeholder rectangles and grouped graphics, Business Updates box takes IB-tone prose (not metrics), cover INFOR logo must not be touched, earnings slide includes two quote-paper graphics, contact page defaults to Neil + 3 `[x]` placeholders |
 | 1.3.0 | 2026-04-20 | brand-guidelines-infor now starts from the bundled `INFOR Deck Template.pptx` (with `INFORFG.thmx` theme) and clones the template's sample slides as starting points, preserving master-level formatting (title bars, footers, page numbers, theme font) that was previously lost when building decks from scratch |
 | 1.2.1 | 2026-04-16 | deckcheck-infor now delivers the tiered review as a Microsoft Word (.docx) document saved to `outputs/` instead of an inline markdown response |
