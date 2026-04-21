@@ -5,7 +5,7 @@ description: >
   statements to populate a capitalization table. Activates for tasks involving shares outstanding,
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
-version: 1.3.8
+version: 1.3.9
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
@@ -151,7 +151,7 @@ Report to the user:
 | I | Preferred Shares, NCI | F52, F53 | — | — |
 | II | Options / Warrants / RSUs / DSUs | B (type), C (amount, M shares), D (strike) | 57–72 | E73, F73, F75, F76, F77 |
 | III | Convertible Debentures / Preferred | B (type), C (face, $M), D (shares/1000), E (strike) | 81–86 | F87 |
-| IV | Debt Schedule | B (facility), E (maturity date), F (amount, $M) | 91–98 | F99 |
+| IV | Debt Schedule | B (facility), E (as-of date — financial statement date, NOT maturity date), F (amount, $M) | 91–98 | F99 |
 | V | Lease Obligations | B (type), E (date), F (amount, $M) | 103–110 | F111 |
 | VI | Cash & Equivalents | B (type), E (date), F (amount, $M) | 115–122 | F123 |
 | VII | Basic Shares Outstanding | B (description), E (date), F (amount, M shares) | 127–136 | F137 |
@@ -200,6 +200,10 @@ Examples:
 **Options/Warrants/RSUs/DSUs:** Stock-based compensation footnote. Enter one row per exercise-price tranche for options — do NOT aggregate to WAEP. RSUs/DSUs use $0 strike. **Always exclude PSUs.**
 
 **Convertible Debentures:** Face amount (col C), shares per $1,000 face = 1,000 / conversion price (col D), conversion price (col E).
+
+**Convertibles / Preferred included in debt — ITM check with FX:** When a convertible debenture or preferred is conditionally included in the debt section via an IF statement that checks whether it is in-the-money (share price vs. strike price), the comparison **must be in the same currency**. The share price is stated in the Output currency (cell F5); the strike price is typically in the filing's reporting currency. Use the FX rate in cell F7 to convert one side to match the other — multiply or divide as needed so both values are expressed in the same currency before the ITM comparison. Failing to FX-adjust will produce false ITM/OTM classifications whenever F5 and the filing currency differ.
+
+**Debt Schedule col E (date):** Column E is the **as-of date of the information** (typically the balance sheet date of the financial statement being used), not the maturity date of the debt instrument.
 
 **Preferred Shares / NCI:** Balance sheet equity section. Enter 0 if none.
 
