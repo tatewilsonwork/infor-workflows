@@ -1,7 +1,7 @@
 ---
 name: lbo-infor
-description: This skill should be used when completing LBO (Leveraged Buyout) model templates in Excel for private equity transactions, deal materials, or investment committee presentations. The skill fills in formulas, validates calculations, and ensures professional formatting standards that adapt to any template structure. Output uses INFOR Financial Group brand colors.
-version: 1.3.6
+description: This skill should be used when completing LBO (Leveraged Buyout) model templates in Excel for private equity transactions, deal materials, or investment committee presentations. The skill builds a target-company capitalization table first (via captable-infor), embeds it in the LBO workbook, and links balance-sheet-derived assumptions (cash, shares outstanding, debt, EV inputs) from the cap table. Fills in formulas, validates calculations, and ensures professional formatting standards that adapt to any template structure. Output uses INFOR Financial Group brand colors.
+version: 1.3.8
 ---
 
 ---
@@ -11,9 +11,10 @@ version: 1.3.6
 **This skill uses templates for LBO models. Always check for an attached template file first.**
 
 Before starting any LBO model:
-1. **If a template file is attached/provided**: Use that template's structure exactly - copy it and populate with the user's data
-2. **If no template is attached**: Ask the user: *"Do you have a specific LBO template you'd like me to use? If not, I can use the standard template which includes Sources & Uses, Operating Model, Debt Schedule, and Returns Analysis."*
-3. **If using the standard template**: Copy `examples/LBO_Model.xlsx` as your starting point and populate it with the user's assumptions
+1. **Build the target capitalization table FIRST** — see the *CAP TABLE INTEGRATION* section below. Every LBO built with this skill begins with a populated cap table (via `captable-infor`) that is then embedded in the LBO workbook. Balance-sheet-derived LBO assumptions (cash, shares O/S, debt, etc.) are linked from the cap table, not hardcoded.
+2. **If a template file is attached/provided**: Use that template's structure exactly - copy it and populate with the user's data
+3. **If no template is attached**: Ask the user: *"Do you have a specific LBO template you'd like me to use? If not, I can use the standard template which includes Sources & Uses, Operating Model, Debt Schedule, and Returns Analysis."*
+4. **If using the standard template**: Copy `examples/LBO_Model.xlsx` as your starting point and populate it with the user's assumptions
 
 **IMPORTANT**: When a file like `LBO_Model.xlsx` is attached, you MUST use it as your template - do not build from scratch. Even if the template seems complex or has more features than needed, copy it and adapt it to the user's requirements. Never decide to "build from scratch" when a template is provided.
 
@@ -25,6 +26,7 @@ Before starting any LBO model:
 * **Every calculation must be an Excel formula** - NEVER compute values in Python and hardcode results into cells. The model must be dynamic and update when inputs change.
 * **Use the template structure** - Follow the organization in `examples/LBO_Model.xlsx` or the user's provided template. Do not invent your own layout.
 * **Use proper cell references** - All formulas should reference the appropriate cells. Never type numbers that should come from other cells.
+* **Company-state inputs come from the cap table** - Any assumption that describes the target's current balance sheet (cash, shares outstanding, debt by tranche, leases, preferred, NCI, dilutive securities) must be populated as a cross-tab link into the embedded `Cap with Links` sheet, NOT typed as a hardcoded number. Deal-specific inputs (offer price, fees, new debt, synergies) remain hardcoded blue inputs. See *CAP TABLE INTEGRATION* below.
 * **Maintain sign convention consistency** - Follow whatever sign convention the template uses (some use negative for outflows, some use positive). Be consistent throughout.
 * **Work section by section** - Complete one section fully before moving to the next, as later sections often depend on earlier ones.
 
@@ -75,6 +77,87 @@ Before filling any formulas:
 * **Ask the user if anything is unclear** - If the template structure, calculation methods, or requirements are ambiguous, ask before proceeding
 * **Confirm key assumptions** - Any key inputs, calculation preferences, or specific requirements
 * **ONLY AFTER understanding the template**, proceed to fill in formulas
+
+---
+
+## CAP TABLE INTEGRATION — STEP 0 (DO THIS FIRST)
+
+**Every LBO model built with this skill begins with a target-company capitalization table.** The cap table is the source of truth for the target's opening balance sheet — cash, shares outstanding, debt, leases, preferred, NCI, and dilutive securities. The LBO's Assumptions tab still *lists* all of these line items, but they are **linked** from the embedded cap table rather than typed in as hardcoded numbers.
+
+### Step 0a — Build the cap table
+
+Run the **`captable-infor`** skill on the target company first. Follow that skill's workflow in full — collect the CapIQ ticker and attached filings, copy the `INFOR Cap Table Template.xlsx`, populate the `Cap with Links` sheet (shares outstanding, options/warrants/RSUs, convertibles, debt schedule, leases, cash, preferred, NCI), and attach cell comments citing the source for each extracted value.
+
+The output is a standalone cap table workbook (e.g., `NasdaqGS-MSFT - Capitalization Table.xlsx`). Verify it recalcs cleanly and the cross-checks in the captable-infor skill all pass before proceeding.
+
+### Step 0b — Embed cap table tabs in the LBO workbook
+
+Copy the `Cap Summary` and `Cap with Links` sheets from the cap table workbook into the LBO workbook so all cross-sheet formulas resolve within one file. Preserve formulas — do NOT flatten to values. Copy cell-by-cell with openpyxl, preserving `cell.value`, `cell.font`, `cell.fill`, `cell.border`, `cell.alignment`, `cell.number_format`, and any comments.
+
+**Resulting LBO workbook tab order:**
+1. `Cap Summary` — from captable-infor (reference view)
+2. `Cap with Links` — from captable-infor (**source of truth** for linked assumptions)
+3. `Assumptions` — LBO deal and operating assumptions
+4. `Sources & Uses`
+5. `Operating Model`
+6. `Debt Schedule`
+7. `Returns`
+
+(If the user's LBO template has a different tab order, insert the two cap table tabs as the leftmost tabs and adjust downstream tab names accordingly.)
+
+### Step 0c — Link balance-sheet assumptions to `Cap with Links`
+
+On the LBO Assumptions tab, every line item below must be a cross-tab formula pointing into `Cap with Links`. These cells render in **green (008000)** per the IB-standard formula color convention (cross-tab links).
+
+| LBO Assumption line item | `Cap with Links` cell | Formula |
+|---|---|---|
+| Cash & Equivalents | F123 | `='Cap with Links'!F123` |
+| Basic Shares Outstanding | F137 | `='Cap with Links'!F137` |
+| Total Debt | F99 | `='Cap with Links'!F99` |
+| Lease Obligations | F111 | `='Cap with Links'!F111` |
+| Convertible Debentures | F87 | `='Cap with Links'!F87` |
+| Dilutive Options / Warrants / RSUs (TSM dilutive shares) | F73 | `='Cap with Links'!F73` |
+| Preferred Shares | F52 | `='Cap with Links'!F52` |
+| Non-Controlling Interest | F53 | `='Cap with Links'!F53` |
+
+**Do not delete these rows from the Assumptions tab.** They must remain visible as labeled line items so the reader can see the full opening balance sheet — they are simply now populated by cross-tab formulas instead of typed-in blue values.
+
+### Step 0d — Derived values (Equity Value, Net Debt, Enterprise Value)
+
+With the inputs above linked from the cap table, the LBO's headline purchase-price figures are derived formulas on the LBO Assumptions or Sources & Uses tab:
+
+- **Diluted Shares** = Basic Shares + TSM dilutive shares (links to F137 + F73 via the Assumptions rows above)
+- **Equity Purchase Price** = Offer Price per Share (hardcoded blue input) × Diluted Shares
+- **Net Debt** = Total Debt + Lease Obligations (if treated as debt) − Cash
+- **Enterprise Value** = Equity Purchase Price + Net Debt + Preferred + NCI + Convertibles-at-face (if settled in cash at close)
+
+Every one of these is a formula that traces back to `Cap with Links` through the Assumptions tab — never typed numbers.
+
+### What stays hardcoded (blue inputs) in Assumptions
+
+These describe the **deal** or the **forecast**, not the target's current balance sheet, and remain typed-in blue inputs:
+
+- Offer price per share and implied premium
+- Target tax rate (if overriding reported ETR)
+- Transaction fees (advisory, financing, legal)
+- New capital structure at close (term loan size, notes, revolver commitment, drawn balance)
+- Pricing on new debt (SOFR spread, fixed coupon, OID, upfront fees)
+- Sponsor equity check
+- Operating model drivers (revenue growth, margin expansion, capex %, NWC %)
+- Exit year and exit multiple
+- Synergies, if modeled
+
+### Rule of thumb
+
+> If a number describes the **target's current state**, link it from `Cap with Links` (green cross-tab formula).
+> If a number describes the **deal terms or the forecast**, hardcode it as a blue input.
+
+### Verification add-on (run during the main checklist)
+
+- [ ] `Cap Summary` and `Cap with Links` tabs are present in the LBO workbook
+- [ ] Every balance-sheet-derived assumption on the LBO Assumptions tab is a green cross-tab formula, not a blue hardcoded number
+- [ ] Changing any value on `Cap with Links` propagates through to Assumptions → Sources & Uses → Returns
+- [ ] The cap table's own internal cross-checks (F17=F137, revolver present, no PSUs, etc.) still pass after the tabs were copied into the LBO workbook
 
 ---
 
@@ -270,4 +353,4 @@ Fills and borders (INFOR palette):
 
 ---
 
-**This skill produces INFOR-branded LBO models by filling templates with correct formulas (IB-standard formula font colors), INFOR-palette fills and borders for titles/headers/subtotals/totals, and validated calculations. The skill adapts to any template structure while ensuring financial accuracy and professional presentation standards.**
+**This skill produces INFOR-branded LBO models by (1) first building the target's capitalization table via `captable-infor` and embedding it in the LBO workbook, (2) linking balance-sheet-derived assumptions (cash, shares O/S, debt, leases, preferred, NCI, dilutives) from `Cap with Links` rather than hardcoding them, (3) filling templates with correct formulas (IB-standard formula font colors), (4) applying INFOR-palette fills and borders for titles/headers/subtotals/totals, and (5) validating calculations. The skill adapts to any template structure while ensuring financial accuracy and professional presentation standards.**

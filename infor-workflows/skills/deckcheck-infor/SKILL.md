@@ -8,7 +8,7 @@ description: >
   Confidence and Impact, delivered as a Microsoft Word (.docx) document. Activates on "deck check",
   "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request
   to review a PowerPoint for errors.
-version: 1.3.6
+version: 1.3.8
 ---
 
 # INFOR Deck Check — Workflow
