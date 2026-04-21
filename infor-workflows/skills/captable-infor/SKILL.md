@@ -5,7 +5,7 @@ description: >
   statements to populate a capitalization table. Activates for tasks involving shares outstanding,
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
-version: 1.3.8
+version: 1.4.0
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
@@ -197,9 +197,13 @@ Examples:
 
 **Leases:** ASC 842 or IFRS 16 footnote. Use the discounted lease liability balance, not undiscounted payments.
 
-**Options/Warrants/RSUs/DSUs:** Stock-based compensation footnote. Enter one row per exercise-price tranche for options — do NOT aggregate to WAEP. RSUs/DSUs use $0 strike. **Always exclude PSUs.**
+**Options/Warrants/RSUs/DSUs:** Stock-based compensation footnote. Enter one row per exercise-price tranche for options — do NOT aggregate to WAEP. RSUs/DSUs use $0 strike. **Always exclude PSUs, and exclude any RSUs/DSUs that are exclusively cash-settled** (they pay out in cash rather than shares, so they don't factor into ITM dilutive share count). Check the equity comp footnote for settlement terms — language like "settled in cash," "cash-settled only," or "no share issuance" signals exclusion. If an RSU/DSU plan allows share OR cash settlement at the company's discretion, include it.
 
-**Convertible Debentures:** Face amount (col C), shares per $1,000 face = 1,000 / conversion price (col D), conversion price (col E).
+**Convertible Debentures / Convertible Preferreds:** Face amount (col C), shares per $1,000 face = 1,000 / conversion price (col D), conversion price (col E). **Also add a matching row in Section IV (Debt)** so the face is captured as debt only when the convert is out-of-the-money:
+- Label col B: `"[Convert name] (if OTM)"`
+- Date col E: maturity of the convert
+- Amount col F: enter as an **IF formula** referencing the Section III row, e.g. for a convert on row 81 use `=IF(E81<F$16,0,C81)` — if strike < share price (ITM) the convert will convert to shares and contributes $0 to debt; otherwise the face amount (C81) flows into total debt.
+- Apply blue font to col B, E, and F (the F cell holds a hardcoded formula you authored, not a template formula, so color it).
 
 **Preferred Shares / NCI:** Balance sheet equity section. Enter 0 if none.
 
@@ -216,18 +220,21 @@ Examples:
 | Revolver at $0 | Always include — label "Revolving Credit Facility (undrawn)" |
 | IFRS leases | Write F103 as formula, not scalar; leave row 104 blank |
 | PSUs | Always exclude from Section II |
+| Cash-settled RSUs/DSUs | Exclude from Section II — they pay in cash, not shares |
 | Options aggregated | Enter one row per tranche, not single WAEP row |
 | Shares date | Use capital stock note subsequent-event date, not balance sheet date |
 | RSU/DSU strike | Use $0 |
 | Convertible preferred | If convertible → Section III; if not → F52 |
+| Convertibles & debt | Every Section III row needs a matching Section IV row with `=IF(E[row]<F$16,0,C[row])` so OTM converts flow into debt |
 
 ### Cross-Checks
 
 1. F17 (Basic Shares) = F137 — formula-linked
 2. F99 (Total Debt) should tie to balance sheet carrying value
 3. F123 (Total Cash) should be positive
-4. Section II contains no PSUs
+4. Section II contains no PSUs and no cash-settled RSUs/DSUs
 5. Revolver appears in Section IV even at $0
 6. IFRS: only row 103 populated in Section V; row 104 blank
 7. Options appear as one row per tranche, not single WAEP row
 8. Section VII col E dates reflect capital stock note subsequent-event date
+9. Every row populated in Section III has a matching `=IF(E[row]<F$16,0,C[row])` row in Section IV
