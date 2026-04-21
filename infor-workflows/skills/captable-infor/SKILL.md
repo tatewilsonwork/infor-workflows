@@ -5,7 +5,7 @@ description: >
   statements to populate a capitalization table. Activates for tasks involving shares outstanding,
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
-version: 1.4.0
+version: 1.4.1
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
@@ -151,7 +151,7 @@ Report to the user:
 | I | Preferred Shares, NCI | F52, F53 | — | — |
 | II | Options / Warrants / RSUs / DSUs | B (type), C (amount, M shares), D (strike) | 57–72 | E73, F73, F75, F76, F77 |
 | III | Convertible Debentures / Preferred | B (type), C (face, $M), D (shares/1000), E (strike) | 81–86 | F87 |
-| IV | Debt Schedule | B (facility), E (maturity date), F (amount, $M) | 91–98 | F99 |
+| IV | Debt Schedule | B (facility), E (as-of date — financial statement date, NOT maturity date), F (amount, $M) | 91–98 | F99 |
 | V | Lease Obligations | B (type), E (date), F (amount, $M) | 103–110 | F111 |
 | VI | Cash & Equivalents | B (type), E (date), F (amount, $M) | 115–122 | F123 |
 | VII | Basic Shares Outstanding | B (description), E (date), F (amount, M shares) | 127–136 | F137 |
@@ -201,8 +201,9 @@ Examples:
 
 **Convertible Debentures / Convertible Preferreds:** Face amount (col C), shares per $1,000 face = 1,000 / conversion price (col D), conversion price (col E). **Also add a matching row in Section IV (Debt)** so the face is captured as debt only when the convert is out-of-the-money:
 - Label col B: `"[Convert name] (if OTM)"`
-- Date col E: maturity of the convert
-- Amount col F: enter as an **IF formula** referencing the Section III row, e.g. for a convert on row 81 use `=IF(E81<F$16,0,C81)` — if strike < share price (ITM) the convert will convert to shares and contributes $0 to debt; otherwise the face amount (C81) flows into total debt.
+- Date col E: the as-of date of the financial statement the convert face amount is sourced from (NOT the maturity of the convert — col E is an as-of date throughout Section IV).
+- Amount col F: enter as an **IF formula** referencing the Section III row. If strike < share price (ITM) the convert will convert to shares and contributes $0 to debt; otherwise the face (C[row]) flows into total debt.
+  - **FX-aware comparison — required whenever filing currency ≠ Output currency (F5):** share price (F$16) is stated in the Output currency (F5); strike (col E in Section III) is in the filing's reporting currency. F7 holds the FX rate. You MUST align the two sides before comparing, or the ITM/OTM classification will be wrong whenever F5 and the filing currency differ. Pick the direction based on F7's definition (multiply or divide) so both sides land in the same currency. Same-currency example (row 81): `=IF(E81<F$16,0,C81)`. Cross-currency example (row 81) converting the strike into F5 currency: `=IF(E81*F$7<F$16,0,C81)` — flip to `/F$7` if F7 is inverted.
 - Apply blue font to col B, E, and F (the F cell holds a hardcoded formula you authored, not a template formula, so color it).
 
 **Preferred Shares / NCI:** Balance sheet equity section. Enter 0 if none.
@@ -225,7 +226,8 @@ Examples:
 | Shares date | Use capital stock note subsequent-event date, not balance sheet date |
 | RSU/DSU strike | Use $0 |
 | Convertible preferred | If convertible → Section III; if not → F52 |
-| Convertibles & debt | Every Section III row needs a matching Section IV row with `=IF(E[row]<F$16,0,C[row])` so OTM converts flow into debt |
+| Convertibles & debt | Every Section III row needs a matching Section IV row with `=IF(E[row]<F$16,0,C[row])` so OTM converts flow into debt — apply F$7 to align strike and share price whenever filing currency ≠ F5 |
+| Debt col E | Column E in Section IV is the **as-of date** of the information (financial statement date), NOT the debt's maturity date |
 
 ### Cross-Checks
 
@@ -237,4 +239,4 @@ Examples:
 6. IFRS: only row 103 populated in Section V; row 104 blank
 7. Options appear as one row per tranche, not single WAEP row
 8. Section VII col E dates reflect capital stock note subsequent-event date
-9. Every row populated in Section III has a matching `=IF(E[row]<F$16,0,C[row])` row in Section IV
+9. Every row populated in Section III has a matching `=IF(E[row]<F$16,0,C[row])` row in Section IV, with F$7 applied to the strike or share price whenever filing currency ≠ Output currency (F5)

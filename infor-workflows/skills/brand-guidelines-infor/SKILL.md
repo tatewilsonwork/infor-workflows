@@ -6,7 +6,7 @@ description: >
   "format this deck", "branded presentation", "INFOR style", "make a deck", "pitch book",
   "discussion materials", or any request to create or fix a PowerPoint using INFOR branding.
   Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout standards.
-version: 1.4.0
+version: 1.4.1
 ---
 
 # INFOR Brand Guidelines — PowerPoint
