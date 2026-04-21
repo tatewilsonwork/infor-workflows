@@ -5,14 +5,14 @@ description: >
   statements to populate a capitalization table. Activates for tasks involving shares outstanding,
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
-version: 1.4.1
+version: 1.5.2
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
 
 This skill guides you through populating the INFOR capitalization table template from a CapIQ ticker and attached financial statements, and provides domain knowledge for accurate data extraction.
 
-Allowed tools: Read, Bash, Write, Glob
+Allowed tools: Read, Bash, Write, Glob, WebSearch, WebFetch
 
 ---
 
@@ -90,11 +90,54 @@ Read the attached documents and extract all items listed in the Domain Reference
 
 **Source tracking:** For every value extracted, record its source in this format:
 `"[Document Name] - Page [#], [Section Name]"`
-You will attach these as cell comments in Step 5.
+You will attach these as cell comments in Step 6.
 
 ---
 
-### Step 5 — Write Extracted Data to Excel
+### Step 5 — Subsequent Events Scan
+
+Capital structures can change materially between the balance sheet date and today. Run both checks below and apply adjustments **on top of the Step 4 figures** so the cap table reflects the current capital structure, not a stale snapshot.
+
+**5a — Filing subsequent-events note.** Locate the subsequent-events section in the attached filing:
+- US GAAP: "Subsequent Events" note (ASC 855), typically the final footnote.
+- IFRS: "Events After the Reporting Period" note (IAS 10).
+- Also scan the MD&A "Recent Developments" / "Outlook" sections — material capital events are often disclosed there even if the formal sub-events note is silent.
+
+For every event that changes the cap table (see the Cap-Table-Impacting Events list in the Domain Reference), adjust the relevant row in Step 4 before writing. Do not create a separate "subsequent events" section — fold the adjustments into the existing rows and note the event in the row's cell comment.
+
+**Row labeling — REQUIRED.** Whenever a subsequent event adds a **new row** to the cap table (e.g., a new debt tranche, new share issuance, new convertible), the col B label MUST be prefixed `"Sub-Event: "` followed by a brief description. Examples:
+- `"Sub-Event: $500M 5.25% Senior Notes due 2034"` (new row in Section IV)
+- `"Sub-Event: Feb 2026 follow-on offering"` (new row in Section VII)
+- `"Sub-Event: 2026 Convertible Notes"` (new row in Section III, with matching `"Sub-Event: 2026 Convertible Notes (if OTM)"` row in Section IV)
+
+When a subsequent event **modifies an existing row** (e.g., buyback reducing share count, revolver draw updating an existing facility balance) rather than adding a new one, leave the col B label unchanged — the event is disclosed only in the cell comment per the source-tracking format below.
+
+**5b — Newsroom web screen.** Search **only company-issued sources** — the company's investor-relations newsroom and its own press releases — for items dated **after the balance sheet date** through today. Do **NOT** use third-party news sites, analyst reports, aggregators, or wire services (Reuters, Bloomberg, Yahoo Finance, Seeking Alpha, etc.) as the primary source. A press release hosted on a wire (e.g., Business Wire, GlobeNewswire, PR Newswire, CNW) is acceptable only when it is the company's own release republished by the wire — confirm the release is issued by the company, not written about the company.
+
+Use WebSearch with queries scoped to the company's own domain, for example:
+- `"[Company Name]" (offering OR issuance OR redemption OR buyback OR "share repurchase" OR acquisition OR dividend OR "credit facility" OR convertible) site:[IR domain]`
+- `"[Company Name]" press release [Month Year] site:[company domain]` for each month between the balance sheet date and today
+
+Then WebFetch the IR newsroom index page directly to confirm no material company releases were missed. If you cannot locate an IR/newsroom page on the company's domain, note this in the Step 8 summary and skip 5b rather than substituting a third-party source.
+
+**Deduplication rule:** Before applying a newsroom item, confirm it is NOT already captured in 5a (the filing's sub-events note) or in any footnote read during Step 4. Common duplicates:
+- Post-year-end debt refinancings already disclosed in the long-term debt note
+- Share issuances announced pre-filing and cross-referenced in the capital stock note
+- Dividends declared before the filing date and mentioned in MD&A
+
+If unsure whether an event is already captured, prefer the filing's disclosure and skip the newsroom version — do not double-count.
+
+**Source tracking for sub-events:** Use this comment format, appended to the existing source citation on the affected row:
+`"[Original source] + Subsequent event [YYYY-MM-DD]: [brief description] per [filing note / press release URL]"`
+
+Example:
+`"Rogers 2024 Annual Report - Page 87, Note 12: Long-Term Debt + Subsequent event 2026-02-10: $500M senior notes issued per Rogers press release https://..."`
+
+If no subsequent events are found in either scan, note this in the Step 8 summary — do not invent events.
+
+---
+
+### Step 6 — Write Extracted Data to Excel
 
 **CRITICAL: All extracted data must be written into the copied INFOR template .xlsx file using openpyxl. Never output the data as a markdown table, plain text, or any format other than the .xlsx file. If openpyxl is not available, stop and tell the user: "Please install openpyxl: `pip install openpyxl`"**
 
@@ -116,7 +159,7 @@ Write the file.
 
 ---
 
-### Step 6 — Recalculate and Verify
+### Step 7 — Recalculate and Verify
 
 Run the recalc script if available:
 ```bash
@@ -129,15 +172,16 @@ Perform the cross-checks listed in the Domain Reference below before delivering.
 
 ---
 
-### Step 7 — Summary
+### Step 8 — Summary
 
 Report to the user:
 
 1. **Output file:** path to the saved file
 2. **CapIQ auto-populated fields** (will refresh when file is opened in Excel with CapIQ connection): share price, company name, FYE, currency, report dates, revenue & EBITDA consensus estimates, analyst coverage, average target price
 3. **Fields populated from MD&A:** list each section and what was found
-4. **Items not found:** any line items missing from the attached documents (user should fill these manually in blue)
-5. **Reminder:** Open in Excel with the CapIQ add-in active to refresh market data
+4. **Subsequent events applied:** for each adjustment made in Step 5, list the event date, description, source (filing note vs. press release), and which row it adjusted. If none were found, state "No subsequent events identified in filing sub-events note or newsroom screen through [today's date]."
+5. **Items not found:** any line items missing from the attached documents (user should fill these manually in blue)
+6. **Reminder:** Open in Excel with the CapIQ add-in active to refresh market data
 
 ---
 
@@ -208,6 +252,29 @@ Examples:
 
 **Preferred Shares / NCI:** Balance sheet equity section. Enter 0 if none.
 
+### Cap-Table-Impacting Subsequent Events
+
+Apply the following event types when found in the filing's sub-events note or in post-filing press releases. Ignore events that don't move any row in the template (operational updates, guidance changes, leadership moves, customer wins).
+
+| Event | Section/Row affected | Adjustment |
+|-------|---------------------|------------|
+| Equity issuance / follow-on / PIPE | VII — Basic Shares | Add issued shares to a new row with col E = closing date |
+| Share buyback completed or ASR settled | VII — Basic Shares | Subtract repurchased shares; note buyback authorization amount and date in comment |
+| Stock split / consolidation | VII — Basic Shares (and II, III strike prices) | Apply ratio to shares and to every option/convert strike |
+| New debt issuance (notes, term loan, revolver upsize) | IV — Debt Schedule | Add a new row at face with col E = issuance date |
+| Debt redemption / repayment / tender | IV — Debt Schedule | Reduce or remove the redeemed tranche |
+| Revolver draw or paydown | IV — Debt Schedule | Update the revolver row balance and rename to "Revolving Credit Facility (drawn $XM)" if drawn |
+| Convertible issuance | III (new row) **and** IV (matching OTM/ITM row) | Add face, shares/1000, strike to Section III; add linked `=IF(...,0,C[row])` row in IV |
+| Convertible conversion / redemption | III + IV | Zero out or remove both the Section III and Section IV rows |
+| Acquisition closing (cash-funded) | VI — Cash | Reduce cash by purchase price; add assumed debt to IV if applicable |
+| Acquisition closing (stock-funded) | VII — Basic Shares | Add consideration shares issued |
+| Dividend declared + paid after BS date | VI — Cash | Reduce cash by total dividend paid |
+| Option grant / RSU grant / exercise post BS date | II — Options/RSUs | Add new tranche or reduce outstanding count if exercised |
+| Lease signed or terminated (material) | V — Leases | Adjust lease liability balance |
+| Preferred share issuance / redemption | I (F52) or III if convertible | Update balance or add Section III row |
+
+**When in doubt, include and flag.** If a press release describes a material capital event that doesn't clearly map to a row, apply your best interpretation, note the uncertainty in the cell comment, and call it out in the Step 8 summary so the user can review.
+
 ### Fallback — No Documents Attached
 
 - **US filers:** `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=[ticker]&type=10-K`
@@ -240,3 +307,4 @@ Examples:
 7. Options appear as one row per tranche, not single WAEP row
 8. Section VII col E dates reflect capital stock note subsequent-event date
 9. Every row populated in Section III has a matching `=IF(E[row]<F$16,0,C[row])` row in Section IV, with F$7 applied to the strike or share price whenever filing currency ≠ Output currency (F5)
+10. Subsequent-events scan completed: both the filing's sub-events note (ASC 855 / IAS 10) and a company-source-only newsroom screen (IR page and company press releases — no third-party news wires or analyst coverage) have been reviewed. Every applied adjustment is deduplicated against the filing's disclosures and documented in the relevant row's cell comment
