@@ -1,7 +1,7 @@
 ---
 name: lbo-infor
-description: This skill should be used when completing LBO (Leveraged Buyout) model templates in Excel for private equity transactions, deal materials, or investment committee presentations. The skill builds a target-company capitalization table first (via captable-infor), embeds it in the LBO workbook, and links balance-sheet-derived assumptions (cash, shares outstanding, debt, EV inputs) and the first two years of forecast Revenue / Adj. EBITDA from the cap table. Fills in formulas, validates calculations, and ensures professional formatting standards that adapt to any template structure. Output uses INFOR Financial Group brand colors.
-version: 1.9.6
+description: This skill should be used when completing LBO (Leveraged Buyout) model templates in Excel for private equity transactions, deal materials, or investment committee presentations. The skill builds a target-company capitalization table first (via captable-infor), embeds it in the LBO workbook, links balance-sheet-derived assumptions (cash, shares outstanding, debt, EV inputs) FROM the cap table into the LBO Assumptions, and links `Cap with Links` Revenue / Adj. EBITDA rows FROM the Operating Model (the Operating Model is the source of truth for forecasts). Fills in formulas, validates calculations, and ensures professional formatting standards that adapt to any template structure. Output uses INFOR Financial Group brand colors.
+version: 1.9.7
 ---
 
 ---
@@ -167,24 +167,33 @@ With the inputs above linked from the cap table, the LBO's headline purchase-pri
 
 Every one of these is a formula that traces back to `Cap with Links` through the Assumptions tab — never typed numbers.
 
-### Step 0e — Link forecast Revenue and Adj. EBITDA to `Cap with Links`
+### Step 0e — Link `Cap with Links` Revenue and Adj. EBITDA FROM the Operating Model
 
-`Cap with Links` also carries CapIQ consensus estimates for Revenue and Adj. EBITDA across LTM, the next calendar year (CY+1), and the year after (CY+2) in rows 34 and 35. These feed the Operating Model / Forecast tab's LTM column and first two forecast periods — do NOT retype them as blue inputs. Link each cell as a green cross-tab formula.
+**Direction matters:** the Operating Model is the source of truth for Revenue and Adj. EBITDA in the LBO workbook. The `Cap with Links` sheet carries Revenue and Adj. EBITDA in rows 34 and 35 (columns D/E/F for LTM, CY+1, CY+2), and in a standalone cap table these are populated from CapIQ consensus. **Inside the LBO workbook, those cells are re-pointed to pull from the Operating Model**, so that when the operating-case forecast changes, the cap table reflects it. Never link the other direction — the Operating Model must not pull its Revenue / EBITDA from `Cap with Links`.
 
-| Operating Model line item | `Cap with Links` cell | Formula |
+On `Cap with Links`, replace the existing CapIQ values in D34:F34 and D35:F35 with green cross-tab formulas pointing at the matching period columns on the Operating Model:
+
+| `Cap with Links` cell | Source on Operating Model | Formula shape |
 |---|---|---|
-| Revenue — LTM | D34 | `='Cap with Links'!D34` |
-| Revenue — CY+1 (first forecast year) | E34 | `='Cap with Links'!E34` |
-| Revenue — CY+2 (second forecast year) | F34 | `='Cap with Links'!F34` |
-| Adj. EBITDA — LTM | D35 | `='Cap with Links'!D35` |
-| Adj. EBITDA — CY+1 | E35 | `='Cap with Links'!E35` |
-| Adj. EBITDA — CY+2 | F35 | `='Cap with Links'!F35` |
+| D34 — Revenue LTM | Operating Model Revenue row, LTM column | `='Operating Model'!<LTM col>` |
+| E34 — Revenue CY+1 | Operating Model Revenue row, CY+1 column | `='Operating Model'!<CY+1 col>` |
+| F34 — Revenue CY+2 | Operating Model Revenue row, CY+2 column | `='Operating Model'!<CY+2 col>` |
+| D35 — Adj. EBITDA LTM | Operating Model Adj. EBITDA row, LTM column | `='Operating Model'!<LTM col>` |
+| E35 — Adj. EBITDA CY+1 | Operating Model Adj. EBITDA row, CY+1 column | `='Operating Model'!<CY+1 col>` |
+| F35 — Adj. EBITDA CY+2 | Operating Model Adj. EBITDA row, CY+2 column | `='Operating Model'!<CY+2 col>` |
 
-The period column headers on `Cap with Links` (D33:F33) show `LTM`, `CY[year]`, `CY[year+1]`. Match the Operating Model's column headers to these so the linked figures line up to the right periods.
+Inspect the Operating Model tab to resolve the actual Revenue and Adj. EBITDA row numbers and the LTM / CY+1 / CY+2 column letters before writing the formulas — don't assume a layout. Match the Operating Model's period column headers to `Cap with Links` D33:F33 (`LTM`, `CY[year]`, `CY[year+1]`) so the periods line up.
 
-Forecast periods **beyond CY+2** are driven by hardcoded blue assumptions (revenue growth %, EBITDA margin %) applied to the prior year's figure — they are NOT linked from the cap table because CapIQ only publishes two forward years of consensus.
+**How the Operating Model Revenue and Adj. EBITDA themselves are populated:**
 
-If the user has their own forecast figures for CY+1 or CY+2 that should override the CapIQ consensus (e.g., management case, broker model, sponsor base case), confirm with the user before overwriting the green link with a blue hardcoded input. Default behavior is to keep the cap-table link.
+- **LTM** — hardcoded blue input from company filings (10-K/10-Q, annual report, MD&A). This is the only historical period that is hardcoded. Add a cell comment citing the source.
+- **CY+1, CY+2, CY+3, CY+4, CY+5** — ALL formula-driven from hardcoded blue assumptions (revenue growth %, EBITDA margin %). There is no special treatment of CY+1 and CY+2. The forecast is internally consistent: every forward year rolls off the prior year using the assumption cell in the driver column to its left (see the *NO-TEMPLATE FORECAST TAB LAYOUT* section).
+  - Revenue formula shape: `<prior year revenue> * (1 + <growth % assumption>)`
+  - Adj. EBITDA formula shape: `<current year revenue> * <margin % assumption>`
+
+**Do not hardcode CY+1 or CY+2** from CapIQ consensus or any other external source into the Operating Model. The only hardcoded forecast-period cells in the Operating Model are the driver assumptions (growth %, margin %), never the dollar figures themselves.
+
+If the user asks for the Operating Model to be linked *from* the cap table (the reverse of this convention) or to hardcode CY+1 / CY+2 from consensus, confirm once — the default behavior of this skill is LTM hardcoded, forward years formula-driven, and Operating Model → cap table.
 
 ### What stays hardcoded (blue inputs) in Assumptions
 
@@ -209,8 +218,11 @@ These describe the **deal** or the **forecast**, not the target's current balanc
 
 - [ ] `Cap Summary` and `Cap with Links` tabs are present in the LBO workbook
 - [ ] Every balance-sheet-derived assumption on the LBO Assumptions tab is a green cross-tab formula, not a blue hardcoded number
-- [ ] Operating Model / Forecast tab has LTM, CY+1, and CY+2 Revenue (row linked to `Cap with Links` D34:F34) and Adj. EBITDA (linked to D35:F35) as green cross-tab formulas, not blue hardcoded numbers (unless the user explicitly overrode with a management/broker case)
-- [ ] Changing any value on `Cap with Links` propagates through to Assumptions → Sources & Uses → Returns, and through the Operating Model Revenue and EBITDA rows for LTM, CY+1, and CY+2
+- [ ] `Cap with Links` D34:F34 (Revenue LTM / CY+1 / CY+2) and D35:F35 (Adj. EBITDA LTM / CY+1 / CY+2) are green cross-tab formulas pointing at the Operating Model — NOT the other way around, and NOT the original CapIQ-consensus hardcoded values
+- [ ] Operating Model LTM Revenue and Adj. EBITDA are blue hardcoded inputs sourced from company filings (with source cited in a cell comment)
+- [ ] Operating Model CY+1, CY+2, CY+3, CY+4, CY+5 Revenue and Adj. EBITDA are black calculation formulas driven off the prior-year figure and the hardcoded blue driver-column assumption (growth % / margin %) — NOT hardcoded dollar figures, and NOT linked from `Cap with Links`
+- [ ] Changing any value on `Cap with Links` propagates through to Assumptions → Sources & Uses → Returns
+- [ ] Changing the Operating Model's LTM / CY+1 / CY+2 Revenue or Adj. EBITDA propagates back into `Cap with Links` rows 34 and 35
 - [ ] The cap table's own internal cross-checks (F17=F137, revolver present, no PSUs, etc.) still pass after the tabs were copied into the LBO workbook
 
 ---
@@ -407,4 +419,4 @@ Fills and borders (INFOR palette):
 
 ---
 
-**This skill produces INFOR-branded LBO models by (1) first building the target's capitalization table via `captable-infor` and embedding it in the LBO workbook, (2) linking balance-sheet-derived assumptions (cash, shares O/S, debt, leases, preferred, NCI, dilutives) from `Cap with Links` rather than hardcoding them, (3) filling templates with correct formulas (IB-standard formula font colors), (4) applying INFOR-palette fills and borders for titles/headers/subtotals/totals, and (5) validating calculations. The skill adapts to any template structure while ensuring financial accuracy and professional presentation standards.**
+**This skill produces INFOR-branded LBO models by (1) first building the target's capitalization table via `captable-infor` and embedding it in the LBO workbook, (2) linking balance-sheet-derived assumptions (cash, shares O/S, debt, leases, preferred, NCI, dilutives) from `Cap with Links` into the LBO Assumptions tab rather than hardcoding them, (3) re-pointing `Cap with Links` Revenue and Adj. EBITDA rows (rows 34 and 35) to pull FROM the Operating Model so the operating case drives the cap table rather than the reverse, (4) filling templates with correct formulas (IB-standard formula font colors), (5) applying INFOR-palette fills and borders for titles/headers/subtotals/totals, and (6) validating calculations. The skill adapts to any template structure while ensuring financial accuracy and professional presentation standards.**
