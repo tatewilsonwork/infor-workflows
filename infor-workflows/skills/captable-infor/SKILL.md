@@ -5,7 +5,7 @@ description: >
   statements to populate a capitalization table. Activates for tasks involving shares outstanding,
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
-version: 1.6.0
+version: 1.7.0
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
@@ -150,10 +150,10 @@ Write each section into the correct rows and columns per the Template Row Map be
 **Cell comments:** Attach a single openpyxl `Comment` to the **first cell in each row** (col B). One comment per row only:
 ```python
 from openpyxl.comments import Comment
-ws["B91"].comment = Comment("Rogers 2024 Annual Report - Page 87, Note 12: Long-Term Debt", "INFOR")
+ws["B108"].comment = Comment("Rogers 2024 Annual Report - Page 87, Note 12: Long-Term Debt", "INFOR")
 ```
 
-**Never write to formula total cells** E73, F73, F75, F76, F77, F87, F99, F111, F123, F137.
+**Never write to formula total cells** E82, F82, F84, F85, F86, F104, F122, F143, F164, F186.
 
 Write the file.
 
@@ -193,14 +193,14 @@ Report to the user:
 |---------|-------------|---------------|------|----------------------------------|
 | Header | Ticker | F3 | — | — |
 | I | Preferred Shares, NCI | F52, F53 | — | — |
-| II | Options / Warrants / RSUs / DSUs | B (type), C (amount, M shares), D (strike) | 57–72 | E73, F73, F75, F76, F77 |
-| III | Convertible Debentures / Preferred | B (type), C (face, $M), D (shares/1000), E (strike) | 81–86 | F87 |
-| IV | Debt Schedule | B (facility), E (as-of date — financial statement date, NOT maturity date), F (amount, $M) | 91–98 | F99 |
-| V | Lease Obligations | B (type), E (date), F (amount, $M) | 103–110 | F111 |
-| VI | Cash & Equivalents | B (type), E (date), F (amount, $M) | 115–122 | F123 |
-| VII | Basic Shares Outstanding | B (description), E (date), F (amount, M shares) | 127–136 | F137 |
+| II | Options / Warrants / RSUs / DSUs | B (type), C (amount, M shares), D (strike) | 57–81 | E82, F82, F84, F85, F86 |
+| III | Convertible Debentures / Preferred | B (type), C (face, $M), D (shares/1000), E (strike) | 90–103 | F104 |
+| IV | Debt Schedule | B (facility), E (as-of date — financial statement date, NOT maturity date), F (amount, $M) | 108–121 | F122 |
+| V | Lease Obligations | B (type), E (date), F (amount, $M) | 126–142 | F143 |
+| VI | Cash & Equivalents | B (type), E (date), F (amount, $M) | 147–163 | F164 |
+| VII | Basic Shares Outstanding | B (description), E (date), F (amount, M shares) | 168–185 | F186 |
 
-**Never write to formula total cells** E73, F73, F75, F76, F77, F87, F99, F111, F123, F137. These are SUM/formula cells that auto-total the rows above them.
+**Never write to formula total cells** E82, F82, F84, F85, F86, F104, F122, F143, F164, F186. These are SUM/formula cells that auto-total the rows above them.
 
 ### Unit Conventions
 
@@ -226,10 +226,10 @@ Examples:
 | Item | US GAAP | IFRS |
 |------|---------|------|
 | Debt note label | "Long-Term Debt" | "Borrowings" or "Loans and Borrowings" |
-| Lease standard | ASC 842 — finance + operating leases separately | IFRS 16 — single lease liability, row 103 only |
+| Lease standard | ASC 842 — finance + operating leases separately | IFRS 16 — single lease liability, row 126 only |
 | Equity comp note | "Stock-Based Compensation" | "Share-Based Payments" |
 
-**IFRS lease:** Write F103 as a formula `ws["F103"] = current + noncurrent` — not a scalar. Leave row 104 blank.
+**IFRS lease:** Write F126 as a formula `ws["F126"] = current + noncurrent` — not a scalar. Leave row 127 blank.
 
 ### Where to Find Each Data Item
 
@@ -247,7 +247,7 @@ Examples:
 - Label col B: `"[Convert name] (if OTM)"`
 - Date col E: the as-of date of the financial statement the convert face amount is sourced from (NOT the maturity of the convert — col E is an as-of date throughout Section IV).
 - Amount col F: enter as an **IF formula** referencing the Section III row. If strike < share price (ITM) the convert will convert to shares and contributes $0 to debt; otherwise the face (C[row]) flows into total debt.
-  - **FX-aware comparison — required whenever filing currency ≠ Output currency (F5):** share price (F$16) is stated in the Output currency (F5); strike (col E in Section III) is in the filing's reporting currency. F7 holds the FX rate. You MUST align the two sides before comparing, or the ITM/OTM classification will be wrong whenever F5 and the filing currency differ. Pick the direction based on F7's definition (multiply or divide) so both sides land in the same currency. Same-currency example (row 81): `=IF(E81<F$16,0,C81)`. Cross-currency example (row 81) converting the strike into F5 currency: `=IF(E81*F$7<F$16,0,C81)` — flip to `/F$7` if F7 is inverted.
+  - **FX-aware comparison — required whenever filing currency ≠ Output currency (F5):** share price (F$16) is stated in the Output currency (F5); strike (col E in Section III) is in the filing's reporting currency. F7 holds the FX rate. You MUST align the two sides before comparing, or the ITM/OTM classification will be wrong whenever F5 and the filing currency differ. Pick the direction based on F7's definition (multiply or divide) so both sides land in the same currency. Same-currency example (row 90): `=IF(E90<F$16,0,C90)`. Cross-currency example (row 90) converting the strike into F5 currency: `=IF(E90*F$7<F$16,0,C90)` — flip to `/F$7` if F7 is inverted.
 - Apply blue font to col B, E, and F (the F cell holds a hardcoded formula you authored, not a template formula, so color it).
 
 **Preferred Shares / NCI:** Balance sheet equity section. Enter 0 if none.
@@ -286,7 +286,7 @@ Apply the following event types when found in the filing's sub-events note or in
 |-------|----------|
 | Face vs. carrying value | Enter face value; add negative row for issuance costs |
 | Revolver at $0 | Always include — label "Revolving Credit Facility (undrawn)" |
-| IFRS leases | Write F103 as formula, not scalar; leave row 104 blank |
+| IFRS leases | Write F126 as formula, not scalar; leave row 127 blank |
 | PSUs | Always exclude from Section II |
 | Cash-settled RSUs/DSUs | Exclude from Section II — they pay in cash, not shares |
 | Options aggregated | Enter one row per tranche, not single WAEP row |
@@ -298,12 +298,12 @@ Apply the following event types when found in the filing's sub-events note or in
 
 ### Cross-Checks
 
-1. F17 (Basic Shares) = F137 — formula-linked
-2. F99 (Total Debt) should tie to balance sheet carrying value
-3. F123 (Total Cash) should be positive
+1. F17 (Basic Shares) = F186 — formula-linked
+2. F122 (Total Debt) should tie to balance sheet carrying value
+3. F164 (Total Cash) should be positive
 4. Section II contains no PSUs and no cash-settled RSUs/DSUs
 5. Revolver appears in Section IV even at $0
-6. IFRS: only row 103 populated in Section V; row 104 blank
+6. IFRS: only row 126 populated in Section V; row 127 blank
 7. Options appear as one row per tranche, not single WAEP row
 8. Section VII col E dates reflect capital stock note subsequent-event date
 9. Every row populated in Section III has a matching `=IF(E[row]<F$16,0,C[row])` row in Section IV, with F$7 applied to the strike or share price whenever filing currency ≠ Output currency (F5)
