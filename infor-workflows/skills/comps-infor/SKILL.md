@@ -3,13 +3,13 @@ name: comps-infor
 description: >
   Use this skill when the user invokes /comps-infor or asks to build a public comparables table
   (comps, trading comps, public comps) for a company. Populates the INFOR Comps Template with
-  8 CapIQ tickers split into two labelled groups, plus a short description for each company.
-version: 1.6.0
+  18 CapIQ tickers split into three labelled groups, plus a short description for each company.
+version: 1.7.0
 ---
 
 # INFOR Public Comparables Table — Workflow
 
-This skill builds a public comparable companies table by selecting 8 peers and writing their CapIQ tickers, group labels, and one-line descriptions into the INFOR Comps Template.
+This skill builds a public comparable companies table by selecting 18 peers and writing their CapIQ tickers, group labels, and one-line descriptions into the INFOR Comps Template.
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch
 
@@ -35,16 +35,16 @@ Wait for the company name before proceeding.
 
 ---
 
-### Step 2 — Select 8 Public Comparables
+### Step 2 — Select 18 Public Comparables
 
-Using your knowledge of public markets (and WebSearch if needed to verify current tickers or identify relevant peers), select **8 publicly traded comparable companies** for the target.
+Using your knowledge of public markets (and WebSearch if needed to verify current tickers or identify relevant peers), select **18 publicly traded comparable companies** for the target.
 
 **Grouping logic — choose ONE of the following that best fits:**
 
-- **By Geography** — when the target operates in a specific region and regional peers are meaningful (e.g., Canadian banks, European industrials). Label groups by region (e.g., "Canadian Peers", "U.S. Peers").
-- **By Sector / Vertical** — when the target spans geographies but has distinct business lines or sub-sectors. Label groups by business type (e.g., "Core Software", "Payments & FinTech").
+- **By Geography** — when the target operates in a specific region and regional peers are meaningful (e.g., Canadian banks, European industrials). Label groups by region (e.g., "Canadian Peers", "U.S. Peers", "European Peers").
+- **By Sector / Vertical** — when the target spans geographies but has distinct business lines or sub-sectors. Label groups by business type (e.g., "Core Software", "Payments & FinTech", "Data & Analytics").
 
-Split the 8 comparables into **two groups of exactly 4**. Each group must have a clear, concise label (3–6 words max).
+Split the 18 comparables into **three groups of exactly 6**. Each group must have a clear, concise label (3–6 words max).
 
 **Ticker format:** Use CapIQ format — `Exchange:Ticker` (e.g., `NasdaqGS:MSFT`, `TSX:RY`, `NYSE:JPM`).
 
@@ -78,30 +78,51 @@ cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 
 Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve all formulas.
 
-Write **exactly 18 cells** in the `Comps` sheet. No other cells should be touched.
+Write **exactly 39 cells** in the `Comps` sheet (3 group labels + 18 tickers + 18 descriptions). No other cells should be touched.
 
 | Cell | Value |
 |------|-------|
-| B9   | Group 1 label (e.g., `"Canadian Peers"`) |
+| D9   | Group 1 label (e.g., `"Canadian Peers"`) — replaces `[Group #1]` |
 | B10  | Ticker 1 in CapIQ format (e.g., `"TSX:RY"`) |
 | B11  | Ticker 2 |
 | B12  | Ticker 3 |
 | B13  | Ticker 4 |
+| B14  | Ticker 5 |
+| B15  | Ticker 6 |
 | AM10 | Description for company 1 |
 | AM11 | Description for company 2 |
 | AM12 | Description for company 3 |
 | AM13 | Description for company 4 |
-| B17  | Group 2 label (e.g., `"U.S. Peers"`) |
-| B18  | Ticker 5 |
-| B19  | Ticker 6 |
+| AM14 | Description for company 5 |
+| AM15 | Description for company 6 |
+| D19  | Group 2 label (e.g., `"U.S. Peers"`) — replaces `[Group #2]` |
 | B20  | Ticker 7 |
 | B21  | Ticker 8 |
-| AM18 | Description for company 5 |
-| AM19 | Description for company 6 |
+| B22  | Ticker 9 |
+| B23  | Ticker 10 |
+| B24  | Ticker 11 |
+| B25  | Ticker 12 |
 | AM20 | Description for company 7 |
 | AM21 | Description for company 8 |
+| AM22 | Description for company 9 |
+| AM23 | Description for company 10 |
+| AM24 | Description for company 11 |
+| AM25 | Description for company 12 |
+| D29  | Group 3 label (e.g., `"European Peers"`) — replaces `[Group #3]` |
+| B30  | Ticker 13 |
+| B31  | Ticker 14 |
+| B32  | Ticker 15 |
+| B33  | Ticker 16 |
+| B34  | Ticker 17 |
+| B35  | Ticker 18 |
+| AM30 | Description for company 13 |
+| AM31 | Description for company 14 |
+| AM32 | Description for company 15 |
+| AM33 | Description for company 16 |
+| AM34 | Description for company 17 |
+| AM35 | Description for company 18 |
 
-All 18 values are plain strings. Do not modify any other cell. Leave AM9 and AM17 (group header rows) blank.
+All 39 values are plain strings. Do not modify any other cell. Leave AM9, AM19, AM29 (group header rows) blank.
 
 Save the file.
 
@@ -112,9 +133,10 @@ Save the file.
 Report to the user:
 
 1. **Output file:** path to the saved file
-2. **Group 1 — [Label]:** list the 4 companies with tickers and descriptions
-3. **Group 2 — [Label]:** list the 4 companies with tickers and descriptions
-4. **Reminder:** Open in Excel with the CapIQ add-in active to populate all market data, multiples, and statistics automatically
+2. **Group 1 — [Label]:** list the 6 companies with tickers and descriptions
+3. **Group 2 — [Label]:** list the 6 companies with tickers and descriptions
+4. **Group 3 — [Label]:** list the 6 companies with tickers and descriptions
+5. **Reminder:** Open in Excel with the CapIQ add-in active to populate all market data, multiples, and statistics automatically
 
 ---
 
@@ -124,14 +146,17 @@ Report to the user:
 
 | Cell | Purpose |
 |------|---------|
-| B9      | Group 1 section header (text label) |
-| B10–B13 | CapIQ tickers for Group 1 companies (4 rows) |
-| AM10–AM13 | One-line descriptions for Group 1 companies |
-| B17     | Group 2 section header (text label) |
-| B18–B21 | CapIQ tickers for Group 2 companies (4 rows) |
-| AM18–AM21 | One-line descriptions for Group 2 companies |
+| D9        | Group 1 section header (text label — replaces `[Group #1]`) |
+| B10–B15   | CapIQ tickers for Group 1 companies (6 rows) |
+| AM10–AM15 | One-line descriptions for Group 1 companies |
+| D19       | Group 2 section header (text label — replaces `[Group #2]`) |
+| B20–B25   | CapIQ tickers for Group 2 companies (6 rows) |
+| AM20–AM25 | One-line descriptions for Group 2 companies |
+| D29       | Group 3 section header (text label — replaces `[Group #3]`) |
+| B30–B35   | CapIQ tickers for Group 3 companies (6 rows) |
+| AM30–AM35 | One-line descriptions for Group 3 companies |
 
-All other cells (D9, D10–D13, D17, D18–D21 and beyond) contain CapIQ array formulas that auto-populate when opened in Excel. **Never overwrite these.** Column AM cells are plain text input — no formulas.
+All other cells (D10–D15, D20–D25, D30–D35 and beyond columns E onward) contain CapIQ array formulas that auto-populate from the column B ticker when opened in Excel. **Never overwrite these.** Rows 17, 27, 37 contain Group Average formulas; rows 39–41 contain Global aggregates. Column AM cells are plain text input — no formulas.
 
 ### Description Rules
 
