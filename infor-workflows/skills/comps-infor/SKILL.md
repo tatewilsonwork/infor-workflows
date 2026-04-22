@@ -4,7 +4,7 @@ description: >
   Use this skill when the user invokes /comps-infor or asks to build a public comparables table
   (comps, trading comps, public comps) for a company. Populates the INFOR Comps Template with
   18 CapIQ tickers split into three labelled groups, plus a short description for each company.
-version: 1.7.0
+version: 1.8.0
 ---
 
 # INFOR Public Comparables Table — Workflow
@@ -46,7 +46,9 @@ Using your knowledge of public markets (and WebSearch if needed to verify curren
 
 Split the 18 comparables into **three groups of exactly 6**. Each group must have a clear, concise label (3–6 words max).
 
-**Ticker format:** Use CapIQ format — `Exchange:Ticker` (e.g., `NasdaqGS:MSFT`, `TSX:RY`, `NYSE:JPM`).
+**Ticker format:** Use CapIQ format — `Exchange:Ticker` (e.g., `NasdaqGS:MSFT`, `NasdaqGM:RPD`, `TSX:RY`, `NYSE:JPM`).
+
+**Nasdaq tier — verify, don't guess.** Nasdaq has three tiers (`NasdaqGS`, `NasdaqGM`, `NasdaqCM`) and CapIQ treats them as distinct prefixes. Defaulting to `NasdaqGS` for every Nasdaq name will silently break the lookup for anything actually on GM or CM (e.g., `NasdaqGM:RPD`, not `NasdaqGS:RPD`). If you are not certain of the tier, **use WebSearch to confirm before writing it**. See the Domain Reference for the full tier table.
 
 For each company, draft a short description (see Description Rules in the Domain Reference). Proceed directly to writing the file — do not pause for user confirmation.
 
@@ -160,29 +162,44 @@ All other cells (D10–D15, D20–D25, D30–D35 and beyond columns E onward) co
 
 ### Description Rules
 
-Column AM has a width of ~50 characters. Descriptions that exceed this will overflow visually.
+Column AM has a width of ~75 characters. Descriptions that exceed this will overflow visually.
 
 - Describe **what the company does or sells** — product, service, asset class, client segment, or business model
-- Target **30–50 characters**; **never exceed 50**
+- Target **45–75 characters**; **never exceed 75**
+- Use the extra length to add meaningful specificity (e.g., end market, product focus, client segment) — do not pad with filler
 - **Do not include geography** — already visible from the exchange prefix in the ticker (e.g., `TSX:RY` signals Canada)
 - No trailing punctuation; title case preferred
 - Examples (character counts):
-  - `"Diversified multi-asset & alternatives manager"` (47)
-  - `"Retail wealth & mutual fund platform"` (37)
-  - `"Independent financial advisory services"` (39)
-  - `"Global payments & merchant acquiring"` (37)
-  - `"Enterprise SaaS for financial services"` (38)
+  - `"Diversified multi-asset & alternatives manager for institutional LPs"` (68)
+  - `"Retail wealth platform offering mutual funds, ETFs, and advisory"` (64)
+  - `"Independent financial advisory across M&A, restructuring & capital markets"` (73)
+  - `"Global payments & merchant acquiring for SMBs and enterprise"` (60)
+  - `"Enterprise SaaS for financial services workflows and compliance"` (63)
 
 ### CapIQ Ticker Format
 
 | Exchange | Format | Example |
 |----------|--------|---------|
 | Nasdaq Global Select | `NasdaqGS:TICK` | `NasdaqGS:MSFT` |
+| Nasdaq Global Market | `NasdaqGM:TICK` | `NasdaqGM:RPD` |
+| Nasdaq Capital Market | `NasdaqCM:TICK` | `NasdaqCM:XYZ` |
 | NYSE | `NYSE:TICK` | `NYSE:JPM` |
+| NYSE American | `NYSEAM:TICK` | `NYSEAM:XYZ` |
+| NYSE Arca | `NYSEArca:TICK` | `NYSEArca:XYZ` |
 | TSX | `TSX:TICK` | `TSX:RY` |
 | TSX Venture | `TSXV:TICK` | `TSXV:XYZ` |
 | London Stock Exchange | `LSE:TICK` | `LSE:HSBA` |
 | ASX | `ASX:TICK` | `ASX:CBA` |
+
+**⚠️ Nasdaq tier accuracy — critical**
+
+Nasdaq has **three tiers** and CapIQ treats them as distinct exchange prefixes. Guessing `NasdaqGS` for every Nasdaq-listed company will silently break the CapIQ lookups for any company that is actually listed on GM or CM.
+
+- **NasdaqGS** (Global Select) — top tier; large caps and most well-known names (AAPL, MSFT, GOOGL, AMZN).
+- **NasdaqGM** (Global Market) — mid tier; many small-to-mid caps. Common miss: **Rapid7 is `NasdaqGM:RPD`**, not `NasdaqGS:RPD`.
+- **NasdaqCM** (Capital Market) — entry tier; smaller / newer issuers.
+
+**Rule:** If you are not 100% certain a Nasdaq name is on Global Select, **use WebSearch to verify the tier before writing the ticker**. A quick query like `"<company> nasdaq tier global select market capital"` or checking the company's Capital IQ / investor-relations page usually resolves it. Do not default to `NasdaqGS`.
 
 ### Grouping Guidelines
 
