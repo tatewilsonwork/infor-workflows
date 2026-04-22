@@ -74,7 +74,7 @@ For each strategic buyer, gather:
 - **HQ** — City, Country (abbreviated)
 - **Vertical** — their primary industry vertical (abbreviated)
 - **Rev. (C$MM)** — estimated annual revenue in Canadian dollars; convert if USD/other, enter as numeric or leave blank if unknown
-- **M&A activity** — brief note on relevant recent M&A (≤30 chars; e.g., "Active acquirer in sector")
+- **M&A activity** — up to **3** most relevant recent acquisitions, formatted as `"Target Name #1 - YY, Target Name #2 - YY, Target Name #3 - YY"` where `YY` is the 2-digit year the deal was announced. If more than 3 deals exist, select the most relevant (by sector/thesis fit first, then recency). Leave blank if no disclosed M&A.
 - **Rationale** — professional IB-style explanation of why this buyer is a strong fit for the target (see **Rationale Writing Guidelines** below)
 - **Tier** — A, B, or C (see Tiering Criteria below)
 
@@ -96,7 +96,7 @@ For each financial buyer, gather:
 - **Fund Size (C$B)** — most recent fund size in C$ billions; numeric or blank if unknown
 - **Avg. Deal Size (C$MM)** — typical deal size range midpoint in C$ millions; numeric or blank if unknown
 - **Sector Focus** — 1–2 word description of their investment focus
-- **Portfolio Companies** — relevant portfolio companies in the sector (≤30 chars; comma-separated if multiple)
+- **Portfolio Companies** — up to **3** most relevant portfolio companies in the sector, formatted as `"PortCo Name #1 (Current), PortCo Name #2 (Exited), PortCo Name #3 (Current)"`. Use `(Current)` for live holdings and `(Exited)` for realized investments. If more than 3 exist, select the most relevant (by sector/thesis fit first, then recency). Leave blank if none in-sector.
 - **Rationale** — professional IB-style explanation of why this sponsor is a strong fit: name the specific portfolio company for bolt-on theses, or articulate the platform/growth thesis for new-platform theses (see **Rationale Writing Guidelines** below)
 - **Tier** — A, B, or C (see Tiering Criteria below)
 
@@ -209,7 +209,7 @@ Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve
 | C | HQ | `str` |
 | D | Vertical | `str` |
 | E | Revenue (C$MM) | `float`/`int` or skip if unknown |
-| F | M&A activity | `str` |
+| F | M&A activity | `str` — up to 3 deals as `"Target - YY, Target - YY, Target - YY"` |
 | G | Rationale | `str` — 1 concise sentence (rarely 2), ~100–230 chars (see Rationale Writing Guidelines) |
 | H | Tier | `str` — `"A"`, `"B"`, or `"C"` |
 
@@ -226,7 +226,7 @@ Track `n_strategic` = the number of strategic buyer rows written.
 | D | Fund Size (C$B) | `float`/`int` or skip if unknown |
 | E | Avg. Deal Size (C$MM) | `float`/`int` or skip if unknown |
 | F | Sector Focus | `str` |
-| G | Portfolio Companies | `str` — ≤30 chars |
+| G | Portfolio Companies | `str` — up to 3 portcos as `"Name (Current), Name (Exited), Name (Current)"` |
 | H | Rationale | `str` — 1 concise sentence (rarely 2), ~100–230 chars (see Rationale Writing Guidelines) |
 | I | Tier | `str` — `"A"`, `"B"`, or `"C"` |
 
@@ -318,7 +318,7 @@ The buyer data rows have pre-set row height (~28.5pt) and `wrap_text=True` on th
 | B | Buyer name | ~20 chars — use common/abbreviated name |
 | C | HQ | ~12 chars — e.g., `"Toronto, CA"` |
 | D | Vertical | ~12 chars — e.g., `"Wealth Mgmt"` |
-| F | M&A activity | ≤30 chars |
+| F | M&A activity | Up to 3 deals, `"Target - YY, Target - YY, Target - YY"` format (~60–80 chars typical) |
 | G | Rationale | 1 concise sentence (rarely 2), ~100–230 chars (professional IB prose — see Rationale Writing Guidelines) |
 
 **Financial Buyers:**
@@ -327,8 +327,8 @@ The buyer data rows have pre-set row height (~28.5pt) and `wrap_text=True` on th
 | B | Buyer name | ~20 chars |
 | C | HQ | ~12 chars |
 | F | Sector Focus | ~12 chars |
-| G | Portfolio Companies | ≤30 chars |
-| H | Rationale | 1–2 full sentences, ~150–350 chars (professional IB prose — see Rationale Writing Guidelines) |
+| G | Portfolio Companies | Up to 3 portcos, `"Name (Current), Name (Exited), Name (Current)"` format (~60–80 chars typical) |
+| H | Rationale | 1 concise sentence (rarely 2), ~100–230 chars (professional IB prose — see Rationale Writing Guidelines) |
 
 ### Buyer Category Definitions
 
