@@ -4,8 +4,10 @@ description: >
   Use this skill when the user asks to build a buyer list, buyer universe, or potential acquirer list
   for a company in a sell-side M&A process. Activates on "buyer list", "buyer universe",
   "potential acquirers", "who would buy", "strategic buyers", "financial sponsors", or "sell-side process".
-  Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C.
-version: 1.6.0
+  Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C, plus an
+  optional third category (e.g., family offices, international strategics, sovereign wealth, SPACs)
+  when the user wants buyers that don't fit cleanly as Strategic or Financial.
+version: 1.7.0
 ---
 
 # INFOR Buyers List — Workflow & Domain Knowledge
@@ -37,6 +39,16 @@ Ask the user for the following if not already provided:
 > I'll research the rest."
 
 Wait for a company name before proceeding.
+
+Then ask a **separate follow-up** about an additional buyer category beyond Strategic and Financial:
+
+> "Would you like me to also build a third list of buyers that don't fit cleanly into Strategic or Financial? Common examples: **Family Offices**, **International Strategic Buyers**, **Sovereign Wealth Funds**, **Consortium Buyers**, **SPACs**, or any other category specific to this process.
+>
+> Reply with the **category name** you'd like (e.g., "Family Offices") or **"no"** to skip."
+
+Record the user's response as `other_label`:
+- If the user answers `"no"`, `"skip"`, `"none"`, or declines → set `include_other = False`.
+- Otherwise → set `include_other = True` and capture `other_label` as the exact buyer category name provided (trimmed, title-cased). Excel sheet names have a 31-character limit, so truncate `other_label` to ≤31 characters if needed and strip any characters Excel disallows in sheet names (`: \ / ? * [ ]`).
 
 ---
 
@@ -102,6 +114,32 @@ For each financial buyer, gather:
 
 ---
 
+### Step 4b — Identify Other Buyers (conditional)
+
+**Skip this step entirely if `include_other = False`.**
+
+If `include_other = True`, research **5–10 buyers** that fit the user-specified `other_label` category. Use the same quality bar as Strategic/Financial — names must be specific, researched, and justified.
+
+Tailor the research lens to the category. Examples:
+
+| Category | What to look for |
+|---|---|
+| Family Offices | Active direct investors, sector familiarity, typical cheque size, recent deals |
+| International Strategic Buyers | Foreign strategics with disclosed interest in the target's geography, FX/tax considerations, precedent cross-border deals |
+| Sovereign Wealth Funds | Mandate fit (infra/financials/tech), direct-deal capacity, recent co-investments |
+| Consortium Buyers | Plausible PE + strategic pairings, prior consortium precedents |
+| SPACs | Live SPACs with sector fit, trust size vs. target EV, deadline proximity |
+
+For each Other buyer, gather:
+- **Buyer name** — common name, concise
+- **HQ** — City, Country (abbreviated)
+- **Vertical** — primary vertical or investment focus (abbreviated)
+- **Transactions** — up to **3** most relevant recent transactions, formatted as `"Target Name #1 - YY, Target Name #2 - YY, Target Name #3 - YY"`. Leave blank if none disclosed.
+- **Rationale** — professional IB-style explanation of why this buyer fits (see **Rationale Writing Guidelines** below)
+- **Tier** — A, B, or C (see Tiering Criteria below)
+
+---
+
 ### Rationale Writing Guidelines
 
 The Rationale column on both sheets uses wrapped text with tall rows to accommodate professional, IB-style prose — but keep it tight.
@@ -152,9 +190,9 @@ Assign every buyer a tier:
 | B | 10–15 | Good fit but less obvious; less active M&A track record or smaller size |
 | C | Remainder | Possible but lower probability; include to broaden the process if needed |
 
-Total buyers across both sheets must not exceed **40** (20 strategic + 20 financial maximum per sheet).
+Total buyers across all sheets must not exceed **60** (20 strategic + 20 financial + 20 other, maximum per sheet). The Other sheet is optional; it is only populated when `include_other = True` (Step 4b).
 
-**Quality over quantity** — a focused list of 30–40 well-researched buyers beats a list of 200 names.
+**Quality over quantity** — a focused list of 30–50 well-researched buyers beats a list of 200 names.
 
 ---
 
@@ -199,7 +237,7 @@ Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve
 | C10 | Key Business Lines |
 | C11 | Key Value Drivers |
 
-**Do not write to rows 13–17** — these contain headers and COUNTIF formula links.
+**Do not write to rows 13–17 in Step 7** — these contain headers and COUNTIF formula links. Row 17 (and a new row 18) are rewritten in Step 7c only when `include_other = True`.
 
 **Sheet 2 — `Strategic Buyers`:** Write one row per buyer starting at row 5 (max row 24):
 
@@ -234,6 +272,21 @@ Track `n_financial` = the number of financial buyer rows written.
 
 **Never write to rows 25–27 before row removal** — these are COUNTIF total rows.
 
+**Sheet 4 — `Other Buyers`:** Only write this sheet if `include_other = True`. One row per buyer starting at row 5 (max row 24):
+
+| Column | Field | Type |
+|--------|-------|------|
+| B | Buyer name | `str` |
+| C | HQ | `str` |
+| D | Vertical | `str` |
+| E | Transactions | `str` — up to 3 deals as `"Target - YY, Target - YY, Target - YY"` |
+| F | Rationale | `str` — 1 concise sentence (rarely 2), ~100–230 chars (see Rationale Writing Guidelines) |
+| G | Tier | `str` — `"A"`, `"B"`, or `"C"` |
+
+Track `n_other` = the number of other buyer rows written.
+
+**Never write to rows 25–27 before row removal** — these are COUNTIF total rows.
+
 ---
 
 ### Step 7b — Remove Empty Rows and Rewrite Totals
@@ -242,9 +295,9 @@ After writing all buyers, physically delete the unused data rows so the Tier tot
 
 Do this **before saving** and **for each buyer sheet independently**.
 
-For each buyer sheet (do Strategic first, then Financial — the two sheets are independent so row deletions on one do not affect the other):
+For each buyer sheet — do Strategic first, then Financial, then Other (if `include_other = True`). The sheets are independent so row deletions on one do not affect the others:
 
-1. Let `n` = number of buyers written on that sheet (`n_strategic` or `n_financial`).
+1. Let `n` = number of buyers written on that sheet (`n_strategic`, `n_financial`, or `n_other`).
 2. Let `last_data_row = 4 + n` (data starts at row 5).
 3. Let `first_empty = last_data_row + 1` and `last_empty = 24`.
 4. If `first_empty <= last_empty`, delete the empty rows: `ws.delete_rows(first_empty, last_empty - first_empty + 1)`.
@@ -262,6 +315,12 @@ For each buyer sheet (do Strategic first, then Financial — the two sheets are 
      ws[f"I{last_data_row + 2}"] = f'=COUNTIF($I$5:$I${last_data_row},"B")'
      ws[f"I{last_data_row + 3}"] = f'=COUNTIF($I$5:$I${last_data_row},"C")'
      ```
+   - **Other Buyers** (tier column is `G`):
+     ```
+     ws[f"G{last_data_row + 1}"] = f'=COUNTIF($G$5:$G${last_data_row},"A")'
+     ws[f"G{last_data_row + 2}"] = f'=COUNTIF($G$5:$G${last_data_row},"B")'
+     ws[f"G{last_data_row + 3}"] = f'=COUNTIF($G$5:$G${last_data_row},"C")'
+     ```
 
 5b. **Force the tier-total rows back to height 14.25.** `openpyxl.delete_rows` does not shift `row_dimensions` entries, so the three total rows inherit the 28.5pt height from the old buyer-row dimensions at their new positions. Explicitly reset them (this step is mandatory on every run, even when no rows were deleted, to guarantee the output):
    ```
@@ -278,11 +337,66 @@ For each buyer sheet (do Strategic first, then Financial — the two sheets are 
    summary["D16"] = f"=+'Financial Buyers'!$I${financial_totals_start + 1}"
    summary["E16"] = f"=+'Financial Buyers'!$I${financial_totals_start + 2}"
    ```
-   The `SUM` totals in column F (`F15`, `F16`, `C17:F17`) reference only the same-sheet cells C/D/E 15–17 and remain correct without changes.
+   The `SUM` totals in column F (`F15`, `F16`) reference only the same-sheet cells and remain correct. The overall `Total` row is handled in Step 7c below.
 
-7. Verify that all three sheets still open cleanly and that the tier totals reflect the buyers written (sanity-check: each tier count should be ≥ 0 and the sum across tiers on each sheet should equal `n`).
+7. Verify that all buyer sheets still open cleanly and that the tier totals reflect the buyers written (sanity-check: each tier count should be ≥ 0 and the sum across tiers on each sheet should equal `n`).
 
-Save the file after all three sheets have been written and trimmed.
+---
+
+### Step 7c — Handle the Other Buyers Sheet and Summary Total Row
+
+The template ships with an `Other Buyers` tab and a `Total` row at Summary row 17. Finalize both based on `include_other`.
+
+**Case A — `include_other = False` (user declined the third category):**
+
+1. Delete the `Other Buyers` sheet entirely:
+   ```
+   del wb["Other Buyers"]
+   ```
+2. Leave the Summary sheet unchanged — `Total` stays at row 17 with its existing `=SUM(C15:C16)` formulas.
+
+**Case B — `include_other = True` (user specified a category):**
+
+1. **Rename the sheet.** Rename `Other Buyers` to `other_label` (already sanitized in Step 1 to ≤31 chars and no forbidden characters). All formulas below must use this renamed sheet name.
+   ```
+   ws_other = wb["Other Buyers"]
+   ws_other.title = other_label
+   ```
+2. **Capture the styling of the existing rows BEFORE overwriting anything.** The new row 17 should inherit the buyer-row styling from row 16, and the new row 18 should inherit the Total-row styling from the current row 17:
+   ```
+   from copy import copy
+   financial_style = {c.column_letter: (copy(c.font), copy(c.fill), copy(c.border), copy(c.alignment), c.number_format) for c in summary[16]}
+   total_style     = {c.column_letter: (copy(c.font), copy(c.fill), copy(c.border), copy(c.alignment), c.number_format) for c in summary[17]}
+   financial_row_height = summary.row_dimensions[16].height
+   total_row_height     = summary.row_dimensions[17].height
+   ```
+3. **Write the new row 17 (Other Buyers) and new row 18 (Total).** Let `other_totals_start = 4 + n_other + 1` (the new location of the Tier A total on the renamed Other Buyers sheet after Step 7b trimming). Then apply the captured styling:
+   ```
+   summary["B17"] = other_label
+   summary["C17"] = f"=+'{other_label}'!$G${other_totals_start}"
+   summary["D17"] = f"=+'{other_label}'!$G${other_totals_start + 1}"
+   summary["E17"] = f"=+'{other_label}'!$G${other_totals_start + 2}"
+   summary["F17"] = "=SUM(C17:E17)"
+
+   summary["B18"] = "Total"
+   summary["C18"] = "=SUM(C15:C17)"
+   summary["D18"] = "=SUM(D15:D17)"
+   summary["E18"] = "=SUM(E15:E17)"
+   summary["F18"] = "=SUM(F15:F17)"
+
+   for col, (font, fill, border, alignment, number_format) in financial_style.items():
+       cell = summary[f"{col}17"]
+       cell.font, cell.fill, cell.border, cell.alignment, cell.number_format = font, fill, border, alignment, number_format
+   for col, (font, fill, border, alignment, number_format) in total_style.items():
+       cell = summary[f"{col}18"]
+       cell.font, cell.fill, cell.border, cell.alignment, cell.number_format = font, fill, border, alignment, number_format
+   if financial_row_height is not None:
+       summary.row_dimensions[17].height = financial_row_height
+   if total_row_height is not None:
+       summary.row_dimensions[18].height = total_row_height
+   ```
+
+Save the file after Step 7c.
 
 ---
 
@@ -293,8 +407,9 @@ Report to the user:
 1. **Output file:** path to the saved file
 2. **Strategic Buyers:** count by tier (e.g., "8 Tier A, 7 Tier B, 4 Tier C")
 3. **Financial Buyers:** count by tier
-4. **Notable Tier A buyers:** briefly highlight the strongest 2–3 names and why
-5. **Reminder:** Review the list and add any relationship-specific buyers or exclusions manually before distributing
+4. **Other Buyers** (only if `include_other = True`): count by tier, labelled with `other_label`
+5. **Notable Tier A buyers:** briefly highlight the strongest 2–3 names and why
+6. **Reminder:** Review the list and add any relationship-specific buyers or exclusions manually before distributing
 
 ---
 
@@ -304,9 +419,10 @@ Report to the user:
 
 | Sheet | Write range | Formula rows (initial) | Notes |
 |-------|-------------|------------------------|-------|
-| Summary | C4:C11 | Rows 13–17 | C15:E16 cross-reference the two buyer sheets — rewrite after Step 7b |
+| Summary | C4:C11 | Rows 13–17 | C15:E16 cross-reference Strategic/Financial — rewrite after Step 7b. If `include_other=True`, row 17 becomes the Other Buyers cross-reference and Total shifts to row 18 (Step 7c). |
 | Strategic Buyers | B5:H24 (max 20 rows) | Rows 25–27 | Totals shift up after Step 7b empty-row deletion |
 | Financial Buyers | B5:I24 (max 20 rows) | Rows 25–27 | Totals shift up after Step 7b empty-row deletion |
+| Other Buyers (optional) | B5:G24 (max 20 rows) | Rows 25–27 | Sheet is deleted if `include_other=False`; renamed to `other_label` if `include_other=True`. Totals shift up after Step 7b empty-row deletion. |
 
 The buyer data rows have pre-set row height (~28.5pt) and `wrap_text=True` on the Rationale column so longer professional-language rationales render cleanly without manual formatting.
 
@@ -330,6 +446,15 @@ The buyer data rows have pre-set row height (~28.5pt) and `wrap_text=True` on th
 | G | Portfolio Companies | Up to 3 portcos, `"Name (Current), Name (Exited), Name (Current)"` format (~60–80 chars typical) |
 | H | Rationale | 1 concise sentence (rarely 2), ~100–230 chars (professional IB prose — see Rationale Writing Guidelines) |
 
+**Other Buyers** (only when `include_other=True`):
+| Column | Field | Limit |
+|--------|-------|-------|
+| B | Buyer name | ~20 chars |
+| C | HQ | ~12 chars |
+| D | Vertical | ~12 chars |
+| E | Transactions | Up to 3 deals, `"Target - YY, Target - YY, Target - YY"` format (~60–80 chars typical) |
+| F | Rationale | 1 concise sentence (rarely 2), ~100–230 chars (professional IB prose — see Rationale Writing Guidelines) |
+
 ### Buyer Category Definitions
 
 **Strategic:**
@@ -342,6 +467,13 @@ The buyer data rows have pre-set row height (~28.5pt) and `wrap_text=True` on th
 - **Platform Investors** — establishing a new sector platform; look for funds in deployment mode with sector focus
 - **Add-on Buyers** — existing portco that could bolt-on the target; name the specific portco in column G
 - **Growth Equity** — minority/majority growth investors; relevant for high-growth or pre-profitability targets
+
+**Other** (user-defined via `other_label` — common examples):
+- **Family Offices** — active direct investors; typical cheque size and sector familiarity matter
+- **International Strategic Buyers** — foreign strategics with disclosed interest in the target's geography
+- **Sovereign Wealth Funds** — mandate-fit funds with direct-deal capacity
+- **Consortium Buyers** — plausible PE + strategic pairings with consortium precedent
+- **SPACs** — live SPACs with sector fit, adequate trust size, and deadline runway
 
 ### Tiering Criteria
 
