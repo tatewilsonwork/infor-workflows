@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin for analysts — automated deal workflows, branded presentations, and deck QC.
 
-Current version: **1.9.0**
+Current version: **1.9.5**
 
 ## Skills
 
@@ -13,7 +13,6 @@ Current version: **1.9.0**
 | buyerslist-infor | `/buyerslist-infor` | Builds a strategic and financial buyer universe for a sell-side M&A process, tiered A/B/C, and populates the INFOR Buyers List Template |
 | captable-infor | `/captable-infor` | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A) |
 | lbo-infor | `/lbo-infor` | Builds an LBO model in Excel for PE transactions — starts from a populated cap table (via captable-infor), links balance-sheet assumptions, and fills in Sources & Uses, Operating Model, Debt Schedule, and Returns Analysis |
-| expenses-extraction | `/expenses-extraction` | Fills in the INFOR Expense Report template from attached receipt images |
 | brand-guidelines-infor | `/brand-guidelines-infor` | Applies or reviews INFOR brand standards on PowerPoint decks — colors, fonts, layouts, charts, tables |
 | deckcheck-infor | `/deckcheck-infor` | Reviews an attached deck for grammar/spelling, INFOR brand formatting, and factual accuracy; delivers a tiered review (Tier I/II/III) with Confidence and Impact scores as a Word (.docx) document |
 
@@ -28,7 +27,6 @@ Invoke any skill by name, command, or by describing what you want:
 /deckcheck-infor (attach a .pptx)
 "Fill in the cap table for NasdaqGS:MSFT"
 "Build an LBO model for Dye & Durham"
-"Fill in my expense report" (attach receipt images)
 "Format this deck to INFOR brand guidelines"
 ```
 
@@ -51,7 +49,6 @@ infor-workflows/
 │   │   ├── captable-infor/
 │   │   ├── comps-infor/
 │   │   ├── deckcheck-infor/
-│   │   ├── expenses-extraction/
 │   │   ├── lbo-infor/
 │   │   └── precedents-infor/
 │   └── templates/              # Excel templates and INFOR logo
