@@ -104,9 +104,9 @@ For each financial buyer, gather:
 
 ### Rationale Writing Guidelines
 
-The Rationale column on both sheets now uses wrapped text with tall rows to accommodate professional, IB-style prose — not shorthand.
+The Rationale column on both sheets uses wrapped text with tall rows to accommodate professional, IB-style prose — but keep it tight.
 
-**Length:** 1–2 complete sentences, typically 150–350 characters. Long enough to articulate the thesis; short enough to scan quickly on a printed page.
+**Length:** 1 concise sentence (rarely 2), typically 100–230 characters. Scannable on a printed page. Cut any word that does not add a thesis-level fact.
 
 **Voice and register:**
 - Write in declarative, analytical, client-facing investment banking language
@@ -129,10 +129,10 @@ The Rationale column on both sheets now uses wrapped text with tall rows to acco
 
 **Strong examples:**
 
-- *Strategic (Adjacent Player):* "Acquisition would extend CI Financial's wealth management platform into the Quebec HNW segment, complementing its Ontario-centric advisor network and adding approximately C$4B in fee-bearing AUM with a high proportion of recurring revenue."
-- *Strategic (Platform Builder):* "Target aligns with Power Corp's stated strategy to consolidate mid-market Canadian asset managers; the acquisition would accelerate scale economics and broaden product shelf into alternative fixed income."
-- *PE Add-on:* "Natural bolt-on to Onex portfolio company WealthOne, where the target's advisor base and Quebec footprint would expand WealthOne's national distribution and accelerate its path to a C$50B AUM platform."
-- *PE Platform:* "Birch Hill is actively deploying its recently closed C$1.4B Fund VI and has publicly targeted financial services platforms; the target offers a recurring-revenue, asset-light profile well-suited to a 5–7 year hold."
+- *Strategic (Adjacent Player):* "Extends CI Financial's wealth platform into the Quebec HNW segment, complementing its Ontario advisor network and adding ~C$4B in recurring-revenue AUM."
+- *Strategic (Platform Builder):* "Aligns with Power Corp's stated strategy to consolidate mid-market Canadian asset managers and broadens its product shelf into alternative fixed income."
+- *PE Add-on:* "Natural bolt-on to Onex portfolio company WealthOne, where the target's advisor base and Quebec footprint expand WealthOne's national distribution."
+- *PE Platform:* "Birch Hill is deploying its recently closed C$1.4B Fund VI against financial services platforms; target fits its recurring-revenue, asset-light profile."
 
 **Weak examples (do not write these):**
 
@@ -210,7 +210,7 @@ Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve
 | D | Vertical | `str` |
 | E | Revenue (C$MM) | `float`/`int` or skip if unknown |
 | F | M&A activity | `str` |
-| G | Rationale | `str` — 1–2 professional sentences, ~150–350 chars (see Rationale Writing Guidelines) |
+| G | Rationale | `str` — 1 concise sentence (rarely 2), ~100–230 chars (see Rationale Writing Guidelines) |
 | H | Tier | `str` — `"A"`, `"B"`, or `"C"` |
 
 Track `n_strategic` = the number of strategic buyer rows written.
@@ -227,7 +227,7 @@ Track `n_strategic` = the number of strategic buyer rows written.
 | E | Avg. Deal Size (C$MM) | `float`/`int` or skip if unknown |
 | F | Sector Focus | `str` |
 | G | Portfolio Companies | `str` — ≤30 chars |
-| H | Rationale | `str` — 1–2 professional sentences, ~150–350 chars (see Rationale Writing Guidelines) |
+| H | Rationale | `str` — 1 concise sentence (rarely 2), ~100–230 chars (see Rationale Writing Guidelines) |
 | I | Tier | `str` — `"A"`, `"B"`, or `"C"` |
 
 Track `n_financial` = the number of financial buyer rows written.
@@ -262,6 +262,12 @@ For each buyer sheet (do Strategic first, then Financial — the two sheets are 
      ws[f"I{last_data_row + 2}"] = f'=COUNTIF($I$5:$I${last_data_row},"B")'
      ws[f"I{last_data_row + 3}"] = f'=COUNTIF($I$5:$I${last_data_row},"C")'
      ```
+
+5b. **Force the tier-total rows back to height 14.25.** `openpyxl.delete_rows` does not shift `row_dimensions` entries, so the three total rows inherit the 28.5pt height from the old buyer-row dimensions at their new positions. Explicitly reset them (this step is mandatory on every run, even when no rows were deleted, to guarantee the output):
+   ```
+   for offset in (1, 2, 3):
+       ws.row_dimensions[last_data_row + offset].height = 14.25
+   ```
 
 6. **Rewrite the Summary sheet cross-sheet references** to point at the new totals rows. Let `strategic_totals_start = 4 + n_strategic + 1` and `financial_totals_start = 4 + n_financial + 1`. On the `Summary` sheet:
    ```
@@ -313,7 +319,7 @@ The buyer data rows have pre-set row height (~28.5pt) and `wrap_text=True` on th
 | C | HQ | ~12 chars — e.g., `"Toronto, CA"` |
 | D | Vertical | ~12 chars — e.g., `"Wealth Mgmt"` |
 | F | M&A activity | ≤30 chars |
-| G | Rationale | 1–2 full sentences, ~150–350 chars (professional IB prose — see Rationale Writing Guidelines) |
+| G | Rationale | 1 concise sentence (rarely 2), ~100–230 chars (professional IB prose — see Rationale Writing Guidelines) |
 
 **Financial Buyers:**
 | Column | Field | Limit |
