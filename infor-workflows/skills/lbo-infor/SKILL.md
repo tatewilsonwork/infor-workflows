@@ -1,7 +1,7 @@
 ---
 name: lbo-infor
 description: This skill should be used when completing LBO (Leveraged Buyout) model templates in Excel for private equity transactions, deal materials, or investment committee presentations. The skill builds a target-company capitalization table first (via captable-infor), embeds it in the LBO workbook, and links balance-sheet-derived assumptions (cash, shares outstanding, debt, EV inputs) from the cap table. Fills in formulas, validates calculations, and ensures professional formatting standards that adapt to any template structure. Output uses INFOR Financial Group brand colors.
-version: 1.7.0
+version: 1.9.0
 ---
 
 ---

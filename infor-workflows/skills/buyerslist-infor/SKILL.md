@@ -7,7 +7,7 @@ description: >
   Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C, plus an
   optional third category (e.g., family offices, international strategics, sovereign wealth, SPACs)
   when the user wants buyers that don't fit cleanly as Strategic or Financial.
-version: 1.8.0
+version: 1.9.0
 ---
 
 # INFOR Buyers List — Workflow & Domain Knowledge
@@ -239,6 +239,17 @@ cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ### Step 7 — Write to Excel (openpyxl)
 
 Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve all formulas.
+
+**⚠️ Preserve template formatting — do NOT touch it.** The template already contains every piece of formatting the output needs: gridlines hidden, buyer-row heights and wrap-text set, column widths sized, and Tier A/B/C conditional formatting (bold green / yellow / red font on the Tier column) applied on every buyer sheet. Every run that has modified this formatting has produced a broken output. Specifically, on every buyer sheet:
+
+- **Do NOT add, modify, or remove conditional formatting.** The template's Tier CF rules already live on `H5:H24` (Strategic), `I5:I24` (Financial), and `G5:G24` (Other Buyers). Do not call `ws.conditional_formatting.add(...)` or touch `ws.conditional_formatting` in any way. In particular, do not apply Excel's built-in "Good / Neutral / Bad" (pastel green/yellow/pink fills) styles — those are the classic default dxfs and will override the template's bold-font styling.
+- **Do NOT touch `ws.sheet_view`.** Reassigning `ws.sheet_view`, creating a `SheetView()`, or setting `showGridLines` flips gridlines back on in the saved file. The template has already set `showGridLines="0"` — leave it alone.
+- **Do NOT insert or delete columns** on any buyer sheet (`ws.insert_cols`, `ws.delete_cols`). Column widths and the trailing buffer column come from the template — modifying them leaves stray narrow columns or gaps in the column-dimensions list.
+- **Do NOT reassign `ws.row_dimensions[r]`** wholesale. Setting a specific row height (e.g. resetting total-row heights in Step 7b) is fine; replacing the whole dimension object is not.
+- **Row deletion is only permitted in Step 7b** (trimming unused buyer rows between the last buyer and the tier-total rows). No other row operations.
+- **You may** only write cell values, write formulas, and in Step 7c copy individual cell styling (font/fill/border/alignment/number_format) onto the new Summary rows 17 and 18. Nothing else.
+
+If, after loading the copied template and writing cell values, the output appears to be missing gridlines-off, conditional formatting, or correct columns — **stop and investigate**. The cause is upstream (wrong template copy, bad openpyxl version, etc.), not something to patch by layering on extra formatting.
 
 **Sheet 1 — `Summary`:** Write target company info to column C:
 
