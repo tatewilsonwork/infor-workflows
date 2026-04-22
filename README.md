@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin for analysts — automated deal workflows, branded presentations, and deck QC.
 
-Current version: **1.3.8**
+Current version: **1.9.5**
 
 ## Skills
 
@@ -12,7 +12,6 @@ Current version: **1.3.8**
 | precedents-infor | `/precedents-infor` | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template with verified Revenue, EBITDA, AUM, and deal metrics |
 | buyerslist-infor | `/buyerslist-infor` | Builds a strategic and financial buyer universe for a sell-side M&A process, tiered A/B/C, and populates the INFOR Buyers List Template |
 | captable-infor | `/captable-infor` | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A) |
-| expenses-extraction | `/expenses-extraction` | Fills in the INFOR Expense Report template from attached receipt images |
 | brand-guidelines-infor | `/brand-guidelines-infor` | Applies or reviews INFOR brand standards on PowerPoint decks — colors, fonts, layouts, charts, tables |
 | deckcheck-infor | `/deckcheck-infor` | Reviews an attached deck for grammar/spelling, INFOR brand formatting compliance, and factual accuracy via web search |
 
@@ -26,7 +25,6 @@ Invoke any skill by name, command, or by describing what you want:
 /buyerslist-infor Dye & Durham
 /deckcheck-infor (attach a .pptx)
 "Fill in the cap table for NasdaqGS:MSFT"
-"Fill in my expense report" (attach receipt images)
 "Format this deck to INFOR brand guidelines"
 ```
 
@@ -49,7 +47,6 @@ infor-workflows/
 │   │   ├── captable-infor/
 │   │   ├── comps-infor/
 │   │   ├── deckcheck-infor/
-│   │   ├── expenses-extraction/
 │   │   └── precedents-infor/
 │   └── templates/              # Excel templates and INFOR logo
 ├── outputs/                    # Deal outputs (gitignored)
@@ -60,6 +57,7 @@ infor-workflows/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.9.5 | 2026-04-22 | Removed `expenses-extraction` skill and the bundled `INFOR Expense Report Template.xlsx`; pruned all references from the main README (skills table, usage examples, folder structure); bumped plugin + marketplace manifests to 1.9.5 |
 | 1.3.4 | 2026-04-21 | Repo cleanup: unified all skills and plugin manifests to v1.3.4; removed empty `hooks/` directory; pruned stale entries from `.claude/settings.local.json`; standardized SKILL.md frontmatter style; tightened plugin description |
 | 1.3.1 | 2026-04-20 | brand-guidelines-infor: fixed `clone_slide` helper to copy slide relationships (was dropping image rels, causing broken red-X logo on cover); added slide-specific conventions from test-output review — required deck structure (cover → exec summary → graphical content → disclaimer → contact page), text-only slides restricted to exec summary and disclaimer, preserve placeholder rectangles and grouped graphics, Business Updates box takes IB-tone prose (not metrics), cover INFOR logo must not be touched, earnings slide includes two quote-paper graphics, contact page defaults to Neil + 3 `[x]` placeholders |
 | 1.3.0 | 2026-04-20 | brand-guidelines-infor now starts from the bundled `INFOR Deck Template.pptx` (with `INFORFG.thmx` theme) and clones the template's sample slides as starting points, preserving master-level formatting (title bars, footers, page numbers, theme font) that was previously lost when building decks from scratch |
