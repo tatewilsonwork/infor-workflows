@@ -7,7 +7,7 @@ description: >
   Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C, plus an
   optional third category (e.g., family offices, international strategics, sovereign wealth, SPACs)
   when the user wants buyers that don't fit cleanly as Strategic or Financial.
-version: 1.7.0
+version: 1.8.0
 ---
 
 # INFOR Buyers List — Workflow & Domain Knowledge
@@ -48,7 +48,7 @@ Then ask a **separate follow-up** about an additional buyer category beyond Stra
 
 Record the user's response as `other_label`:
 - If the user answers `"no"`, `"skip"`, `"none"`, or declines → set `include_other = False`.
-- Otherwise → set `include_other = True` and capture `other_label` as the exact buyer category name provided (trimmed, title-cased). Excel sheet names have a 31-character limit, so truncate `other_label` to ≤31 characters if needed and strip any characters Excel disallows in sheet names (`: \ / ? * [ ]`).
+- Otherwise → set `include_other = True` and capture `other_label` as the exact buyer category name provided (trimmed, title-cased). `other_label` is only used as the row label on the Summary sheet (cell B17) — it is **not** used as an Excel sheet name, so no length or character-set restrictions apply. The tab itself stays titled `Other Buyers`.
 
 ---
 
@@ -134,9 +134,25 @@ For each Other buyer, gather:
 - **Buyer name** — common name, concise
 - **HQ** — City, Country (abbreviated)
 - **Vertical** — primary vertical or investment focus (abbreviated)
-- **Transactions** — up to **3** most relevant recent transactions, formatted as `"Target Name #1 - YY, Target Name #2 - YY, Target Name #3 - YY"`. Leave blank if none disclosed.
+- **Transactions** — up to **3** most relevant recent transactions. The *type* of transaction must fit the buyer category — see the table below. Leave blank if none disclosed.
 - **Rationale** — professional IB-style explanation of why this buyer fits (see **Rationale Writing Guidelines** below)
 - **Tier** — A, B, or C (see Tiering Criteria below)
+
+**Category-specific Transactions guidance.** The Transactions column must reflect the kind of activity the category actually does — an acquirer's M&A, an investor's rounds, a funder's cases. Pick the format that matches:
+
+| Category | What "Transactions" means | Format example |
+|---|---|---|
+| Family Offices | Recent direct deals / investments | `"Target - YY, Target - YY, Target - YY"` |
+| International Strategic Buyers | Recent cross-border M&A | `"Target - YY, Target - YY, Target - YY"` |
+| Sovereign Wealth Funds | Recent direct deals / co-investments | `"Target - YY, Target - YY, Target - YY"` |
+| SPACs | Prior de-SPAC targets / announced combinations | `"Target - YY, Target - YY"` |
+| Consortium Buyers | Prior consortium transactions | `"Target (with Co-Investor) - YY, Target - YY"` |
+| Venture Capital / Growth Equity | Portfolio rounds led/co-led | `"PortCo (Series B) - YY, PortCo (Seed) - YY, PortCo (Series A) - YY"` |
+| Litigation Funders | Notable cases / litigations funded | `"Case name - YY, Case name - YY, Case name - YY"` |
+| Corporate Venture Arms | Portfolio rounds participated in | `"PortCo (Series B) - YY, PortCo (Seed) - YY"` |
+| Any other | Choose the transaction type that most naturally represents the category's activity (deals for acquirers, rounds for investors, cases for funders). If the choice is non-obvious, briefly note the convention used in the Rationale. |
+
+Do not mix transaction types within a single sheet — every row on the Other Buyers tab should use the same transaction convention, so a reader can scan the column without recalibrating.
 
 ---
 
@@ -357,12 +373,9 @@ The template ships with an `Other Buyers` tab and a `Total` row at Summary row 1
 
 **Case B — `include_other = True` (user specified a category):**
 
-1. **Rename the sheet.** Rename `Other Buyers` to `other_label` (already sanitized in Step 1 to ≤31 chars and no forbidden characters). All formulas below must use this renamed sheet name.
-   ```
-   ws_other = wb["Other Buyers"]
-   ws_other.title = other_label
-   ```
-2. **Capture the styling of the existing rows BEFORE overwriting anything.** The new row 17 should inherit the buyer-row styling from row 16, and the new row 18 should inherit the Total-row styling from the current row 17:
+**Do NOT rename the `Other Buyers` tab.** Renaming the sheet in openpyxl has been observed to (a) turn sheet gridlines back on, (b) insert a spurious narrow column, and (c) drop the Tier conditional-formatting rules — because `showGridLines`, `column_dimensions`, and `conditional_formatting` do not always transfer cleanly across a rename. Keeping the tab literally titled `Other Buyers` avoids all three issues. The user-specific category name still appears prominently on the Summary sheet (cell B17, written below), so no information is lost.
+
+1. **Capture the styling of the existing rows BEFORE overwriting anything.** The new row 17 should inherit the buyer-row styling from row 16, and the new row 18 should inherit the Total-row styling from the current row 17:
    ```
    from copy import copy
    financial_style = {c.column_letter: (copy(c.font), copy(c.fill), copy(c.border), copy(c.alignment), c.number_format) for c in summary[16]}
@@ -370,12 +383,12 @@ The template ships with an `Other Buyers` tab and a `Total` row at Summary row 1
    financial_row_height = summary.row_dimensions[16].height
    total_row_height     = summary.row_dimensions[17].height
    ```
-3. **Write the new row 17 (Other Buyers) and new row 18 (Total).** Let `other_totals_start = 4 + n_other + 1` (the new location of the Tier A total on the renamed Other Buyers sheet after Step 7b trimming). Then apply the captured styling:
+2. **Write the new row 17 (Other Buyers) and new row 18 (Total).** Let `other_totals_start = 4 + n_other + 1` (the new location of the Tier A total on the `Other Buyers` sheet after Step 7b trimming). Cross-sheet formulas reference the tab by its literal name `'Other Buyers'`. Cell `B17` carries the user-specified `other_label` so a reader still sees exactly which category the row represents:
    ```
    summary["B17"] = other_label
-   summary["C17"] = f"=+'{other_label}'!$G${other_totals_start}"
-   summary["D17"] = f"=+'{other_label}'!$G${other_totals_start + 1}"
-   summary["E17"] = f"=+'{other_label}'!$G${other_totals_start + 2}"
+   summary["C17"] = f"=+'Other Buyers'!$G${other_totals_start}"
+   summary["D17"] = f"=+'Other Buyers'!$G${other_totals_start + 1}"
+   summary["E17"] = f"=+'Other Buyers'!$G${other_totals_start + 2}"
    summary["F17"] = "=SUM(C17:E17)"
 
    summary["B18"] = "Total"
@@ -422,7 +435,7 @@ Report to the user:
 | Summary | C4:C11 | Rows 13–17 | C15:E16 cross-reference Strategic/Financial — rewrite after Step 7b. If `include_other=True`, row 17 becomes the Other Buyers cross-reference and Total shifts to row 18 (Step 7c). |
 | Strategic Buyers | B5:H24 (max 20 rows) | Rows 25–27 | Totals shift up after Step 7b empty-row deletion |
 | Financial Buyers | B5:I24 (max 20 rows) | Rows 25–27 | Totals shift up after Step 7b empty-row deletion |
-| Other Buyers (optional) | B5:G24 (max 20 rows) | Rows 25–27 | Sheet is deleted if `include_other=False`; renamed to `other_label` if `include_other=True`. Totals shift up after Step 7b empty-row deletion. |
+| Other Buyers (optional) | B5:G24 (max 20 rows) | Rows 25–27 | Sheet is deleted if `include_other=False`. If `include_other=True`, the tab stays titled `Other Buyers` (never renamed — rename corrupts gridlines, columns, and conditional formatting in openpyxl) and the category name is written to Summary cell B17. Totals shift up after Step 7b empty-row deletion. |
 
 The buyer data rows have pre-set row height (~28.5pt) and `wrap_text=True` on the Rationale column so longer professional-language rationales render cleanly without manual formatting.
 
