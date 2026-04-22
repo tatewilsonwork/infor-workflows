@@ -1,7 +1,7 @@
 ---
 name: lbo-infor
-description: This skill should be used when completing LBO (Leveraged Buyout) model templates in Excel for private equity transactions, deal materials, or investment committee presentations. The skill builds a target-company capitalization table first (via captable-infor), embeds it in the LBO workbook, and links balance-sheet-derived assumptions (cash, shares outstanding, debt, EV inputs) from the cap table. Fills in formulas, validates calculations, and ensures professional formatting standards that adapt to any template structure. Output uses INFOR Financial Group brand colors.
-version: 1.9.0
+description: This skill should be used when completing LBO (Leveraged Buyout) model templates in Excel for private equity transactions, deal materials, or investment committee presentations. The skill builds a target-company capitalization table first (via captable-infor), embeds it in the LBO workbook, and links balance-sheet-derived assumptions (cash, shares outstanding, debt, EV inputs) and the first two years of forecast Revenue / Adj. EBITDA from the cap table. Fills in formulas, validates calculations, and ensures professional formatting standards that adapt to any template structure. Output uses INFOR Financial Group brand colors.
+version: 1.9.6
 ---
 
 ---
@@ -17,6 +17,40 @@ Before starting any LBO model:
 4. **If using the standard template**: Copy `examples/LBO_Model.xlsx` as your starting point and populate it with the user's assumptions
 
 **IMPORTANT**: When a file like `LBO_Model.xlsx` is attached, you MUST use it as your template - do not build from scratch. Even if the template seems complex or has more features than needed, copy it and adapt it to the user's requirements. Never decide to "build from scratch" when a template is provided.
+
+---
+
+## NO-TEMPLATE FORECAST TAB LAYOUT
+
+When the user has NOT attached a template (and is not using the standard template either — i.e., you are building the Operating Model / Forecast tab from scratch), the forecast tab must be laid out so driver assumptions sit to the LEFT of the dollar figures, not the right.
+
+Reading left-to-right on any forecast row, the order is:
+
+```
+| Row label | Assumption column(s) | LTM | CY+1 | CY+2 | CY+3 | CY+4 | CY+5 |
+```
+
+The assumption column(s) go immediately to the right of the row label and to the LEFT of the period columns, so the reader sees "what drives this" before "how much it is."
+
+**Examples:**
+
+| Row label              | Driver (assumption) col  | LTM | CY+1 | CY+2 | CY+3 | CY+4 | CY+5 |
+|------------------------|--------------------------|-----|------|------|------|------|------|
+| Revenue                | Growth %                 | $   | $    | $    | $    | $    | $    |
+| Adj. EBITDA            | Margin %                 | $   | $    | $    | $    | $    | $    |
+| Capital Expenditures   | % of Revenue             | $   | $    | $    | $    | $    | $    |
+| Change in NWC          | % of Revenue             | $   | $    | $    | $    | $    | $    |
+| D&A                    | % of Revenue             | $   | $    | $    | $    | $    | $    |
+| Cash Taxes             | Tax rate %               | $   | $    | $    | $    | $    | $    |
+
+**Rules:**
+
+- **One assumption column per driver.** Growth %, margin %, % of revenue, tax rate, etc. — each goes in its own column immediately to the left of the period columns.
+- **If a line item has no driver** (e.g., a row that simply sums other rows, like EBIT or Free Cash Flow), leave the assumption cell blank — do not repurpose it.
+- **Two adjacent driver columns are allowed** when a line item takes two inputs (e.g., a base margin plus a step-up, or a growth rate plus a terminal adjustment). Both still sit to the LEFT of the period columns.
+- **LTM column takes no assumption**; LTM is historical / linked from `Cap with Links` (see Step 0e). The driver assumption applies to the forecast years only.
+- **Assumption cells are blue hardcoded inputs** (e.g., typed `15.0%` revenue growth) per the IB formula color convention. The resulting period-column dollar figures are black calculation formulas that reference both the prior-period figure and the assumption cell.
+- **This rule applies only when no template is attached.** If the user supplies a template whose forecast tab puts drivers to the right of the period columns (or uses a different layout entirely), follow the template exactly.
 
 ---
 
@@ -133,6 +167,25 @@ With the inputs above linked from the cap table, the LBO's headline purchase-pri
 
 Every one of these is a formula that traces back to `Cap with Links` through the Assumptions tab — never typed numbers.
 
+### Step 0e — Link forecast Revenue and Adj. EBITDA to `Cap with Links`
+
+`Cap with Links` also carries CapIQ consensus estimates for Revenue and Adj. EBITDA across LTM, the next calendar year (CY+1), and the year after (CY+2) in rows 34 and 35. These feed the Operating Model / Forecast tab's LTM column and first two forecast periods — do NOT retype them as blue inputs. Link each cell as a green cross-tab formula.
+
+| Operating Model line item | `Cap with Links` cell | Formula |
+|---|---|---|
+| Revenue — LTM | D34 | `='Cap with Links'!D34` |
+| Revenue — CY+1 (first forecast year) | E34 | `='Cap with Links'!E34` |
+| Revenue — CY+2 (second forecast year) | F34 | `='Cap with Links'!F34` |
+| Adj. EBITDA — LTM | D35 | `='Cap with Links'!D35` |
+| Adj. EBITDA — CY+1 | E35 | `='Cap with Links'!E35` |
+| Adj. EBITDA — CY+2 | F35 | `='Cap with Links'!F35` |
+
+The period column headers on `Cap with Links` (D33:F33) show `LTM`, `CY[year]`, `CY[year+1]`. Match the Operating Model's column headers to these so the linked figures line up to the right periods.
+
+Forecast periods **beyond CY+2** are driven by hardcoded blue assumptions (revenue growth %, EBITDA margin %) applied to the prior year's figure — they are NOT linked from the cap table because CapIQ only publishes two forward years of consensus.
+
+If the user has their own forecast figures for CY+1 or CY+2 that should override the CapIQ consensus (e.g., management case, broker model, sponsor base case), confirm with the user before overwriting the green link with a blue hardcoded input. Default behavior is to keep the cap-table link.
+
 ### What stays hardcoded (blue inputs) in Assumptions
 
 These describe the **deal** or the **forecast**, not the target's current balance sheet, and remain typed-in blue inputs:
@@ -156,7 +209,8 @@ These describe the **deal** or the **forecast**, not the target's current balanc
 
 - [ ] `Cap Summary` and `Cap with Links` tabs are present in the LBO workbook
 - [ ] Every balance-sheet-derived assumption on the LBO Assumptions tab is a green cross-tab formula, not a blue hardcoded number
-- [ ] Changing any value on `Cap with Links` propagates through to Assumptions → Sources & Uses → Returns
+- [ ] Operating Model / Forecast tab has LTM, CY+1, and CY+2 Revenue (row linked to `Cap with Links` D34:F34) and Adj. EBITDA (linked to D35:F35) as green cross-tab formulas, not blue hardcoded numbers (unless the user explicitly overrode with a management/broker case)
+- [ ] Changing any value on `Cap with Links` propagates through to Assumptions → Sources & Uses → Returns, and through the Operating Model Revenue and EBITDA rows for LTM, CY+1, and CY+2
 - [ ] The cap table's own internal cross-checks (F17=F137, revolver present, no PSUs, etc.) still pass after the tabs were copied into the LBO workbook
 
 ---
