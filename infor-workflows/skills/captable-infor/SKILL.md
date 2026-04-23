@@ -5,7 +5,7 @@ description: >
   statements to populate a capitalization table. Activates for tasks involving shares outstanding,
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
-version: 1.9.6
+version: 1.9.9
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
@@ -243,6 +243,12 @@ Examples:
 
 **Options/Warrants/RSUs/DSUs:** Stock-based compensation footnote. Enter one row per exercise-price tranche for options — do NOT aggregate to WAEP. RSUs/DSUs use $0 strike. **Always exclude PSUs, and exclude any RSUs/DSUs that are exclusively cash-settled** (they pay out in cash rather than shares, so they don't factor into ITM dilutive share count). Check the equity comp footnote for settlement terms — language like "settled in cash," "cash-settled only," or "no share issuance" signals exclusion. If an RSU/DSU plan allows share OR cash settlement at the company's discretion, include it.
 
+**Options strike — FX conversion required whenever filing currency ≠ Output currency (F5).** The template's ITM calculation compares the strike in col D against the share price in F$16, which is stated in the Output currency (F5). Unlike Section III (where the ITM formula is authored per-row and can apply FX inline), Section II strikes are compared natively by template formulas you cannot modify — so the strike **value written to col D must already be in the Output currency**. Convert each tranche's strike using F7 before writing:
+- If F7 is stated as **Output-per-Filing** (e.g., USD per CAD = 0.74), multiply: `strike_output = strike_filing * F7`
+- If F7 is stated as **Filing-per-Output** (e.g., CAD per USD = 1.35), divide: `strike_output = strike_filing / F7`
+
+Pick the direction based on F7's definition in the template header. In the cell comment on col B, note both the original filing-currency strike and the FX rate applied, e.g., `"Rogers 2024 Annual Report - Page 102, Note 20: Stock Options. Original strike CAD $45.20 converted to USD at F7 = 0.74"`. Apply blue font to col D as with any hardcoded value.
+
 **Convertible Debentures / Convertible Preferreds:** Face amount (col C), shares per $1,000 face = 1,000 / conversion price (col D), conversion price (col E). **Also add a matching row in Section IV (Debt)** so the face is captured as debt only when the convert is out-of-the-money:
 - Label col B: `"[Convert name] (if OTM)"`
 - Date col E: the as-of date of the financial statement the convert face amount is sourced from (NOT the maturity of the convert — col E is an as-of date throughout Section IV).
@@ -290,6 +296,7 @@ Apply the following event types when found in the filing's sub-events note or in
 | PSUs | Always exclude from Section II |
 | Cash-settled RSUs/DSUs | Exclude from Section II — they pay in cash, not shares |
 | Options aggregated | Enter one row per tranche, not single WAEP row |
+| Options strike currency | Col D must be in Output currency (F5) — apply F7 to strike before writing whenever filing currency ≠ F5, otherwise the template's ITM comparison against F$16 breaks |
 | Shares date | Use capital stock note subsequent-event date, not balance sheet date |
 | RSU/DSU strike | Use $0 |
 | Convertible preferred | If convertible → Section III; if not → F52 |
@@ -307,4 +314,5 @@ Apply the following event types when found in the filing's sub-events note or in
 7. Options appear as one row per tranche, not single WAEP row
 8. Section VII col E dates reflect capital stock note subsequent-event date
 9. Every row populated in Section III has a matching `=IF(E[row]<F$16,0,C[row])` row in Section IV, with F$7 applied to the strike or share price whenever filing currency ≠ Output currency (F5)
-10. Subsequent-events scan completed: both the filing's sub-events note (ASC 855 / IAS 10) and a company-source-only newsroom screen (IR page and company press releases — no third-party news wires or analyst coverage) have been reviewed. Every applied adjustment is deduplicated against the filing's disclosures and documented in the relevant row's cell comment
+10. Section II option/warrant strikes in col D are stated in the Output currency (F5) — if filing currency ≠ F5, each strike has been converted via F7 (multiplied or divided per F7's definition) so the template's ITM comparison against F$16 works correctly
+11. Subsequent-events scan completed: both the filing's sub-events note (ASC 855 / IAS 10) and a company-source-only newsroom screen (IR page and company press releases — no third-party news wires or analyst coverage) have been reviewed. Every applied adjustment is deduplicated against the filing's disclosures and documented in the relevant row's cell comment
