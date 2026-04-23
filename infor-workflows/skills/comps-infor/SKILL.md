@@ -39,10 +39,19 @@ Wait for the company name before proceeding.
 
 Using your knowledge of public markets (and WebSearch if needed to verify current tickers or identify relevant peers), select **18 publicly traded comparable companies** for the target.
 
-**Grouping logic — choose ONE of the following that best fits:**
+**Grouping logic — pick ONE dimension and apply it to all three groups. Never mix.**
 
-- **By Geography** — when the target operates in a specific region and regional peers are meaningful (e.g., Canadian banks, European industrials). Label groups by region (e.g., "Canadian Peers", "U.S. Peers", "European Peers").
-- **By Sector / Vertical** — when the target spans geographies but has distinct business lines or sub-sectors. Label groups by business type (e.g., "Core Software", "Payments & FinTech", "Data & Analytics").
+All three group labels must share the same grouping dimension — either **all geography** or **all sector/vertical**. Do not combine the two axes in the same table.
+
+- **By Geography** — when the target operates in a specific region and regional peers are meaningful. All three labels are regions (e.g., `"Canadian Peers"`, `"U.S. Peers"`, `"European Peers"`; or `"Canada"`, `"U.S."`, `"Rest of World"`).
+- **By Sector / Vertical** — when the target spans geographies but has distinct business lines or sub-sectors. All three labels are business types (e.g., `"Core Software"`, `"Payments & FinTech"`, `"Data & Analytics"`).
+
+**Invalid — do not produce tables like this:**
+- ❌ `"Large-Cap Engineering Consultants"`, `"MEP Firms"`, `"European Engineering Consultants"` — mixes sector (first two) with geography (third)
+- ❌ `"U.S. Software"`, `"European Software"`, `"Payments & FinTech"` — mixes geography with sector
+- ❌ `"Canadian Peers"`, `"U.S. Peers"`, `"Global SaaS"` — mixes geography with sector
+
+Before writing to the file, read back your three group labels and confirm they answer the same question ("where?" or "what?"). If they don't, re-group.
 
 Split the 18 comparables into **three groups of exactly 6**. Each group must have a clear, concise label (3–6 words max).
 
@@ -246,6 +255,8 @@ Nasdaq has **three tiers** and CapIQ treats them as distinct exchange prefixes. 
 **Rule:** If you are not 100% certain a Nasdaq name is on Global Select, **use WebSearch to verify the tier before writing the ticker**. A quick query like `"<company> nasdaq tier global select market capital"` or checking the company's Capital IQ / investor-relations page usually resolves it. Do not default to `NasdaqGS`.
 
 ### Grouping Guidelines
+
+**One dimension, applied consistently.** All three group labels must share the same axis — either all geography or all sector/vertical. Mixing the two (e.g., two sector labels and one regional label) is not allowed.
 
 **Use Geography when:**
 - Target is a regional business (e.g., Canadian insurance, Australian banks)
