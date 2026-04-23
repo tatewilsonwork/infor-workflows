@@ -8,7 +8,7 @@ description: >
   performance summary. Activates on "earnings update", "earnings deck", "quarterly earnings",
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
-version: 1.9.14
+version: 1.9.15
 ---
 
 # INFOR Earnings Update — Workflow
@@ -108,17 +108,37 @@ Slide 2 is indexed 1. Update these shapes by name:
 
 **Do NOT touch `Rectangle 4` — the BBG placeholder at L≈5.12, T≈1.48.** The analyst will replace it manually with a Bloomberg company tearsheet screenshot and then paste in the cap table output from Step 8.
 
-**Company description bullets** — see the Village Farms slide 2 left panel for tone. Target **7–9 bullets**, each **≤120 characters**, with a **total ≤900 characters** across all bullets. These caps keep the left column content above T≈6.85 (just above the footer at T=7.03) — goeasy v1.9.13 overflowed the slide with 9 bullets averaging 185 chars each (1,641 total). Structure:
-- Bullet 1 (main, 10.5 pt): One-sentence "what the company is" — founding year, exchange/ticker, one-line business description
-- Bullet 2 (main, 10.5 pt): Scale/footprint statement (facilities, geographies, headcount, or revenue)
-- Bullet 3 (main, 10.5 pt): Financial snapshot — most recent revenue, EBITDA, margin, or balance-sheet anchor (loan book, AUM, production)
-- Bullets 4–6+ (sub, 10 pt): One sub-bullet per reportable segment or major business line, naming the segment and its core activity/KPIs
-- Second-to-last bullet (main, 10.5 pt): Key historical transactions (acquisitions, divestitures, JVs) in chronological order
-- Last bullet (main, 10.5 pt): Governance / leadership / credit-rating note, or one notable recent milestone
+**Company description bullets** — see the Village Farms slide 2 left panel for tone. Target **10–12 bullets**, each **≤120 characters**, with a **total 1,200–1,450 characters** across all bullets. Available vertical space (T=1.45 → T=7.03) is ~5.58 in, which fits roughly 12 two-line bullets at Palatino 10.5 pt. v1.9.13 overflowed with 1,641 chars; v1.9.14 under-filled with 852 chars leaving obvious white space. **~1,350 chars ≈ 12 bullets is the sweet spot.**
 
-**Why 120 chars / bullet.** Shape width 4.53 in fits ~65 characters per line at Palatino 10.5 pt. A 120-char bullet is exactly 2 lines; anything more pushes to 3 and overflows over 9 bullets. Count characters with `len(bullet)` and assert before writing.
+**Content focus — what the company DOES, not how it PERFORMED last quarter.** The description is a durable company profile that could have been written any time in the last year. Do NOT include quarterly financial performance here (that belongs on slide 3). Specifically:
+- ❌ "FY 2025 revenue of C$1.7B, up 20% YoY, with 26.6% yield" — performance
+- ❌ "Q4 2025 net loss of C$337MM driven by LendCare impairment" — performance
+- ✅ "~475,000 active customers, 2,600+ employees, 400+ locations" — durable scale
+- ✅ "Senior unsecured notes rated B- (S&P) / B1 (Moody's)" — durable credit profile
+- ✅ "Acquired LendCare in 2021 to extend into point-of-sale financing" — history
 
-Do not pad with fluff — if the filing genuinely only supports 7 bullets of real content, stop at 7. Do not let total height exceed T≈6.85 — if it does, tighten wording before shrinking font. Claude cannot visually render the slide to check overflow; **enforce the char caps programmatically**.
+Structure (12 bullets as a target):
+1. Main (10.5 pt): Company name, founding year, exchange/ticker, one-sentence business description
+2. Main (10.5 pt): Headquarters + geographic footprint
+3. Main (10.5 pt): Scale anchors (employees, customers, locations, annualized volume)
+4. Main (10.5 pt): Balance-sheet / book anchor (loan book size, AUM, production capacity, installed base)
+5. Main (10.5 pt): Segment overview intro — "Operates X reportable segments" or "organized around Y business lines"
+6–8. **Sub-bullets (10 pt)** — one per reportable segment. **Bold the segment name prefix** (see below).
+9. Main (10.5 pt): Distribution channels / go-to-market (branch footprint, digital, wholesale, merchant partners)
+10. Main (10.5 pt): Key historical transactions (acquisitions, divestitures, JVs) in chronological order
+11. Main (10.5 pt): Strategic partnerships, licenses, or exclusive arrangements
+12. Main (10.5 pt): Governance / leadership / credit rating / ESG note
+
+Combine or drop slots if the filing doesn't support 12 real bullets, but aim for 10+.
+
+**Segment-name bolding.** On the sub-bullets naming each segment (e.g. `easyfinancial: direct-to-consumer unsecured...`), render the segment name + colon **bold** and the rest of the bullet regular weight. Two-run paragraph pattern — see `set_bullet_with_bold_prefix` in the reference implementation. Examples of bold prefixes:
+- `easyfinancial:` / `LendCare:` / `easyhome:` (goeasy)
+- `Cannabis (Canada):` / `Cannabis (International):` / `Produce:` / `Clean Energy:` (Village Farms)
+- `Commercial Banking:` / `Wealth Management:` / `Capital Markets:` (a bank)
+
+**Why 120 chars / bullet.** Shape width 4.53 in fits ~65 characters per line at Palatino 10.5 pt. A 120-char bullet is exactly 2 lines; anything more pushes to 3 and overflows. Count characters with `len(bullet)` and assert before writing.
+
+Claude cannot visually render the slide to check overflow; **enforce the char caps programmatically**.
 
 Source content from the MD&A's "Overview" / "Our Business" / "Operating Segments" sections, the 10-K Item 1 "Business" section, and the company website if needed via WebSearch. Keep each bullet tight — one idea per line.
 
@@ -191,15 +211,15 @@ This applies even when the "good" direction is inverted — for charge-off rates
 
 Target shape: `TextBox 1067` at L≈0.35, T≈1.44. Replace all `[x]` bullets with concise bullets covering the quarter's operational story.
 
-**Must fit inside the box.** The Business Updates area runs from T≈1.44 to T≈4.13 (the Broker Estimates section header starts at T=4.18). The bullets must not overflow into or touch that section.
+**Must fit inside the box.** The Business Updates area runs from T≈1.44 to T≈4.13 (the Broker Estimates section header starts at T=4.18). That's ~2.69 in of vertical space — enough for **6–7 two-line bullets** at Palatino 10 pt. v1.9.13 used 4 three-line bullets (barely touched the header); v1.9.14 dropped to 4 short bullets and left obvious white space.
 
 **Hard caps — enforce programmatically:**
-- **Max 4 bullets** (not 5). goeasy v1.9.13 used 4 bullets averaging 30 words / 206 chars each and the text just barely touched the Broker Estimates title — one line too long.
-- **≤ 22 words per bullet**
-- **≤ 140 characters per bullet**
-- **≤ 480 characters total** across all bullets
+- **Target 6 bullets, max 7.** Every bullet should be 2 lines (not 3, not 1).
+- **≤ 130 characters per bullet** (2 lines at Palatino 10 pt in a 4.53 in column ≈ 140 chars; set cap slightly below to avoid line-wrap surprises)
+- **≤ 20 words per bullet**
+- **≤ 900 characters total** across all bullets (6 bullets × ~130 chars ≈ 780; 7 × ~130 ≈ 910 — cap protects against a stretch run)
 
-Assert each of these before writing with `assert len(b) <= 140 and len(b.split()) <= 22 for b in bullets` and `assert sum(len(b) for b in bullets) <= 480`. Claude cannot visually check overflow — the caps are the only defense.
+Assert each before writing. Claude cannot visually check overflow — the caps are the only defense.
 
 **Bullet formatting — mandatory.** All bullets must use the INFOR square bullet character at **level 0 (main)**, **Palatino Linotype 10 pt**. The template's paragraph 0 has the correct `pPr` (bullet character, indent, spacing). When you add paragraphs beyond paragraph 0, python-pptx creates them with an empty `<a:pPr/>` and no `rPr` — the result is Calibri with **no bullet character**. This is the bug that left bullets 3+ on goeasy without bullets.
 
@@ -272,6 +292,13 @@ Populate each row:
 | Volume / count (production, units, AUM in $B) | Unit suffix or prefix matching the metric | `950 MMcf/d`, `$12.4B AUM`, `1.6M customers` |
 
 Variance keeps the same prefix/suffix as the value: a `+$1.2` or `($31.2)` variance on a dollar metric; `+0.8%` or `(2.3%)` on a margin. Never a bare `(31.2)` with no `$` or `%`.
+
+**Variance column color.** Color the **Variance** cell text based on the sign — same scheme as the KPI delta boxes on the right side of the slide:
+- Positive variance (beat) → **green `#00B050`**
+- Negative variance (miss) → **red `#C00000`**
+- Zero → template default (black)
+
+Set on the variance cell's run via `run.font.color.rgb = RGBColor.from_string("00B050" if variance >= 0 else "C00000")`. The Reported and Bloomberg Estimate cells stay template-default (black). Only the Variance column is colored.
 
 **Currency-in-header vs currency-on-value.** Even with `Figures in C$MM` in the header, each cell carries `$` (not `C$` — the header already scopes it to Canadian). Never `C$406.3` in-cell; just `$406.3`. For an EPS row in the same table, `$1.24` implicitly means C$1.24 because the header already said so.
 
@@ -569,8 +596,9 @@ def fmt_broker_value(kind, value):
         body = f"{a:,.1f}"
     return f"({body})" if neg else body
 
-def set_cell_text(cell, text, size_pt=9):
-    """Overwrite cell content as a single run, Palatino Linotype at size_pt."""
+def set_cell_text(cell, text, size_pt=9, color_hex=None):
+    """Overwrite cell content as a single run, Palatino Linotype at size_pt.
+    Optionally color the run (e.g. for variance column)."""
     tf = cell.text_frame
     while len(tf.paragraphs) > 1:
         last = tf.paragraphs[-1]
@@ -582,6 +610,66 @@ def set_cell_text(cell, text, size_pt=9):
     run.text = text
     run.font.name = PALATINO
     run.font.size = Pt(size_pt)
+    if color_hex is not None:
+        run.font.color.rgb = RGBColor.from_string(color_hex)
+
+def set_bullet_with_bold_prefix(shape, prefix_text, rest_text, level=1, prefix_bold=True,
+                                 size_pt=10.0, append=True):
+    """Write (or append) a bullet where the first part is bold and the rest is regular.
+    Useful for segment overviews: 'easyfinancial:' bold + ' direct-to-consumer...' regular.
+
+    If append=True, adds a new paragraph at the given level copying the seed pPr/rPr.
+    If append=False, overwrites paragraph 0."""
+    tf = shape.text_frame
+    # Harvest seed pPr / rPr for this level
+    level_pPr, level_rPr = None, None
+    for p in tf.paragraphs:
+        if p.level == level:
+            level_pPr = _pPr_of(p)
+            level_rPr = _first_run_rPr(p)
+            break
+    if level_pPr is None:
+        level_pPr = _pPr_of(tf.paragraphs[0])
+    if level_rPr is None:
+        level_rPr = _first_run_rPr(tf.paragraphs[0])
+
+    if append:
+        p = tf.add_paragraph()
+        for child in list(p._p):
+            if child.tag.endswith("}pPr"):
+                p._p.remove(child)
+        if level_pPr is not None:
+            p._p.insert(0, deepcopy(level_pPr))
+    else:
+        p = tf.paragraphs[0]
+        for r in list(p.runs):
+            r._r.getparent().remove(r._r)
+
+    # Run 1 — bold prefix
+    r1 = p.add_run()
+    r1.text = prefix_text
+    if level_rPr is not None:
+        # Copy template rPr, then flip bold on
+        for c in list(r1._r):
+            if c.tag.endswith("}rPr"):
+                r1._r.remove(c)
+        r1._r.insert(0, deepcopy(level_rPr))
+    r1.font.name = PALATINO
+    r1.font.size = Pt(size_pt)
+    if prefix_bold:
+        r1.font.bold = True
+
+    # Run 2 — regular rest
+    r2 = p.add_run()
+    r2.text = rest_text
+    if level_rPr is not None:
+        for c in list(r2._r):
+            if c.tag.endswith("}rPr"):
+                r2._r.remove(c)
+        r2._r.insert(0, deepcopy(level_rPr))
+    r2.font.name = PALATINO
+    r2.font.size = Pt(size_pt)
+    r2.font.bold = False
 
 prs = Presentation(output_path)
 
@@ -600,12 +688,36 @@ set_text(find_shape(slide2, "Title 1"), [f"{company_name} Overview"])
 # Example shape: [("Founded in ...", 0), ("Operates two segments", 0),
 #                 ("Segment A does X", 1), ("Segment B does Y", 1),
 #                 ("Key transactions: ...", 0)]
-# Slide 2 description — enforce char caps before writing.
-_desc_texts = [t for (t, _lvl) in description_bullets_with_levels]
-assert len(description_bullets_with_levels) <= 9, "Slide 2 description must be <= 9 bullets"
-assert all(len(t) <= 120 for t in _desc_texts), "Slide 2 bullets must each be <= 120 chars"
-assert sum(len(t) for t in _desc_texts) <= 900, "Slide 2 total description must be <= 900 chars"
-set_bullets(find_shape(slide2, "TextBox 16"), description_bullets_with_levels)
+# Slide 2 description — target 10-12 bullets, focus on business model not earnings.
+# Each item is (prefix_bold_text, rest_text, level). prefix_bold_text == "" for plain bullets.
+# Examples:
+#   ("", "Founded 1990, goeasy (TSX:GSY) is a leading Canadian non-prime consumer lender", 0)
+#   ("easyfinancial:", " direct-to-consumer unsecured and home-equity loans...", 1)
+def _full_text(item):
+    prefix, rest, _ = item
+    return (prefix + rest) if prefix else rest
+
+_desc_full = [_full_text(x) for x in description_items]
+assert 10 <= len(description_items) <= 12, "Slide 2 description target 10-12 bullets"
+assert all(len(t) <= 120 for t in _desc_full), "Slide 2 bullets must each be <= 120 chars"
+assert 1200 <= sum(len(t) for t in _desc_full) <= 1450, "Slide 2 total 1,200-1,450 chars"
+
+# Write: first bullet uses set_bullets to clear the shape; subsequent bullets append with
+# either a plain run or a bold-prefix+regular-rest run.
+textbox16 = find_shape(slide2, "TextBox 16")
+# Start by wiping the shape with a single placeholder bullet at level 0
+set_bullets(textbox16, [("_placeholder_", 0)], default_sizes=(10.5, 10.0, 9.0))
+# Clear the placeholder text from para 0
+tf = textbox16.text_frame
+tf.paragraphs[0].runs[0].text = ""
+# Now overwrite para 0 and append the rest
+for i, (prefix, rest, level) in enumerate(description_items):
+    if i == 0:
+        set_bullet_with_bold_prefix(textbox16, prefix, rest, level=level, append=False,
+                                     size_pt=(10.5 if level == 0 else 10.0))
+    else:
+        set_bullet_with_bold_prefix(textbox16, prefix, rest, level=level, append=True,
+                                     size_pt=(10.5 if level == 0 else 10.0))
 
 footnote = find_shape(slide2, "Text Placeholder 1")
 set_text(footnote, ["Source: Company filings, S&P CapIQ, equity research ",
@@ -620,16 +732,16 @@ footnote3 = find_shape(slide3, "Text Placeholder 1")
 set_text(footnote3, ["Source: Company filings, S&P CapIQ, equity research ",
                      f"Note: All figures in {currency}, except where indicated otherwise"])
 
-# Slide 3 — Business updates. ALL bullets at level 0 (main) with square bullet, 10 pt.
-# Hard caps enforced below.
-assert 1 <= len(business_updates) <= 4, "Business Updates must be 1-4 bullets (max 4)"
-assert all(len(b) <= 140 for b in business_updates), "Each Business Update <= 140 chars"
-assert all(len(b.split()) <= 22 for b in business_updates), "Each Business Update <= 22 words"
-assert sum(len(b) for b in business_updates) <= 480, "Total Business Updates <= 480 chars"
+# Slide 3 — Business updates. ALL bullets at level 0 (main), square bullet, 10 pt.
+# Target 6 bullets (max 7), each ~2 lines (130 chars).
+assert 5 <= len(business_updates) <= 7, "Business Updates target 5-7 bullets"
+assert all(len(b) <= 130 for b in business_updates), "Each Business Update <= 130 chars"
+assert all(len(b.split()) <= 20 for b in business_updates), "Each Business Update <= 20 words"
+assert sum(len(b) for b in business_updates) <= 900, "Total Business Updates <= 900 chars"
 set_bullets(
     find_shape(slide3, "TextBox 1067"),
     [(text, 0) for text in business_updates],
-    default_sizes=(10.0, 10.0, 10.0),  # level 0 at 10 pt for this shape specifically
+    default_sizes=(10.0, 10.0, 10.0),
 )
 
 # Slide 3 — KPI tiles (rows list each hold (prior_box, current_box, delta_box, tri_l, tri_r, metric))
@@ -669,12 +781,15 @@ for shape in slide3.shapes:
         set_cell_text(tbl.cell(0, 1), "Reported", size_pt=9)
         set_cell_text(tbl.cell(0, 2), "Bloomberg Estimate", size_pt=9)
         set_cell_text(tbl.cell(0, 3), "Variance", size_pt=9)
-        # Metric rows — always 5
-        for i, (label, reported, estimate, variance) in enumerate(broker_rows, start=1):
+        # Metric rows — always 5. broker_rows items:
+        #   (label, reported_str, estimate_str, variance_str, variance_sign)
+        # variance_sign: +1 / -1 / 0 — controls green/red coloring of the Variance cell.
+        for i, (label, reported, estimate, variance, vsign) in enumerate(broker_rows, start=1):
             set_cell_text(tbl.cell(i, 0), label, size_pt=9)
             set_cell_text(tbl.cell(i, 1), reported, size_pt=9)
             set_cell_text(tbl.cell(i, 2), estimate, size_pt=9)
-            set_cell_text(tbl.cell(i, 3), variance, size_pt=9)
+            v_color = COLOR_UP if vsign > 0 else (COLOR_DOWN if vsign < 0 else None)
+            set_cell_text(tbl.cell(i, 3), variance, size_pt=9, color_hex=v_color)
         break
 
 # Slide 3 — Quotes. Hard caps enforced (quote text only, excluding curly quote marks).
@@ -720,9 +835,12 @@ Use `"\u201C"` / `"\u201D"` for curly quotes and `"\u2013"` for en-dash — the 
 | Broker table — always 5 rows | **Never delete rows. Never write N/A.** If the EEO snip doesn't cover a template default metric, swap that row's label for a different metric the snip *does* cover. 5 real rows, no exceptions. |
 | Management quote focus | Quotes must address THE key item of the quarter (the largest surprise, charge, or inflection) — not generic strategy language. If the transcript/press release lacks a pointed quote on the key item, expand the search (Q&A section, post-earnings interviews). |
 | Business Updates tone | Narrative prose, not metric listings. Left side is events + segment commentary + outlook; right side carries the numbers. A bullet that is primarily a metric (`"Revenue grew 19.8% YoY to $5.51B"`) belongs in the KPI tiles, not here. |
-| Slide 2 density | Target **7–9 bullets** in the description, **≤120 chars each, ≤900 chars total**. Cap per-bullet at 2 lines (~120 chars at Palatino 10.5 pt in a 4.53 in column). Overflow → text runs past the footer at T=7.03 / off the slide. |
-| Slide 3 Business Updates density | **Max 4 bullets**, ≤22 words / ≤140 chars each, ≤480 chars total. Anything more touches the Broker Estimates section header at T=4.18. |
+| Slide 2 density | Target **10–12 bullets**, **≤120 chars each, 1,200–1,450 chars total**. Fewer leaves obvious white space (goeasy v1.9.14 shipped 852 chars); more overflows the footer at T=7.03 (v1.9.13 shipped 1,641 chars). |
+| Slide 2 content focus | Description is a durable company profile — what the company DOES. Do NOT include quarterly earnings performance ("FY 2025 revenue of ...", "Q4 net loss of ..."). That belongs on slide 3. |
+| Segment bullet bolding | Sub-bullets naming a segment use a bold `SegmentName:` prefix + regular rest. Use `set_bullet_with_bold_prefix` — two-run paragraph. |
+| Slide 3 Business Updates density | **Target 6 bullets (max 7)**, each ≈ 2 lines, ≤20 words / ≤130 chars each, ≤900 chars total. Fewer leaves white space; more touches the Broker Estimates header at T=4.18. |
 | Broker table number format | Dollar metrics: `$` prefix, 1 decimal, `()` for negatives (`$406.3`, `($121.1)`). Per-share: `$` prefix, 2 decimals. Margin/rate: `%` suffix, 1 decimal. Never a bare `406.3` with no `$` or `%`. |
+| Broker variance color | Variance cell text colored green (`#00B050`) on positive / beats, red (`#C00000`) on negative / misses. Reported and Estimate cells stay black. |
 | Quote length | **≤200 chars / ≤30 words per quote.** goeasy v1.9.13 CFO quote was 52 words / 351 chars and overflowed the 1.18 in group box. |
 | Visual overflow detection | Claude cannot render PPTX; hard char caps are the primary defense. Optional: `soffice --convert-to pdf` + Read the PDF to spot-check after writing. |
 | Gold summary box overflow | ≤25 words / ≤150 chars. Keep high-level; move specific figures to the bullets |
