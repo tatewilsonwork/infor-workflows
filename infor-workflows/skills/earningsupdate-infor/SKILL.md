@@ -8,12 +8,12 @@ description: >
   performance summary. Activates on "earnings update", "earnings deck", "quarterly earnings",
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
-version: 1.9.15
+version: 1.9.16
 ---
 
 # INFOR Earnings Update — Workflow
 
-This skill builds a branded 5-slide earnings update deck from a company's most recent quarter of financials, a Bloomberg EEO screenshot, and optionally an earnings call transcript. It also produces a companion capitalization table XLSX that the analyst manually inserts into the deck in place of the BBG placeholder.
+This skill builds a branded 5-slide earnings update deck from a company's most recent quarter of financials, a Bloomberg EEO screenshot, and optionally an earnings call transcript. It also produces a companion capitalization table XLSX that the analyst manually inserts into the deck in place of the Macabacus placeholder on slide 2.
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch, WebFetch
 
@@ -106,9 +106,13 @@ Slide 2 is indexed 1. Update these shapes by name:
 | `TextBox 16` (L≈0.35, T≈1.45) | `[x]` / `[x]` | 7–9 bullet company description, filling the left column down to ~T=6.85 |
 | `Text Placeholder 1` (footnote, line 2) | `Note: All figures in [x]$MM, ...` | Replace `[x]` with `US`, `C`, etc. |
 
-**Do NOT touch `Rectangle 4` — the BBG placeholder at L≈5.12, T≈1.48.** The analyst will replace it manually with a Bloomberg company tearsheet screenshot and then paste in the cap table output from Step 8.
+**Do NOT touch `Rectangle 4` — the Macabacus placeholder at L≈5.12, T≈1.48** (renders as `[Macabacus Placeholder]`). The analyst pastes the cap table here using the Macabacus Excel-to-PowerPoint linker; leave the placeholder text as shipped in the template.
 
-**Company description bullets** — see the Village Farms slide 2 left panel for tone. Target **10–12 bullets**, each **≤120 characters**, with a **total 1,200–1,450 characters** across all bullets. Available vertical space (T=1.45 → T=7.03) is ~5.58 in, which fits roughly 12 two-line bullets at Palatino 10.5 pt. v1.9.13 overflowed with 1,641 chars; v1.9.14 under-filled with 852 chars leaving obvious white space. **~1,350 chars ≈ 12 bullets is the sweet spot.**
+**Company description bullets** — see the Village Farms slide 2 left panel for tone. Available vertical space (T=1.45 → T=7.03) is ~5.58 in at Palatino 10.5 pt. **Bullets may run 2, 3, or 4 lines** — vary the length by topic. Uniformly-2-line bullets look mechanical; mix them up so shorter points (ratings, leadership) sit next to longer descriptive points (segments, history).
+
+**Total-length budget:** **1,200–1,500 characters total** across all bullets, with a **max of 250 characters per bullet** (≈ 4 lines at Palatino 10.5 pt in a 4.53 in column). Bullet count can vary 7–12 depending on how the character budget is distributed. v1.9.13 overflowed with 1,641 chars; v1.9.14 under-filled with 852 chars; v1.9.15's rigid 120-char cap per bullet produced a uniform 2-line look that read as mechanical.
+
+**No trailing periods.** Financial-deck bullets are fragment-style — do not end any bullet with `.` or `;`. Each bullet ends on its last word. Asserts in the reference code strip and flag trailing periods.
 
 **Content focus — what the company DOES, not how it PERFORMED last quarter.** The description is a durable company profile that could have been written any time in the last year. Do NOT include quarterly financial performance here (that belongs on slide 3). Specifically:
 - ❌ "FY 2025 revenue of C$1.7B, up 20% YoY, with 26.6% yield" — performance
@@ -136,9 +140,15 @@ Combine or drop slots if the filing doesn't support 12 real bullets, but aim for
 - `Cannabis (Canada):` / `Cannabis (International):` / `Produce:` / `Clean Energy:` (Village Farms)
 - `Commercial Banking:` / `Wealth Management:` / `Capital Markets:` (a bank)
 
-**Why 120 chars / bullet.** Shape width 4.53 in fits ~65 characters per line at Palatino 10.5 pt. A 120-char bullet is exactly 2 lines; anything more pushes to 3 and overflows. Count characters with `len(bullet)` and assert before writing.
+**Line math (for reference).** Shape width 4.53 in fits ~65 characters per line at Palatino 10.5 pt:
+- ≤ 65 chars → 1 line (rare — use only for very short bullets like `"Dual-listed on NYSE and TSX"`)
+- 66–130 chars → 2 lines
+- 131–195 chars → 3 lines
+- 196–250 chars → 4 lines
 
-Claude cannot visually render the slide to check overflow; **enforce the char caps programmatically**.
+Budget your bullets to the 5.58-in available height. A rough rule: assume each bullet renders its line count × 0.18 in + 0.11 in spacing. Don't let the sum exceed 5.4 in (leave a small margin above the footer).
+
+Claude cannot visually render the slide to check overflow; **enforce the total-char and per-bullet caps programmatically**.
 
 Source content from the MD&A's "Overview" / "Our Business" / "Operating Segments" sections, the 10-K Item 1 "Business" section, and the company website if needed via WebSearch. Keep each bullet tight — one idea per line.
 
@@ -211,15 +221,22 @@ This applies even when the "good" direction is inverted — for charge-off rates
 
 Target shape: `TextBox 1067` at L≈0.35, T≈1.44. Replace all `[x]` bullets with concise bullets covering the quarter's operational story.
 
-**Must fit inside the box.** The Business Updates area runs from T≈1.44 to T≈4.13 (the Broker Estimates section header starts at T=4.18). That's ~2.69 in of vertical space — enough for **6–7 two-line bullets** at Palatino 10 pt. v1.9.13 used 4 three-line bullets (barely touched the header); v1.9.14 dropped to 4 short bullets and left obvious white space.
+**Must fit inside the box.** The Business Updates area runs from T≈1.44 to T≈4.13 (the Broker Estimates section header starts at T=4.18). That's ~2.69 in of vertical space at Palatino 10 pt. **Bullets may run 2, 3, or 4 lines** — vary by topic, don't force every bullet to 2 lines (v1.9.15 did this and read as mechanical).
 
-**Hard caps — enforce programmatically:**
-- **Target 6 bullets, max 7.** Every bullet should be 2 lines (not 3, not 1).
-- **≤ 130 characters per bullet** (2 lines at Palatino 10 pt in a 4.53 in column ≈ 140 chars; set cap slightly below to avoid line-wrap surprises)
-- **≤ 20 words per bullet**
-- **≤ 900 characters total** across all bullets (6 bullets × ~130 chars ≈ 780; 7 × ~130 ≈ 910 — cap protects against a stretch run)
+**Caps — enforce programmatically:**
+- **Bullet count:** 4–6 depending on how the char budget is distributed
+- **≤ 250 characters per bullet** (≈ 4 lines at Palatino 10 pt in a 4.53 in column)
+- **≤ 900 characters total** across all bullets — text must end above T≈4.13
+- **No trailing periods.** Bullets are fragment-style; do not end with `.` or `;`
 
-Assert each before writing. Claude cannot visually check overflow — the caps are the only defense.
+Claude cannot visually check overflow — the caps are the only defense. Line math at Palatino 10 pt in a 4.53 in column:
+
+- ≤ 70 chars → 1 line
+- 71–140 chars → 2 lines
+- 141–210 chars → 3 lines
+- 211–280 chars → 4 lines
+
+Budget: each bullet takes its line count × 0.17 in + 0.04 in spacing. Don't let the sum exceed 2.55 in (leave ~0.1 in buffer above the section header).
 
 **Bullet formatting — mandatory.** All bullets must use the INFOR square bullet character at **level 0 (main)**, **Palatino Linotype 10 pt**. The template's paragraph 0 has the correct `pPr` (bullet character, indent, spacing). When you add paragraphs beyond paragraph 0, python-pptx creates them with an empty `<a:pPr/>` and no `rPr` — the result is Calibri with **no bullet character**. This is the bug that left bullets 3+ on goeasy without bullets.
 
@@ -371,7 +388,7 @@ Once the deck is populated, invoke the **captable-infor** skill's workflow (Step
 ./<SANITIZED_TICKER> - Capitalization Table.xlsx
 ```
 
-The analyst will open this file, refresh CapIQ, screenshot a cropped cap table region, and paste it over `Rectangle 4` (the BBG placeholder) on slide 2 of the deck. Do NOT try to embed the xlsx into the deck programmatically — manual insertion is intentional because the analyst refreshes CapIQ market data before pasting.
+The analyst will open this file, refresh CapIQ, and use Macabacus to link the cap table range into `Rectangle 4` (the Macabacus placeholder) on slide 2 of the deck. Do NOT try to embed the xlsx into the deck programmatically — manual insertion is intentional because the analyst refreshes CapIQ market data before linking.
 
 ---
 
@@ -393,7 +410,7 @@ Save the deck. Reopen it with python-pptx in read mode and verify:
 - Slide 1: date placeholder no longer contains `[Current Month]`
 - Slide 2: title no longer contains `[Client Name]`, description TextBox has no `[x]` placeholders, footnote has no `[x]` in currency string
 - Slide 3: title has real quarter, top-right section header has real quarters, all four KPI rows populated, broker table has no blank cells, both management quote groups updated, summary box updated
-- BBG placeholder `Rectangle 4` on slide 2 still reads `[BBG Placeholder]` (yes, on purpose — analyst fills manually)
+- Placeholder `Rectangle 4` on slide 2 still reads `[Macabacus Placeholder]` (yes, on purpose — analyst pastes a screenshot of the cap table here using the Macabacus add-in)
 
 If any placeholder `[x]` or `[Client Name]` or `Qx 202x` token remains anywhere on slides 1–3, fix it and re-save.
 
@@ -410,7 +427,7 @@ Output a brief summary:
 5. **Sources used for bullets / quotes:** which file or URL each major section came from
 6. **Manual steps remaining:**
    - Refresh CapIQ in the cap table file and paste a screenshot over `Rectangle 4` on slide 2
-   - Optionally replace `Rectangle 4` with a Bloomberg tearsheet screenshot if the analyst prefers that layout
+   - Optionally swap the cap table paste for a Bloomberg tearsheet screenshot if the analyst prefers that layout
    - Review the Performance Summary box wording before sending
 
 ---
@@ -697,10 +714,19 @@ def _full_text(item):
     prefix, rest, _ = item
     return (prefix + rest) if prefix else rest
 
+def _lines_at_10_5(text, chars_per_line=65):
+    """Rough line count for a bullet at Palatino 10.5 pt in a 4.53 in column."""
+    # Not strictly accurate (would need real font metrics) but close enough for overflow guard
+    return max(1, -(-len(text) // chars_per_line))
+
 _desc_full = [_full_text(x) for x in description_items]
-assert 10 <= len(description_items) <= 12, "Slide 2 description target 10-12 bullets"
-assert all(len(t) <= 120 for t in _desc_full), "Slide 2 bullets must each be <= 120 chars"
-assert 1200 <= sum(len(t) for t in _desc_full) <= 1450, "Slide 2 total 1,200-1,450 chars"
+assert 7 <= len(description_items) <= 12, "Slide 2 description 7-12 bullets"
+assert all(len(t) <= 250 for t in _desc_full), "Slide 2 bullets <= 250 chars (4 lines)"
+assert 1200 <= sum(len(t) for t in _desc_full) <= 1500, "Slide 2 total 1,200-1,500 chars"
+assert not any(t.rstrip().endswith((".", ";")) for t in _desc_full), "Slide 2 bullets must not end with . or ;"
+# Vertical budget — ensure the sum fits in 5.4 in (5.58 in available, leave buffer)
+_height = sum(_lines_at_10_5(t) * 0.18 + 0.11 for t in _desc_full)
+assert _height <= 5.4, f"Slide 2 estimated height {_height:.2f} in exceeds 5.4 in budget"
 
 # Write: first bullet uses set_bullets to clear the shape; subsequent bullets append with
 # either a plain run or a bold-prefix+regular-rest run.
@@ -733,11 +759,17 @@ set_text(footnote3, ["Source: Company filings, S&P CapIQ, equity research ",
                      f"Note: All figures in {currency}, except where indicated otherwise"])
 
 # Slide 3 — Business updates. ALL bullets at level 0 (main), square bullet, 10 pt.
-# Target 6 bullets (max 7), each ~2 lines (130 chars).
-assert 5 <= len(business_updates) <= 7, "Business Updates target 5-7 bullets"
-assert all(len(b) <= 130 for b in business_updates), "Each Business Update <= 130 chars"
-assert all(len(b.split()) <= 20 for b in business_updates), "Each Business Update <= 20 words"
+# 2–4 line bullets allowed; total must fit above the Broker section header at T=4.18.
+def _lines_at_10(text, chars_per_line=70):
+    return max(1, -(-len(text) // chars_per_line))
+
+assert 4 <= len(business_updates) <= 6, "Business Updates 4-6 bullets"
+assert all(len(b) <= 250 for b in business_updates), "Each Business Update <= 250 chars (4 lines)"
 assert sum(len(b) for b in business_updates) <= 900, "Total Business Updates <= 900 chars"
+assert not any(b.rstrip().endswith((".", ";")) for b in business_updates), \
+    "Business Updates must not end with . or ;"
+_bu_height = sum(_lines_at_10(b) * 0.17 + 0.04 for b in business_updates)
+assert _bu_height <= 2.55, f"Business Updates estimated height {_bu_height:.2f} in exceeds 2.55 in budget"
 set_bullets(
     find_shape(slide3, "TextBox 1067"),
     [(text, 0) for text in business_updates],
@@ -820,7 +852,7 @@ Use `"\u201C"` / `"\u201D"` for curly quotes and `"\u2013"` for en-dash — the 
 
 | Issue | Guidance |
 |-------|----------|
-| BBG placeholder on slide 2 | Leave `Rectangle 4` alone — analyst pastes a screenshot manually |
+| Macabacus placeholder on slide 2 | Leave `Rectangle 4` (`[Macabacus Placeholder]`) alone — analyst links the cap table here via the Macabacus add-in |
 | Currency | Read from filing "Basis of Presentation" — don't infer from exchange (VFF is NASDAQ but reports US$; BMO is NYSE-listed but reports C$) |
 | KPI metric choice | Pick 4 metrics that reflect the *company's* story, not the template defaults |
 | Triangle rotation | **NEVER** rotate triangles. Leave every `Isosceles Triangle 10xx` at its template rotation. Delta sign goes on the value, not the arrow. |
@@ -835,10 +867,11 @@ Use `"\u201C"` / `"\u201D"` for curly quotes and `"\u2013"` for en-dash — the 
 | Broker table — always 5 rows | **Never delete rows. Never write N/A.** If the EEO snip doesn't cover a template default metric, swap that row's label for a different metric the snip *does* cover. 5 real rows, no exceptions. |
 | Management quote focus | Quotes must address THE key item of the quarter (the largest surprise, charge, or inflection) — not generic strategy language. If the transcript/press release lacks a pointed quote on the key item, expand the search (Q&A section, post-earnings interviews). |
 | Business Updates tone | Narrative prose, not metric listings. Left side is events + segment commentary + outlook; right side carries the numbers. A bullet that is primarily a metric (`"Revenue grew 19.8% YoY to $5.51B"`) belongs in the KPI tiles, not here. |
-| Slide 2 density | Target **10–12 bullets**, **≤120 chars each, 1,200–1,450 chars total**. Fewer leaves obvious white space (goeasy v1.9.14 shipped 852 chars); more overflows the footer at T=7.03 (v1.9.13 shipped 1,641 chars). |
+| Slide 2 density | **7–12 bullets, 1,200–1,500 chars total, ≤250 chars per bullet.** Let bullets run 2–4 lines each — variable length looks natural; uniformly 2-line bullets look mechanical (v1.9.15). Height budget 5.4 in; overflow past footer at T=7.03 is the failure mode. |
 | Slide 2 content focus | Description is a durable company profile — what the company DOES. Do NOT include quarterly earnings performance ("FY 2025 revenue of ...", "Q4 net loss of ..."). That belongs on slide 3. |
 | Segment bullet bolding | Sub-bullets naming a segment use a bold `SegmentName:` prefix + regular rest. Use `set_bullet_with_bold_prefix` — two-run paragraph. |
-| Slide 3 Business Updates density | **Target 6 bullets (max 7)**, each ≈ 2 lines, ≤20 words / ≤130 chars each, ≤900 chars total. Fewer leaves white space; more touches the Broker Estimates header at T=4.18. |
+| Slide 3 Business Updates density | **4–6 bullets, ≤250 chars each, ≤900 chars total.** Bullets may run 2–4 lines. Height budget 2.55 in; must end above Broker Estimates header at T=4.18. |
+| No trailing periods | Bullets on slide 2 (description) and slide 3 (business updates) are fragment-style — no trailing `.` or `;`. Asserts fail the run if any bullet ends with punctuation. |
 | Broker table number format | Dollar metrics: `$` prefix, 1 decimal, `()` for negatives (`$406.3`, `($121.1)`). Per-share: `$` prefix, 2 decimals. Margin/rate: `%` suffix, 1 decimal. Never a bare `406.3` with no `$` or `%`. |
 | Broker variance color | Variance cell text colored green (`#00B050`) on positive / beats, red (`#C00000`) on negative / misses. Reported and Estimate cells stay black. |
 | Quote length | **≤200 chars / ≤30 words per quote.** goeasy v1.9.13 CFO quote was 52 words / 351 chars and overflowed the 1.18 in group box. |
