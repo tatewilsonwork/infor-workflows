@@ -4,7 +4,7 @@ description: >
   Use this skill when the user invokes /comps-infor or asks to build a public comparables table
   (comps, trading comps, public comps) for a company. Populates the INFOR Comps Template with
   18 CapIQ tickers split into three labelled groups, plus a short description for each company.
-version: 1.9.6
+version: 1.9.8
 ---
 
 # INFOR Public Comparables Table — Workflow
@@ -132,13 +132,57 @@ Save the file.
 
 ### Step 5 — Summary
 
-Report to the user:
+Report to the user in Markdown using the exact structure below.
 
-1. **Output file:** path to the saved file
-2. **Group 1 — [Label]:** list the 6 companies with tickers and descriptions
-3. **Group 2 — [Label]:** list the 6 companies with tickers and descriptions
-4. **Group 3 — [Label]:** list the 6 companies with tickers and descriptions
-5. **Reminder:** Open in Excel with the CapIQ add-in active to populate all market data, multiples, and statistics automatically
+**Output file:** path to the saved file
+
+Then, for each of the three groups, emit a block in this format:
+
+```
+**[Group Label]**
+
+[Company Name] ([CapIQ Ticker])
+- One-line description of the company (what it is / who it serves)
+   - One-line description of the product or service offering
+- One-line rationale for including in comps (how it is similar to [Target Company])
+
+[Company Name] ([CapIQ Ticker])
+- …
+   - …
+- …
+```
+
+Repeat for all 6 companies in the group. Then move to the next group header. All 18 companies must appear.
+
+**Content rules for the bullets:**
+- First bullet (company description): what the company is — business model, client segment, end market. One line.
+- Sub-bullet (product/service offering): the specific product, platform, or service the company sells. One line. Must be a nested bullet under the first bullet (3-space indent + `-`).
+- Third bullet (inclusion rationale): **why this company is a relevant comp for the target** — the shared dimension(s): business model, size, end market, growth profile, or geography. Reference the target by name. One line.
+- Every bullet is a single line. No trailing punctuation. Title case for company/product names only.
+
+After all three groups, emit a **Group Rationale** section:
+
+```
+**Group Rationale**
+
+**[Group 1 Label]**
+- One-line reason this group is relevant to [Target Company]
+- One-line reason this group is relevant to [Target Company]
+
+**[Group 2 Label]**
+- …
+- …
+
+**[Group 3 Label]**
+- …
+- …
+```
+
+Each group gets exactly 2 one-line bullets explaining why that group (as a category) is a meaningful comp set for the target — e.g., *"Global engineering consultancies share MCW's project-based revenue model and public-sector client concentration."* Focus on the category-level fit, not the individual companies.
+
+Close with:
+
+**Reminder:** Open in Excel with the CapIQ add-in active to populate all market data, multiples, and statistics automatically.
 
 ---
 
