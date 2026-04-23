@@ -8,7 +8,7 @@ description: >
   performance summary. Activates on "earnings update", "earnings deck", "quarterly earnings",
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
-version: 1.9.12
+version: 1.9.13
 ---
 
 # INFOR Earnings Update — Workflow
@@ -103,16 +103,20 @@ Slide 2 is indexed 1. Update these shapes by name:
 | Shape name | Current value | Update to |
 |------------|---------------|-----------|
 | `Title 1` (PLACEHOLDER) | `[Client Name] Overview` | `<Company Name> Overview` |
-| `TextBox 16` (L≈0.35, T≈1.45) | `[x]` / `[x]` | 6–8 bullet company description |
+| `TextBox 16` (L≈0.35, T≈1.45) | `[x]` / `[x]` | 7–9 bullet company description, filling the left column down to ~T=6.85 |
 | `Text Placeholder 1` (footnote, line 2) | `Note: All figures in [x]$MM, ...` | Replace `[x]` with `US`, `C`, etc. |
 
 **Do NOT touch `Rectangle 4` — the BBG placeholder at L≈5.12, T≈1.48.** The analyst will replace it manually with a Bloomberg company tearsheet screenshot and then paste in the cap table output from Step 8.
 
-**Company description bullets** — see the Village Farms slide 2 left panel for tone. Structure:
+**Company description bullets** — see the Village Farms slide 2 left panel for tone. Target **7–9 bullets** so the description fills the left column down to roughly T=6.85 (just above the footer at T=7.03). Too-few bullets leaves obvious white space. Structure:
 - Bullet 1 (main, 10.5 pt): One-sentence "what the company is" — founding year, exchange/ticker, one-line business description
 - Bullet 2 (main, 10.5 pt): Scale/footprint statement (facilities, geographies, headcount, or revenue)
-- Bullets 3+ (sub, 10 pt): One sub-bullet per reportable segment, naming the segment and its core activity/KPIs
-- Last bullet (main, 10.5 pt): Key historical transactions (acquisitions, divestitures, JVs) in chronological order
+- Bullet 3 (main, 10.5 pt): Financial snapshot — most recent revenue, EBITDA, margin, or balance-sheet anchor (loan book, AUM, production)
+- Bullets 4–6+ (sub, 10 pt): One sub-bullet per reportable segment or major business line, naming the segment and its core activity/KPIs
+- Second-to-last bullet (main, 10.5 pt): Key historical transactions (acquisitions, divestitures, JVs) in chronological order
+- Last bullet (main, 10.5 pt): Governance / leadership / credit-rating note, or one notable recent milestone
+
+Do not pad with fluff — if the filing genuinely only supports 6 bullets of real content, stop at 6. But for most public companies, 7–9 bullets of real description is the right density. Do not let total height exceed T≈6.85 — if it does, tighten wording before shrinking font.
 
 Source content from the MD&A's "Overview" / "Our Business" / "Operating Segments" sections, the 10-K Item 1 "Business" section, and the company website if needed via WebSearch. Keep each bullet tight — one idea per line.
 
@@ -193,17 +197,29 @@ Fix: for every bullet, **copy paragraph 0's `pPr` element** onto the new paragra
 
 After writing, re-open the deck with python-pptx and measure the bullet text length. If 5 bullets × ~30 words still visually overflows (a safe proxy is total rendered characters > ~800 for this shape at 10 pt), drop to 4 bullets or shorten wording — do not shrink font below 10 pt.
 
+**Content style — narrative, not metric listings.** The Business Updates section on the LEFT should read like a pithy quarterly narrative, not a bulleted list of financial metrics. The RIGHT-side KPI tiles and Broker table already carry the numbers. The LEFT side is for:
+
+1. **Key events / decisions of the quarter** — strategic actions, management changes, capital allocation choices, one-time charges, impairments, guidance revisions, segment wind-downs, major contracts won/lost, acquisitions or divestitures
+2. **Operating commentary on segment performance** — "why" the numbers moved, not "what" the numbers are (the tiles show "what"). One bullet per material segment is typical.
+3. **Forward outlook** — guidance for next quarter / full year, upcoming catalysts (product launches, facility ramps, regulatory decisions), capital plan
+
+Aim for roughly **2 event bullets + 1–2 segment commentary bullets + 1 outlook bullet**. Light numerical anchoring is fine (one or two figures per bullet for context) but a bullet that is *primarily* a metric statement — e.g., *"Revenue of C$406.3MM was effectively flat vs. Q4 2024 (-0.2%)"* — belongs on the right side, not the left. Instead, write *"Revenue stayed flat as yield compression from the 35% rate cap and LendCare charge-offs offset growth in the easyfinancial direct channel."*
+
 Sourcing priority:
 1. Earnings call transcript (if attached) — highest quality, management's own framing
 2. Earnings press release (WebSearch: `"<Company Name>" Q<x> 202<x> earnings press release`) — use the company's site or a wire that reproduces the company release verbatim
 3. MD&A "Highlights" or "Overview" section
 
 Each bullet should:
-- Lead with the segment or driver
-- Include a concrete number (%, $, volume, rate) whenever possible
-- Explain cause, not just the fact — e.g., *"International medical exports surged (+384% YoY) driven by strong demand across European markets"*
+- Lead with the driver or event (not the metric)
+- Explain cause and consequence, not just the fact
+- Be written in full prose sentences — no sentence fragments or metric-first phrasing
 
-Include one bullet acknowledging headwinds or temporary issues (strikes, FX, weather, regulatory) if present in the quarter — see Village Farms bullet 7 for pattern.
+Good example (Village Farms): *"International medical exports surged on strong demand across European markets, with Germany and the UK both scaling materially."*
+
+Bad example (goeasy v3): *"Gross consumer loans receivable grew 19.8% YoY to C$5.51B, with Q4 originations of C$951.5MM (+16.9% YoY) demonstrating continued robust customer demand"* — reads as two metrics and a platitude; belongs on the right side.
+
+Include one bullet covering forward outlook / management guidance for the coming year.
 
 #### 6d — Broker Estimates vs Actuals Table (bottom-left)
 
@@ -248,6 +264,8 @@ Two quote groups on slide 3: `Group 1070` and `Group 1086`. Each group contains 
 | `Group 1086` | `TextBox 1088` | `TextBox 1089` |
 
 Set the quote TextBox to a 1–3 sentence management quote, wrapped in curly quotes `"..."` (the template uses `"Quote"` with slanted double quotes). Set the attribution TextBox to `<Name> – <Role>` (en-dash, not hyphen) — e.g., `Michael DeGiglio – CEO`.
+
+**Formatting preservation — just call `set_text(shape, [line])`.** The template ships the quote TextBoxes (`TextBox 1072`, `TextBox 1088`) with **Palatino Linotype 10.5 pt italic**, and the attribution TextBoxes (`TextBox 1073`, `TextBox 1089`) with **Palatino Linotype 10.5 pt bold**. The `set_text` helper preserves the template's run-level `rPr` (font, size, italic, bold, color) automatically — just mutate the text without passing `size_pt` / `color_hex`. Do not add an explicit `run.font.italic = True` or similar; trust the template.
 
 **Quotes must address THE key item of the quarter — not general strategy.** The section header says "Management Guidance" — the analyst wants to see management's own words about whatever made this quarter noteworthy: the goodwill impairment, the credit-loss spike, the guidance cut, the reorg, the acquisition close, the margin inflection. Generic confidence language ("we're committed to long-term shareholder value", "we have a clear plan to execute with urgency") fails this test even if the CEO said it verbatim.
 
@@ -364,33 +382,71 @@ def _pPr_of(paragraph):
             return child
     return None
 
+def _first_run_rPr(paragraph):
+    """Return a deepcopy of the first run's <a:rPr> element, or None if the paragraph has no runs or no rPr."""
+    for r in paragraph.runs:
+        for child in r._r:
+            if child.tag.endswith("}rPr"):
+                return deepcopy(child)
+        return None
+    return None
+
 def set_text(shape, lines, size_pt=None, color_hex=None):
-    """Replace shape text preserving paragraph 0's pPr on every new paragraph.
-    Forces every run to Palatino Linotype + size_pt + color_hex when provided."""
+    """Replace shape text preserving the template's run formatting.
+
+    Strategy:
+      - For each existing paragraph we're rewriting: mutate the first run's .text in place
+        (keeps its rPr — font, size, bold, italic, color). Remove subsequent runs on that paragraph.
+      - For new paragraphs beyond the existing count: add_paragraph, copy pPr from para 0,
+        and copy the first run's rPr from para 0 so the new run inherits the full formatting.
+      - size_pt / color_hex act as explicit OVERRIDES on top of the preserved formatting.
+        Pass them only when the caller intentionally wants to override (e.g. delta boxes).
+    """
     tf = shape.text_frame
     template_pPr = _pPr_of(tf.paragraphs[0])
+    template_rPr = _first_run_rPr(tf.paragraphs[0])
+
     for i, line in enumerate(lines):
         if i < len(tf.paragraphs):
             p = tf.paragraphs[i]
+            # Remove runs after the first — but keep the first to preserve its rPr
+            for r in list(p.runs[1:]):
+                r._r.getparent().remove(r._r)
+            if p.runs:
+                # MUTATE text in place — preserves font/size/bold/italic/color
+                p.runs[0].text = line
+                run = p.runs[0]
+            else:
+                run = p.add_run()
+                run.text = line
+                if template_rPr is not None:
+                    # Graft a fresh copy of the template rPr onto the new run
+                    existing = [c for c in run._r if c.tag.endswith("}rPr")]
+                    for e in existing:
+                        run._r.remove(e)
+                    run._r.insert(0, deepcopy(template_rPr))
         else:
             p = tf.add_paragraph()
-            # Copy pPr from paragraph 0 so bullet formatting survives
+            # Replace any auto-inserted empty pPr with a copy of paragraph 0's pPr
             if template_pPr is not None:
-                # Remove any auto-inserted empty pPr first
                 for child in list(p._p):
                     if child.tag.endswith("}pPr"):
                         p._p.remove(child)
                 p._p.insert(0, deepcopy(template_pPr))
-        # Clear existing runs
-        for r in list(p.runs):
-            r._r.getparent().remove(r._r)
-        run = p.add_run()
-        run.text = line
+            run = p.add_run()
+            run.text = line
+            if template_rPr is not None:
+                existing = [c for c in run._r if c.tag.endswith("}rPr")]
+                for e in existing:
+                    run._r.remove(e)
+                run._r.insert(0, deepcopy(template_rPr))
+        # Apply overrides if requested
         if size_pt is not None:
             run.font.name = PALATINO
             run.font.size = Pt(size_pt)
         if color_hex is not None:
             run.font.color.rgb = RGBColor.from_string(color_hex)
+
     while len(tf.paragraphs) > len(lines):
         p = tf.paragraphs[-1]
         p._p.getparent().remove(p._p)
@@ -398,31 +454,32 @@ def set_text(shape, lines, size_pt=None, color_hex=None):
 def set_bullets(shape, items, default_sizes=(10.5, 10.0, 9.0)):
     """Write bullets with explicit levels.
     items: list of (text, level) tuples. level 0 = main, 1 = sub, 2 = detail.
-    Copies the template's pPr for the matching level from the shape's seed paragraphs.
-    Forces Palatino Linotype at default_sizes[level] on every run."""
+    Copies the template's pPr AND first-run rPr for the matching level from the shape's seed paragraphs.
+    Falls back to Palatino Linotype at default_sizes[level] if no template rPr is present."""
     tf = shape.text_frame
-    # Harvest pPr templates per level from existing template paragraphs
-    level_templates = {}
+    # Harvest pPr + rPr templates per level from existing seed paragraphs
+    level_pPr, level_rPr = {}, {}
     for p in tf.paragraphs:
         lvl = p.level
-        if lvl not in level_templates:
+        if lvl not in level_pPr:
             pPr = _pPr_of(p)
             if pPr is not None:
-                level_templates[lvl] = deepcopy(pPr)
-    # Fallback: if we only have level 0 template, use it for all levels
-    if 0 not in level_templates and tf.paragraphs:
-        pPr = _pPr_of(tf.paragraphs[0])
-        if pPr is not None:
-            level_templates[0] = deepcopy(pPr)
+                level_pPr[lvl] = deepcopy(pPr)
+        if lvl not in level_rPr:
+            rPr = _first_run_rPr(p)
+            if rPr is not None:
+                level_rPr[lvl] = rPr
+    # Fallback: if only level 0 available, reuse it for missing levels
+    base_pPr = level_pPr.get(0)
+    base_rPr = level_rPr.get(0)
 
-    # Remove all paragraphs after the first, and clear runs on the first
+    # Remove all paragraphs after the first, and clear runs/pPr on the first
     while len(tf.paragraphs) > 1:
         last = tf.paragraphs[-1]
         last._p.getparent().remove(last._p)
     first = tf.paragraphs[0]
     for r in list(first.runs):
         r._r.getparent().remove(r._r)
-    # Strip any existing pPr on first so we can set it fresh
     for child in list(first._p):
         if child.tag.endswith("}pPr"):
             first._p.remove(child)
@@ -436,13 +493,21 @@ def set_bullets(shape, items, default_sizes=(10.5, 10.0, 9.0)):
                 if child.tag.endswith("}pPr"):
                     p._p.remove(child)
         # Apply pPr for this level
-        tmpl = level_templates.get(level) or level_templates.get(0)
-        if tmpl is not None:
-            p._p.insert(0, deepcopy(tmpl))
+        pPr = level_pPr.get(level) or base_pPr
+        if pPr is not None:
+            p._p.insert(0, deepcopy(pPr))
         run = p.add_run()
         run.text = text
-        run.font.name = PALATINO
-        run.font.size = Pt(default_sizes[level])
+        # Prefer template rPr (preserves bold, italic, color, font)
+        rPr = level_rPr.get(level) or base_rPr
+        if rPr is not None:
+            existing = [c for c in run._r if c.tag.endswith("}rPr")]
+            for e in existing:
+                run._r.remove(e)
+            run._r.insert(0, deepcopy(rPr))
+        else:
+            run.font.name = PALATINO
+            run.font.size = Pt(default_sizes[level])
 
 def set_cell_text(cell, text, size_pt=9):
     """Overwrite cell content as a single run, Palatino Linotype at size_pt."""
@@ -575,12 +640,15 @@ Use `"\u201C"` / `"\u201D"` for curly quotes and `"\u2013"` for en-dash — the 
 | Delta font size | **Fixed 10 pt**, all four delta boxes. No step-down. If text doesn't fit, shorten the number format (`+C$0.9B` not `+C$911MM`) — never drop below 10 pt. |
 | Delta color | Positive delta → green `#00B050`; negative delta → red `#C00000`. Direction-based, not "good/bad" — charge-off rate going up is green. |
 | Rate / margin deltas | Always `%` (e.g., `+14.6%`), never `bps` (`+1,460 bps` is wrong) |
-| Bullet formatting (slide 2 + slide 3 business updates) | Copy paragraph 0's `pPr` onto every new paragraph, and set `run.font.name = "Palatino Linotype"` + `run.font.size = Pt(10.5 or 10)` on every run. Empty `pPr` + missing `rPr` → PowerPoint falls back to Calibri 18 pt with no bullet character. Use the `set_bullets` helper. |
+| `set_text` must preserve formatting | The helper mutates `paragraph.runs[0].text` in place (preserving the template's `rPr` — font, size, bold, italic, color). It only creates fresh runs for brand-new paragraphs beyond the template's seed count, and when it does, it grafts a copy of paragraph 0's `rPr` onto the new run. **Do not pass `size_pt` / `color_hex` unless you intentionally want to override.** Overriding on shapes like `Title 1`, `Rectangle 7`, `Rectangle 1111`, `Subtitle 2` (date), or the quote/attribution TextBoxes would wipe out the template's bold/italic/color formatting. |
+| Bullet formatting (slide 2 + slide 3 business updates) | Use `set_bullets` which harvests each level's `pPr` AND `rPr` from the template's seed paragraphs. If the template has a seed paragraph for level 0 (Palatino 10.5 pt main bullet) and level 1 (Palatino 10 pt sub-bullet), new bullets at each level get both formatting layers. Empty `pPr` + missing `rPr` → PowerPoint falls back to Calibri 18 pt with no bullet character. |
 | Slide 2 main vs. sub bullets | Main bullets (level 0) = 10.5 pt, sub-bullets (level 1) = 10 pt. Description bullets use both levels to group segment-level detail under summary bullets. |
 | Business Updates overflow | Hard cap at 5 bullets (4 preferred), ≤30 words each, 10 pt Palatino, **all at level 0** (square bullet). Text must end above T≈4.13 to not collide with the Broker Estimates header at T=4.18. |
 | Broker table font | Every cell forced to Palatino Linotype 9 pt via `run.font.name` + `run.font.size` — do not trust inherited formatting |
 | Broker table — always 5 rows | **Never delete rows. Never write N/A.** If the EEO snip doesn't cover a template default metric, swap that row's label for a different metric the snip *does* cover. 5 real rows, no exceptions. |
 | Management quote focus | Quotes must address THE key item of the quarter (the largest surprise, charge, or inflection) — not generic strategy language. If the transcript/press release lacks a pointed quote on the key item, expand the search (Q&A section, post-earnings interviews). |
+| Business Updates tone | Narrative prose, not metric listings. Left side is events + segment commentary + outlook; right side carries the numbers. A bullet that is primarily a metric (`"Revenue grew 19.8% YoY to $5.51B"`) belongs in the KPI tiles, not here. |
+| Slide 2 density | Target **7–9 bullets** in the description so the left column fills down to T≈6.85. Fewer bullets leaves obvious white space; more risks overflowing the footer at T=7.03. |
 | Gold summary box overflow | ≤25 words / ≤150 chars. Keep high-level; move specific figures to the bullets |
 | Negative numbers | Wrap in parentheses: `($8.7MM)`, not `-$8.7MM` — consistent with template's Village Farms example |
 | Curly quotes | Use `"..."` (U+201C / U+201D), not straight `"..."` — preserves template typography |
