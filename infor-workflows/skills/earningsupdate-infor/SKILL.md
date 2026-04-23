@@ -8,7 +8,7 @@ description: >
   performance summary. Activates on "earnings update", "earnings deck", "quarterly earnings",
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
-version: 1.9.11
+version: 1.9.12
 ---
 
 # INFOR Earnings Update — Workflow
@@ -109,14 +109,16 @@ Slide 2 is indexed 1. Update these shapes by name:
 **Do NOT touch `Rectangle 4` — the BBG placeholder at L≈5.12, T≈1.48.** The analyst will replace it manually with a Bloomberg company tearsheet screenshot and then paste in the cap table output from Step 8.
 
 **Company description bullets** — see the Village Farms slide 2 left panel for tone. Structure:
-- Bullet 1: One-sentence "what the company is" — founding year, exchange/ticker, one-line business description
-- Bullet 2: Scale/footprint statement (facilities, geographies, headcount, or revenue)
-- Bullets 3+: One bullet per reportable segment, naming the segment and its core activity/KPIs
-- Last bullet: Key historical transactions (acquisitions, divestitures, JVs) in chronological order
+- Bullet 1 (main, 10.5 pt): One-sentence "what the company is" — founding year, exchange/ticker, one-line business description
+- Bullet 2 (main, 10.5 pt): Scale/footprint statement (facilities, geographies, headcount, or revenue)
+- Bullets 3+ (sub, 10 pt): One sub-bullet per reportable segment, naming the segment and its core activity/KPIs
+- Last bullet (main, 10.5 pt): Key historical transactions (acquisitions, divestitures, JVs) in chronological order
 
 Source content from the MD&A's "Overview" / "Our Business" / "Operating Segments" sections, the 10-K Item 1 "Business" section, and the company website if needed via WebSearch. Keep each bullet tight — one idea per line.
 
-Use the **Palatino Linotype** font already set in the template. Do not restyle text.
+**Bullet formatting — mandatory.** The template ships `TextBox 16` with two seed paragraphs: paragraph 0 is a **main bullet** (Palatino Linotype 10.5 pt, square bullet character, `marL="180975" indent="-180975"`) and paragraph 1 is a **sub-bullet** (Palatino Linotype 10 pt, dash bullet character, `marL="360000" indent="-180000"`). When you add a new paragraph beyond those two, python-pptx creates it with an empty `<a:pPr/>` and no run properties — the result inherits PowerPoint's theme default, which is **Calibri 18 pt with no bullet character**. This is the bug that showed up on goeasy bullets 3+.
+
+Fix: for every bullet you write, **copy the paragraph-level `pPr` element** from the template paragraph that matches the desired level (0 = main, 1 = sub), and **explicitly set `run.font.name = "Palatino Linotype"` and `run.font.size = Pt(10.5)` or `Pt(10)`** on every run. Do not trust inherited formatting. See the `set_bullets` helper in the reference implementation.
 
 ---
 
@@ -161,7 +163,19 @@ For each row, set:
 
 **Triangle orientation — NEVER rotate.** The gold triangles ship in the template's intended orientation. Do **not** set `shape.rotation` on any of the `Isosceles Triangle 10xx` shapes, ever — regardless of whether the metric moved up, down, or is a "good vs. bad" direction-flipped metric like charge-offs or expenses. Negative deltas are signalled by the `-` sign / parentheses on the delta value itself; the triangles are decorative.
 
-**Delta-box font sizing.** The delta rectangles (`Rectangle 1041`, `1042`, `1061`, `1064`) are narrow (≈1.0–1.1 inches wide) and sit between two arrows. The delta text must fit on a single line between the triangles. Start at **10 pt** (the template default) and, if the delta string wraps to a 2nd line or visibly clips, step down in 0.5 pt increments to a **minimum of 9 pt**. Never go below 9 pt — if the value still doesn't fit at 9 pt, shorten the number's formatting instead (e.g., `+C$0.9B` instead of `+C$911MM`).
+**Delta-box font size — fixed 10 pt.** All four delta rectangles (`Rectangle 1041`, `1042`, `1061`, `1064`) use Palatino Linotype at a fixed **10 pt** — **minimum and only** size. Every delta box on the slide must match. Do not step down to 9 pt. If a delta string doesn't fit in the ≈1.0–1.1 in wide box at 10 pt, **shorten the number format** before anything else:
+- `+C$0.9B` instead of `+C$911MM`
+- `+$1.2B` instead of `+$1,234MM`
+- `+14.6%` instead of `+1,460 bps` (bps is banned anyway — see next rule)
+
+If the formatted number is already compact and still doesn't fit, drop the trailing `MM`/`B` unit (readers infer from the prior/current boxes). Never decrease font size below 10 pt.
+
+**Delta-box color — green up, red down.** Color the delta value text based purely on the **direction of movement**, not whether the change is "good" or "bad" for the company:
+- Positive delta (current > prior) → **green** `#00B050`
+- Negative delta (current < prior) → **red** `#C00000`
+- Zero change → leave template default (black)
+
+This applies even when the "good" direction is inverted — for charge-off rates, cost ratios, or expense metrics, a positive delta is still green because the metric went up. The color reflects arithmetic direction, not business interpretation. Set the color explicitly via `run.font.color.rgb = RGBColor.from_string("00B050")` / `"C00000"`.
 
 **Percent deltas only — never BPS.** For margin / rate / yield metrics (gross margin, charge-off %, CET1 ratio, occupancy, etc.), the delta value is always in percentage points expressed as `%`, not basis points. Write `+14.6%`, not `+1,460 bps`. Compute delta as `current_pct − prior_pct` and format with one decimal and a `%` suffix. This applies across every delta box in all four rows.
 
@@ -171,9 +185,13 @@ For each row, set:
 
 Target shape: `TextBox 1067` at L≈0.35, T≈1.44. Replace all `[x]` bullets with concise bullets covering the quarter's operational story.
 
-**Must fit inside the box.** The Business Updates area runs from T≈1.44 to T≈4.13 (the Broker Estimates section header starts at T=4.18). The bullets must not overflow into that section. Target **4 bullets, max 5**, each under ~30 words. Set font to **Palatino Linotype 10 pt** for every bullet (including the first — do not let the template's first paragraph drift to 10.5/11 pt). Keep paragraph spacing uniform.
+**Must fit inside the box.** The Business Updates area runs from T≈1.44 to T≈4.13 (the Broker Estimates section header starts at T=4.18). The bullets must not overflow into that section. Target **4 bullets, max 5**, each under ~30 words. Keep paragraph spacing uniform.
 
-After writing, re-open the deck with python-pptx and measure the bullet text length. If 5 bullets × ~30 words still visually overflows (a safe proxy is total rendered characters > ~800 for this shape at 10 pt), drop to 4 bullets or shorten wording — do not shrink font below 10 pt. Explicitly set each paragraph's font size via `run.font.size = Pt(10)` to avoid the template inheriting 10.5 pt from the first paragraph.
+**Bullet formatting — mandatory.** All bullets must use the INFOR square bullet character at **level 0 (main)**, **Palatino Linotype 10 pt**. The template's paragraph 0 has the correct `pPr` (bullet character, indent, spacing). When you add paragraphs beyond paragraph 0, python-pptx creates them with an empty `<a:pPr/>` and no `rPr` — the result is Calibri with **no bullet character**. This is the bug that left bullets 3+ on goeasy without bullets.
+
+Fix: for every bullet, **copy paragraph 0's `pPr` element** onto the new paragraph, and **explicitly set `run.font.name = "Palatino Linotype"` and `run.font.size = Pt(10)`** on every run. Do not use sub-bullets (level 1) here — all four/five bullets are main points at level 0 with the same square bullet glyph. See `set_bullets` in the reference implementation.
+
+After writing, re-open the deck with python-pptx and measure the bullet text length. If 5 bullets × ~30 words still visually overflows (a safe proxy is total rendered characters > ~800 for this shape at 10 pt), drop to 4 bullets or shorten wording — do not shrink font below 10 pt.
 
 Sourcing priority:
 1. Earnings call transcript (if attached) — highest quality, management's own framing
@@ -195,33 +213,30 @@ Update the header cell `Figures in x$MM` → `Figures in <currency code>$MM` (e.
 
 **Font — mandatory.** Every cell in the table (header row and all metric rows) must be **Palatino Linotype at 9 pt**. After writing each cell, explicitly iterate every run and set `run.font.name = "Palatino Linotype"` and `run.font.size = Pt(9)`. Do not trust inherited formatting — PowerPoint's default run fallback is Calibri, which has been observed to slip in when cells are re-written.
 
-**Only include metrics the EEO snip actually covers.** Never write `N/A` or leave a Bloomberg Estimate / Variance cell blank. If the Bloomberg EEO snip only shows consensus for 3 metrics, the table has 3 metric rows — delete the unused rows from the table rather than filling them with `N/A`. If the company reports a metric the snip doesn't cover but the analyst needs it shown, swap the row's label for a different metric the snip *does* cover.
+**Always exactly 5 metric rows — never delete.** The table must always have 5 populated metric rows (6 rows total including header). **Never** write `N/A`. **Never** delete rows. If the Bloomberg EEO snip only shows consensus for 3 of the template's default metrics, **swap** the other two row labels for different metrics the snip *does* cover — pick substitutions so all 5 rows have real Reported / Estimate / Variance values.
 
-The template ships with 5 metric rows (Revenue, Gross Margin, Adj. EBITDA, Net Income, UPS). Treat those as defaults — keep the ones the EEO snip covers, replace / delete the rest. Common substitutions:
+The template's 5 default metric rows are Revenue, Gross Margin, Adj. EBITDA, Net Income, UPS. Change the label on any row where the EEO snip lacks consensus. Common substitute metrics by sector:
 
-| Sector | Common EEO metrics |
-|--------|--------------------|
-| Consumer / industrial | Revenue, Gross Margin, Adj. EBITDA, Adj. EPS |
-| Financials / lenders | Revenue, PPNR, Net Income, EPS |
-| Asset managers | Revenue, Adj. EBITDA, AUM, Adj. EPS |
-| Energy | Revenue, Adj. EBITDA, Production, CFPS |
-| REITs / yield vehicles | Revenue, NOI, FFO, AFFO / share |
+| Sector | Preferred 5 metrics (all typically on EEO) |
+|--------|-------------------------------------------|
+| Consumer / industrial | Revenue, Gross Margin %, Adj. EBITDA, Adj. EBITDA Margin %, Adj. EPS |
+| Financials / lenders | Revenue, PPNR, Net Income, ROE %, EPS |
+| Asset managers | Revenue, Adj. EBITDA, AUM, Management Fees, Adj. EPS |
+| Energy | Revenue, Adj. EBITDA, Production, Netback, CFPS |
+| REITs / yield vehicles | Revenue, NOI, FFO, AFFO / share, Occupancy % |
+| SaaS | Revenue, ARR, Adj. EBITDA, FCF, Adj. EPS |
 
-Populate the kept rows:
+Before writing, read the EEO snip and inventory which metrics the snip actually shows consensus for. Build a list of 5 metrics all present on the snip — combine template defaults + sector substitutes. Only then begin writing.
+
+If the EEO snip genuinely shows fewer than 5 metrics (rare — most EEOs cover 6-8), use the lowest-quality filler from the sector row above that the analyst can still manually source (e.g., street consensus from a research note) — but prefer to expand your read of the snip first. Never leave a cell empty or `N/A`.
+
+Populate each row:
 
 - **Reported** — from the 10-Q/10-K or the company's earnings press release
 - **Bloomberg Estimate** — read directly from the EEO snip
 - **Variance** — `Reported − Estimate`; format to match the metric (`+$1.2MM` for dollar metrics, `+0.8%` for margin/rate metrics, `+$0.03` for per-share)
 
 Use parentheses for negative variances, e.g., `(0.60)`. Percentages render with one decimal (`38.7%`).
-
-**Deleting rows.** In python-pptx, remove a table row by manipulating the underlying XML:
-```python
-def delete_table_row(tbl, row_idx):
-    tr = tbl.rows[row_idx]._tr
-    tr.getparent().remove(tr)
-```
-Delete from the bottom up so indices don't shift.
 
 #### 6e — Management Quotes (bottom-right)
 
@@ -234,11 +249,24 @@ Two quote groups on slide 3: `Group 1070` and `Group 1086`. Each group contains 
 
 Set the quote TextBox to a 1–3 sentence management quote, wrapped in curly quotes `"..."` (the template uses `"Quote"` with slanted double quotes). Set the attribution TextBox to `<Name> – <Role>` (en-dash, not hyphen) — e.g., `Michael DeGiglio – CEO`.
 
-Sourcing:
-- If earnings call transcript attached → pick the single most insight-dense quote per executive (CEO + CFO typically)
-- Otherwise → WebSearch for `"<Company Name>" Q<x> 202<x> earnings press release` and pull direct quotes from the company's press release
+**Quotes must address THE key item of the quarter — not general strategy.** The section header says "Management Guidance" — the analyst wants to see management's own words about whatever made this quarter noteworthy: the goodwill impairment, the credit-loss spike, the guidance cut, the reorg, the acquisition close, the margin inflection. Generic confidence language ("we're committed to long-term shareholder value", "we have a clear plan to execute with urgency") fails this test even if the CEO said it verbatim.
 
-Prefer quotes that are forward-looking (guidance, expansion, capital allocation) over backwards-looking ("we had a great quarter"). Keep each quote under ~60 words.
+Before picking quotes, identify the **single most important event or result** driving this quarter's narrative. That is usually:
+1. The largest negative surprise vs. BBG consensus (from Slide 3 Broker table), OR
+2. The largest one-time charge or impairment (from MD&A / press release), OR
+3. The biggest operational shift (segment wind-down, management change, guidance revision)
+
+Then find management's words on **that specific item**. Example for goeasy Q4 2025 (LendCare goodwill impairment + charge-off spike):
+- Good: *"We are taking decisive action on LendCare — accelerating the integration, right-sizing the credit book, and recognizing the C$160MM goodwill impairment today rather than extending the problem into 2026."*
+- Bad (too generic): *"My top priority is to ensure we manage credit well and deliver the strong performance we expect of ourselves."*
+
+If the transcript / press release doesn't contain a direct quote addressing the key item, it is acceptable to use a closely adjacent quote (e.g., one quote on the item + one on the response plan) — but do not fall back to generic mission-statement language.
+
+Sourcing:
+- If earnings call transcript attached → pick the two most insight-dense quotes that directly address the key item (CEO + CFO typically). Scan Q&A as well as prepared remarks — analyst questions often pull out the most pointed management responses.
+- Otherwise → WebSearch for `"<Company Name>" Q<x> 202<x> earnings press release` and pull direct quotes from the company's press release. If the press release lacks a pointed quote, WebSearch for a post-earnings interview or sell-side note that quotes management.
+
+Keep each quote under ~60 words.
 
 #### 6f — Performance Summary Box (bottom-left, below the table)
 
@@ -308,10 +336,14 @@ Output a brief summary:
 The template uses distinctive shape names (e.g., `Rectangle 1032`, `Group 1070`, `TextBox 1067`) that are stable across the template's lifetime. Target shapes by name, not by index, because shape order can vary.
 
 ```python
+from copy import deepcopy
 from pptx import Presentation
 from pptx.util import Pt
+from pptx.dml.color import RGBColor
 
 PALATINO = "Palatino Linotype"
+COLOR_UP   = "00B050"  # green — positive delta
+COLOR_DOWN = "C00000"  # red   — negative delta
 
 def find_shape(slide, name):
     for s in slide.shapes:
@@ -325,39 +357,96 @@ def find_shape_in_group(group, name):
             return s
     raise KeyError(f"Shape {name!r} not found in group {group.name!r}")
 
-def set_text(shape, lines, size_pt=None):
-    """Replace shape text with the given list of lines, preserving the first run's formatting.
-    If size_pt is provided, force every run to that size + Palatino Linotype."""
+def _pPr_of(paragraph):
+    """Return the paragraph-level <a:pPr> element, or None if absent."""
+    for child in paragraph._p:
+        if child.tag.endswith("}pPr"):
+            return child
+    return None
+
+def set_text(shape, lines, size_pt=None, color_hex=None):
+    """Replace shape text preserving paragraph 0's pPr on every new paragraph.
+    Forces every run to Palatino Linotype + size_pt + color_hex when provided."""
     tf = shape.text_frame
+    template_pPr = _pPr_of(tf.paragraphs[0])
     for i, line in enumerate(lines):
         if i < len(tf.paragraphs):
             p = tf.paragraphs[i]
-            for r in list(p.runs[1:]):
-                r._r.getparent().remove(r._r)
-            if p.runs:
-                p.runs[0].text = line
-            else:
-                p.add_run().text = line
         else:
             p = tf.add_paragraph()
-            p.text = line
+            # Copy pPr from paragraph 0 so bullet formatting survives
+            if template_pPr is not None:
+                # Remove any auto-inserted empty pPr first
+                for child in list(p._p):
+                    if child.tag.endswith("}pPr"):
+                        p._p.remove(child)
+                p._p.insert(0, deepcopy(template_pPr))
+        # Clear existing runs
+        for r in list(p.runs):
+            r._r.getparent().remove(r._r)
+        run = p.add_run()
+        run.text = line
+        if size_pt is not None:
+            run.font.name = PALATINO
+            run.font.size = Pt(size_pt)
+        if color_hex is not None:
+            run.font.color.rgb = RGBColor.from_string(color_hex)
     while len(tf.paragraphs) > len(lines):
         p = tf.paragraphs[-1]
         p._p.getparent().remove(p._p)
-    if size_pt is not None:
-        for p in tf.paragraphs:
-            for r in p.runs:
-                r.font.name = PALATINO
-                r.font.size = Pt(size_pt)
 
-def delete_table_row(tbl, row_idx):
-    tr = tbl.rows[row_idx]._tr
-    tr.getparent().remove(tr)
+def set_bullets(shape, items, default_sizes=(10.5, 10.0, 9.0)):
+    """Write bullets with explicit levels.
+    items: list of (text, level) tuples. level 0 = main, 1 = sub, 2 = detail.
+    Copies the template's pPr for the matching level from the shape's seed paragraphs.
+    Forces Palatino Linotype at default_sizes[level] on every run."""
+    tf = shape.text_frame
+    # Harvest pPr templates per level from existing template paragraphs
+    level_templates = {}
+    for p in tf.paragraphs:
+        lvl = p.level
+        if lvl not in level_templates:
+            pPr = _pPr_of(p)
+            if pPr is not None:
+                level_templates[lvl] = deepcopy(pPr)
+    # Fallback: if we only have level 0 template, use it for all levels
+    if 0 not in level_templates and tf.paragraphs:
+        pPr = _pPr_of(tf.paragraphs[0])
+        if pPr is not None:
+            level_templates[0] = deepcopy(pPr)
+
+    # Remove all paragraphs after the first, and clear runs on the first
+    while len(tf.paragraphs) > 1:
+        last = tf.paragraphs[-1]
+        last._p.getparent().remove(last._p)
+    first = tf.paragraphs[0]
+    for r in list(first.runs):
+        r._r.getparent().remove(r._r)
+    # Strip any existing pPr on first so we can set it fresh
+    for child in list(first._p):
+        if child.tag.endswith("}pPr"):
+            first._p.remove(child)
+
+    for i, (text, level) in enumerate(items):
+        if i == 0:
+            p = first
+        else:
+            p = tf.add_paragraph()
+            for child in list(p._p):
+                if child.tag.endswith("}pPr"):
+                    p._p.remove(child)
+        # Apply pPr for this level
+        tmpl = level_templates.get(level) or level_templates.get(0)
+        if tmpl is not None:
+            p._p.insert(0, deepcopy(tmpl))
+        run = p.add_run()
+        run.text = text
+        run.font.name = PALATINO
+        run.font.size = Pt(default_sizes[level])
 
 def set_cell_text(cell, text, size_pt=9):
     """Overwrite cell content as a single run, Palatino Linotype at size_pt."""
     tf = cell.text_frame
-    # Remove all paragraphs except the first
     while len(tf.paragraphs) > 1:
         last = tf.paragraphs[-1]
         last._p.getparent().remove(last._p)
@@ -381,7 +470,13 @@ for s in slide1.shapes:
 # Slide 2
 slide2 = prs.slides[1]
 set_text(find_shape(slide2, "Title 1"), [f"{company_name} Overview"])
-set_text(find_shape(slide2, "TextBox 16"), description_bullets)
+
+# Slide 2 description — pass each bullet with its level (0 = main 10.5 pt, 1 = sub 10 pt).
+# Example shape: [("Founded in ...", 0), ("Operates two segments", 0),
+#                 ("Segment A does X", 1), ("Segment B does Y", 1),
+#                 ("Key transactions: ...", 0)]
+set_bullets(find_shape(slide2, "TextBox 16"), description_bullets_with_levels)
+
 footnote = find_shape(slide2, "Text Placeholder 1")
 set_text(footnote, ["Source: Company filings, S&P CapIQ, equity research ",
                     f"Note: All figures in {currency}, except where indicated otherwise"])
@@ -395,9 +490,14 @@ footnote3 = find_shape(slide3, "Text Placeholder 1")
 set_text(footnote3, ["Source: Company filings, S&P CapIQ, equity research ",
                      f"Note: All figures in {currency}, except where indicated otherwise"])
 
-# Slide 3 — Business updates. Force 10 pt on every bullet. 4 bullets preferred, 5 max.
+# Slide 3 — Business updates. ALL bullets at level 0 (main) with square bullet, 10 pt.
+# 4 bullets preferred, 5 max.
 assert 1 <= len(business_updates) <= 5, "Business Updates must be 1-5 bullets"
-set_text(find_shape(slide3, "TextBox 1067"), business_updates, size_pt=10)
+set_bullets(
+    find_shape(slide3, "TextBox 1067"),
+    [(text, 0) for text in business_updates],
+    default_sizes=(10.0, 10.0, 10.0),  # level 0 at 10 pt for this shape specifically
+)
 
 # Slide 3 — KPI tiles (rows list each hold (prior_box, current_box, delta_box, tri_l, tri_r, metric))
 kpi_rows = [
@@ -409,31 +509,34 @@ kpi_rows = [
 for prior, current, delta, tl, tr, m in kpi_rows:
     set_text(find_shape(slide3, prior), [m["prior_value"], f"Q{q} {year_p} {m['name']}"])
     set_text(find_shape(slide3, current), [m["current_value"], f"Q{q} {year_c} {m['name']}"])
-    # Delta box — 10 pt default, step down to 9 pt if the string is long.
-    # Never go below 9 pt; never use bps for rate metrics (enforce at delta-string construction time).
+    # Delta box — FIXED 10 pt for every delta. No step-down.
+    # Rate deltas must be %, never bps.
+    # Color based purely on direction: positive = green, negative = red.
     delta_str = m["delta_str"]
     assert "bps" not in delta_str.lower(), "Rate deltas must be % not bps"
-    delta_size = 10 if len(delta_str) <= 9 else 9
-    set_text(find_shape(slide3, delta), [delta_str], size_pt=delta_size)
+    sign = m["delta_sign"]  # +1 / -1 / 0
+    color = COLOR_UP if sign > 0 else (COLOR_DOWN if sign < 0 else None)
+    set_text(find_shape(slide3, delta), [delta_str], size_pt=10, color_hex=color)
     # NEVER rotate triangles. Do not set shape.rotation on tl or tr.
 
 # Slide 3 — Broker table
-# Build broker_rows = [(label, reported, estimate, variance)] for ONLY the metrics
-# covered by the BBG EEO snip. No N/A. The template ships with 5 metric rows;
-# delete any extra rows before writing.
+# Build broker_rows = [(label, reported, estimate, variance)] with EXACTLY 5 rows.
+# Every row must have real values — if the EEO snip lacks a template default metric,
+# swap that row's label for a different metric the snip DOES cover.
+assert len(broker_rows) == 5, "Broker table must have exactly 5 rows"
+for r in broker_rows:
+    for v in r[1:]:
+        assert v and v.strip().lower() not in ("n/a", "na", "-"), f"Broker cell cannot be N/A: {r}"
+
 for shape in slide3.shapes:
     if shape.shape_type == 19:  # TABLE
         tbl = shape.table
-        template_metric_rows = 5  # rows 1..5 under the header
-        # Delete extra rows from the bottom up
-        for row_idx in range(template_metric_rows, len(broker_rows), -1):
-            delete_table_row(tbl, row_idx)
-        # Header currency
+        # Header row
         set_cell_text(tbl.cell(0, 0), f"Figures in {currency_short}", size_pt=9)
         set_cell_text(tbl.cell(0, 1), "Reported", size_pt=9)
         set_cell_text(tbl.cell(0, 2), "Bloomberg Estimate", size_pt=9)
         set_cell_text(tbl.cell(0, 3), "Variance", size_pt=9)
-        # Metric rows
+        # Metric rows — always 5
         for i, (label, reported, estimate, variance) in enumerate(broker_rows, start=1):
             set_cell_text(tbl.cell(i, 0), label, size_pt=9)
             set_cell_text(tbl.cell(i, 1), reported, size_pt=9)
@@ -469,11 +572,15 @@ Use `"\u201C"` / `"\u201D"` for curly quotes and `"\u2013"` for en-dash — the 
 | Currency | Read from filing "Basis of Presentation" — don't infer from exchange (VFF is NASDAQ but reports US$; BMO is NYSE-listed but reports C$) |
 | KPI metric choice | Pick 4 metrics that reflect the *company's* story, not the template defaults |
 | Triangle rotation | **NEVER** rotate triangles. Leave every `Isosceles Triangle 10xx` at its template rotation. Delta sign goes on the value, not the arrow. |
-| Delta font size | 10 pt default in the narrow delta rectangles; step down to 9 pt minimum if the string wraps; never below 9 pt — shorten the number format instead |
+| Delta font size | **Fixed 10 pt**, all four delta boxes. No step-down. If text doesn't fit, shorten the number format (`+C$0.9B` not `+C$911MM`) — never drop below 10 pt. |
+| Delta color | Positive delta → green `#00B050`; negative delta → red `#C00000`. Direction-based, not "good/bad" — charge-off rate going up is green. |
 | Rate / margin deltas | Always `%` (e.g., `+14.6%`), never `bps` (`+1,460 bps` is wrong) |
-| Business Updates overflow | Hard cap at 5 bullets (4 preferred), ≤30 words each, 10 pt Palatino — text must end above T≈4.13 to not collide with the Broker Estimates header at T=4.18 |
+| Bullet formatting (slide 2 + slide 3 business updates) | Copy paragraph 0's `pPr` onto every new paragraph, and set `run.font.name = "Palatino Linotype"` + `run.font.size = Pt(10.5 or 10)` on every run. Empty `pPr` + missing `rPr` → PowerPoint falls back to Calibri 18 pt with no bullet character. Use the `set_bullets` helper. |
+| Slide 2 main vs. sub bullets | Main bullets (level 0) = 10.5 pt, sub-bullets (level 1) = 10 pt. Description bullets use both levels to group segment-level detail under summary bullets. |
+| Business Updates overflow | Hard cap at 5 bullets (4 preferred), ≤30 words each, 10 pt Palatino, **all at level 0** (square bullet). Text must end above T≈4.13 to not collide with the Broker Estimates header at T=4.18. |
 | Broker table font | Every cell forced to Palatino Linotype 9 pt via `run.font.name` + `run.font.size` — do not trust inherited formatting |
-| Broker table — no N/A | Only include rows where the EEO snip provides an estimate. Delete unused rows from the template rather than writing `N/A` |
+| Broker table — always 5 rows | **Never delete rows. Never write N/A.** If the EEO snip doesn't cover a template default metric, swap that row's label for a different metric the snip *does* cover. 5 real rows, no exceptions. |
+| Management quote focus | Quotes must address THE key item of the quarter (the largest surprise, charge, or inflection) — not generic strategy language. If the transcript/press release lacks a pointed quote on the key item, expand the search (Q&A section, post-earnings interviews). |
 | Gold summary box overflow | ≤25 words / ≤150 chars. Keep high-level; move specific figures to the bullets |
 | Negative numbers | Wrap in parentheses: `($8.7MM)`, not `-$8.7MM` — consistent with template's Village Farms example |
 | Curly quotes | Use `"..."` (U+201C / U+201D), not straight `"..."` — preserves template typography |
