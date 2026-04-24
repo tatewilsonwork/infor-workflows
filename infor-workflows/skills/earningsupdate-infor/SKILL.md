@@ -8,7 +8,7 @@ description: >
   performance summary. Activates on "earnings update", "earnings deck", "quarterly earnings",
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
-version: 1.9.16
+version: 1.9.17
 ---
 
 # INFOR Earnings Update — Workflow
@@ -82,7 +82,21 @@ If the copy fails or the file is 0 bytes, STOP and tell the user:
 
 Read the 10-Q/10-K to identify the reporting currency. Village Farms reports in US$ despite being Canadian-listed — do NOT infer currency from exchange. Read the cover page or the "Basis of Presentation" footnote in the financial statements.
 
-Output the currency code as one of `US$MM`, `C$MM`, `€MM`, `£MM`, `A$MM`, etc. Use this value everywhere the template says `[x]$MM` or `x$MM`.
+Output the currency code as one of `US$MM`, `C$MM`, `€MM`, `£MM`, `A$MM`, etc.
+
+**Currency only lives in the footnote.** Use the currency code (`US$MM`, `C$MM`, etc.) **only** in:
+- Slide 2 and Slide 3 footnote text (`Note: All figures in C$MM, except where indicated otherwise`)
+- The Broker Estimates table header cell (`Figures in C$MM`)
+
+**Everywhere else on the slide, values use a plain `$` prefix** — never `C$`, `US$`, `€`, etc. The footnote scopes the currency; repeating it on every value is redundant and visually noisy. This applies to:
+- KPI tile prior/current value boxes (`$406.3MM`, not `C$406.3MM`)
+- KPI delta boxes (`+$4.2MM`, not `+C$4.2MM`)
+- Gold summary box text (`missed on $337MM net loss`, not `C$337MM`)
+- Business Updates bullets (`$160MM goodwill charge`, not `C$160MM`)
+- Slide 2 description bullets that reference dollar figures
+- Broker table cells (`$406.3`, `($121.1)` — already the rule)
+
+For non-dollar currencies (€ / £ / ¥), use the symbol once in the footnote (`Figures in €MM`) and plain numbers without symbol in values, OR use `$` as a generic "currency amount" signifier with the footnote doing the work. Match the Village Farms / goeasy convention: plain `$` prefix on all values, real currency on the footnote.
 
 ---
 
@@ -115,8 +129,8 @@ Slide 2 is indexed 1. Update these shapes by name:
 **No trailing periods.** Financial-deck bullets are fragment-style — do not end any bullet with `.` or `;`. Each bullet ends on its last word. Asserts in the reference code strip and flag trailing periods.
 
 **Content focus — what the company DOES, not how it PERFORMED last quarter.** The description is a durable company profile that could have been written any time in the last year. Do NOT include quarterly financial performance here (that belongs on slide 3). Specifically:
-- ❌ "FY 2025 revenue of C$1.7B, up 20% YoY, with 26.6% yield" — performance
-- ❌ "Q4 2025 net loss of C$337MM driven by LendCare impairment" — performance
+- ❌ "FY 2025 revenue of $1.7B, up 20% YoY, with 26.6% yield" — performance
+- ❌ "Q4 2025 net loss of $337MM driven by LendCare impairment" — performance
 - ✅ "~475,000 active customers, 2,600+ employees, 400+ locations" — durable scale
 - ✅ "Senior unsecured notes rated B- (S&P) / B1 (Moody's)" — durable credit profile
 - ✅ "Acquired LendCare in 2021 to extend into point-of-sale financing" — history
@@ -200,7 +214,7 @@ For each row, set:
 **Triangle orientation — NEVER rotate.** The gold triangles ship in the template's intended orientation. Do **not** set `shape.rotation` on any of the `Isosceles Triangle 10xx` shapes, ever — regardless of whether the metric moved up, down, or is a "good vs. bad" direction-flipped metric like charge-offs or expenses. Negative deltas are signalled by the `-` sign / parentheses on the delta value itself; the triangles are decorative.
 
 **Delta-box font size — fixed 10 pt.** All four delta rectangles (`Rectangle 1041`, `1042`, `1061`, `1064`) use Palatino Linotype at a fixed **10 pt** — **minimum and only** size. Every delta box on the slide must match. Do not step down to 9 pt. If a delta string doesn't fit in the ≈1.0–1.1 in wide box at 10 pt, **shorten the number format** before anything else:
-- `+C$0.9B` instead of `+C$911MM`
+- `+$0.9B` instead of `+$911MM`
 - `+$1.2B` instead of `+$1,234MM`
 - `+14.6%` instead of `+1,460 bps` (bps is banned anyway — see next rule)
 
@@ -215,7 +229,7 @@ This applies even when the "good" direction is inverted — for charge-off rates
 
 **Percent deltas only — never BPS.** For margin / rate / yield metrics (gross margin, charge-off %, CET1 ratio, occupancy, etc.), the delta value is always in percentage points expressed as `%`, not basis points. Write `+14.6%`, not `+1,460 bps`. Compute delta as `current_pct − prior_pct` and format with one decimal and a `%` suffix. This applies across every delta box in all four rows.
 
-**Currency prefix.** Use `$` for USD and EUR, `C$` for CAD — match the reporting currency. For percentages, no prefix. For counts (e.g., production volumes), use the appropriate unit (`boe/d`, `MMcf/d`, `MW`, etc.). The template uses bare `$` — replace it if the filing is in a non-USD currency.
+**Currency prefix — always plain `$`.** Do NOT use `C$`, `US$`, `€`, etc. inside any value on the slide — the footnote already scopes the currency. Write `$406.3MM`, `+$4.2MM`, `($8.7MM)`. For percentages, no prefix. For counts (e.g., production volumes), use the appropriate unit (`boe/d`, `MMcf/d`, `MW`, etc.).
 
 #### 6c — Business Updates Bullets (top-left)
 
@@ -250,7 +264,7 @@ After writing, re-open the deck with python-pptx and measure the bullet text len
 2. **Operating commentary on segment performance** — "why" the numbers moved, not "what" the numbers are (the tiles show "what"). One bullet per material segment is typical.
 3. **Forward outlook** — guidance for next quarter / full year, upcoming catalysts (product launches, facility ramps, regulatory decisions), capital plan
 
-Aim for roughly **2 event bullets + 1–2 segment commentary bullets + 1 outlook bullet**. Light numerical anchoring is fine (one or two figures per bullet for context) but a bullet that is *primarily* a metric statement — e.g., *"Revenue of C$406.3MM was effectively flat vs. Q4 2024 (-0.2%)"* — belongs on the right side, not the left. Instead, write *"Revenue stayed flat as yield compression from the 35% rate cap and LendCare charge-offs offset growth in the easyfinancial direct channel."*
+Aim for roughly **2 event bullets + 1–2 segment commentary bullets + 1 outlook bullet**. Light numerical anchoring is fine (one or two figures per bullet for context) but a bullet that is *primarily* a metric statement — e.g., *"Revenue of $406.3MM was effectively flat vs. Q4 2024 (-0.2%)"* — belongs on the right side, not the left. Instead, write *"Revenue stayed flat as yield compression from the 35% rate cap and LendCare charge-offs offset growth in the easyfinancial direct channel"*
 
 Sourcing priority:
 1. Earnings call transcript (if attached) — highest quality, management's own framing
@@ -264,7 +278,7 @@ Each bullet should:
 
 Good example (Village Farms): *"International medical exports surged on strong demand across European markets, with Germany and the UK both scaling materially."*
 
-Bad example (goeasy v3): *"Gross consumer loans receivable grew 19.8% YoY to C$5.51B, with Q4 originations of C$951.5MM (+16.9% YoY) demonstrating continued robust customer demand"* — reads as two metrics and a platitude; belongs on the right side.
+Bad example (goeasy v3): *"Gross consumer loans receivable grew 19.8% YoY to $5.51B, with Q4 originations of $951.5MM (+16.9% YoY) demonstrating continued robust customer demand"* — reads as two metrics and a platitude; belongs on the right side.
 
 Include one bullet covering forward outlook / management guidance for the coming year.
 
@@ -340,7 +354,7 @@ Before picking quotes, identify the **single most important event or result** dr
 3. The biggest operational shift (segment wind-down, management change, guidance revision)
 
 Then find management's words on **that specific item**. Example for goeasy Q4 2025 (LendCare goodwill impairment + charge-off spike):
-- Good: *"We are taking decisive action on LendCare — accelerating the integration, right-sizing the credit book, and recognizing the C$160MM goodwill impairment today rather than extending the problem into 2026."*
+- Good: *"We are taking decisive action on LendCare — accelerating the integration, right-sizing the credit book, and recognizing the $160MM goodwill impairment today rather than extending the problem into 2026."*
 - Bad (too generic): *"My top priority is to ensure we manage credit well and deliver the strong performance we expect of ourselves."*
 
 If the transcript / press release doesn't contain a direct quote addressing the key item, it is acceptable to use a closely adjacent quote (e.g., one quote on the item + one on the response plan) — but do not fall back to generic mission-statement language.
@@ -368,7 +382,7 @@ Target shape: `Rectangle 1111` at L≈0.35, T≈6.19 — the gold/gilded summary
 
 Good example (Village Farms, 20 words): *"Village Farms reported metrics that were below Bloomberg estimates, but results still demonstrated strong growth and margin profile"*
 
-Bad example (goeasy, 26 words, overflowed): *"Q4 2025 results were dominated by a C$159.6MM LendCare goodwill impairment and incremental C$177.9MM of charge-offs"* — too many specific figures for the box; move concrete numbers to the bullets and keep the summary high-level.
+Bad example (goeasy, 26 words, overflowed): *"Q4 2025 results were dominated by a $159.6MM LendCare goodwill impairment and incremental $177.9MM of charge-offs"* — too many specific figures for the box; move concrete numbers to the bullets and keep the summary high-level.
 
 If your draft exceeds 25 words, rewrite more tightly — do not shrink the font below 11 pt. Verify with `len(sentence.split()) <= 25 and len(sentence) <= 150` before writing.
 
@@ -854,9 +868,10 @@ Use `"\u201C"` / `"\u201D"` for curly quotes and `"\u2013"` for en-dash — the 
 |-------|----------|
 | Macabacus placeholder on slide 2 | Leave `Rectangle 4` (`[Macabacus Placeholder]`) alone — analyst links the cap table here via the Macabacus add-in |
 | Currency | Read from filing "Basis of Presentation" — don't infer from exchange (VFF is NASDAQ but reports US$; BMO is NYSE-listed but reports C$) |
+| Currency on values | **Plain `$` on every slide value** — never `C$` / `US$` / `€` etc. The footnote (`Note: All figures in C$MM...`) and the Broker table header cell (`Figures in C$MM`) carry the currency code; values just say `$406.3MM`, `+$4.2MM`, `($8.7MM)`. |
 | KPI metric choice | Pick 4 metrics that reflect the *company's* story, not the template defaults |
 | Triangle rotation | **NEVER** rotate triangles. Leave every `Isosceles Triangle 10xx` at its template rotation. Delta sign goes on the value, not the arrow. |
-| Delta font size | **Fixed 10 pt**, all four delta boxes. No step-down. If text doesn't fit, shorten the number format (`+C$0.9B` not `+C$911MM`) — never drop below 10 pt. |
+| Delta font size | **Fixed 10 pt**, all four delta boxes. No step-down. If text doesn't fit, shorten the number format (`+$0.9B` not `+$911MM`) — never drop below 10 pt. |
 | Delta color | Positive delta → green `#00B050`; negative delta → red `#C00000`. Direction-based, not "good/bad" — charge-off rate going up is green. |
 | Rate / margin deltas | Always `%` (e.g., `+14.6%`), never `bps` (`+1,460 bps` is wrong) |
 | `set_text` must preserve formatting | The helper mutates `paragraph.runs[0].text` in place (preserving the template's `rPr` — font, size, bold, italic, color). It only creates fresh runs for brand-new paragraphs beyond the template's seed count, and when it does, it grafts a copy of paragraph 0's `rPr` onto the new run. **Do not pass `size_pt` / `color_hex` unless you intentionally want to override.** Overriding on shapes like `Title 1`, `Rectangle 7`, `Rectangle 1111`, `Subtitle 2` (date), or the quote/attribution TextBoxes would wipe out the template's bold/italic/color formatting. |
