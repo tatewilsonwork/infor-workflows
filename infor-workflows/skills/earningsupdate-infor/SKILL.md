@@ -8,7 +8,7 @@ description: >
   performance summary. Activates on "earnings update", "earnings deck", "quarterly earnings",
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
-version: 1.9.17
+version: 1.9.18
 ---
 
 # INFOR Earnings Update — Workflow
@@ -149,7 +149,7 @@ Structure (12 bullets as a target):
 
 Combine or drop slots if the filing doesn't support 12 real bullets, but aim for 10+.
 
-**Segment-name bolding.** On the sub-bullets naming each segment (e.g. `easyfinancial: direct-to-consumer unsecured...`), render the segment name + colon **bold** and the rest of the bullet regular weight. Two-run paragraph pattern — see `set_bullet_with_bold_prefix` in the reference implementation. Examples of bold prefixes:
+**Segment-name bolding.** On the sub-bullets naming each segment (e.g. `easyfinancial: direct-to-consumer unsecured...`), render the segment name + colon **bold** and the rest of the bullet regular weight. Two-run paragraph pattern — pass the item as a 3-tuple `(bold_prefix, rest, level)` to `write_bulleted_shape`. Examples of bold prefixes:
 - `easyfinancial:` / `LendCare:` / `easyhome:` (goeasy)
 - `Cannabis (Canada):` / `Cannabis (International):` / `Produce:` / `Clean Energy:` (Village Farms)
 - `Commercial Banking:` / `Wealth Management:` / `Capital Markets:` (a bank)
@@ -168,7 +168,7 @@ Source content from the MD&A's "Overview" / "Our Business" / "Operating Segments
 
 **Bullet formatting — mandatory.** The template ships `TextBox 16` with two seed paragraphs: paragraph 0 is a **main bullet** (Palatino Linotype 10.5 pt, square bullet character, `marL="180975" indent="-180975"`) and paragraph 1 is a **sub-bullet** (Palatino Linotype 10 pt, dash bullet character, `marL="360000" indent="-180000"`). When you add a new paragraph beyond those two, python-pptx creates it with an empty `<a:pPr/>` and no run properties — the result inherits PowerPoint's theme default, which is **Calibri 18 pt with no bullet character**. This is the bug that showed up on goeasy bullets 3+.
 
-Fix: for every bullet you write, **copy the paragraph-level `pPr` element** from the template paragraph that matches the desired level (0 = main, 1 = sub), and **explicitly set `run.font.name = "Palatino Linotype"` and `run.font.size = Pt(10.5)` or `Pt(10)`** on every run. Do not trust inherited formatting. See the `set_bullets` helper in the reference implementation.
+Fix: use the `write_bulleted_shape(shape, items)` helper — it harvests both seed paragraphs' `pPr` templates **before** wiping the shape, inserts a deepcopy of the level-appropriate `pPr` on every new paragraph, sets explicit `run.font.name = "Palatino Linotype"` and `run.font.size` on every run, and **asserts post-write that every paragraph has a `buChar`** (raises `RuntimeError` if any bullet is missing its glyph). Never hand-roll `tf.add_paragraph()` + `p.text = "..."` — that produces empty `<a:pPr/>` and PowerPoint renders no bullet.
 
 ---
 
@@ -254,7 +254,7 @@ Budget: each bullet takes its line count × 0.17 in + 0.04 in spacing. Don't let
 
 **Bullet formatting — mandatory.** All bullets must use the INFOR square bullet character at **level 0 (main)**, **Palatino Linotype 10 pt**. The template's paragraph 0 has the correct `pPr` (bullet character, indent, spacing). When you add paragraphs beyond paragraph 0, python-pptx creates them with an empty `<a:pPr/>` and no `rPr` — the result is Calibri with **no bullet character**. This is the bug that left bullets 3+ on goeasy without bullets.
 
-Fix: for every bullet, **copy paragraph 0's `pPr` element** onto the new paragraph, and **explicitly set `run.font.name = "Palatino Linotype"` and `run.font.size = Pt(10)`** on every run. Do not use sub-bullets (level 1) here — all four/five bullets are main points at level 0 with the same square bullet glyph. See `set_bullets` in the reference implementation.
+Fix: use `write_bulleted_shape(shape, items)` with items as `[(text, 0), (text, 0), ...]` — all bullets at level 0, same square glyph. The helper asserts post-write that every paragraph has a `buChar` — fails loudly if the pPr got dropped. Never hand-roll `tf.add_paragraph()` + `p.text = "..."`.
 
 After writing, re-open the deck with python-pptx and measure the bullet text length. If 5 bullets × ~30 words still visually overflows (a safe proxy is total rendered characters > ~800 for this shape at 10 pt), drop to 4 bullets or shorten wording — do not shrink font below 10 pt.
 
@@ -548,64 +548,6 @@ def set_text(shape, lines, size_pt=None, color_hex=None):
         p = tf.paragraphs[-1]
         p._p.getparent().remove(p._p)
 
-def set_bullets(shape, items, default_sizes=(10.5, 10.0, 9.0)):
-    """Write bullets with explicit levels.
-    items: list of (text, level) tuples. level 0 = main, 1 = sub, 2 = detail.
-    Copies the template's pPr AND first-run rPr for the matching level from the shape's seed paragraphs.
-    Falls back to Palatino Linotype at default_sizes[level] if no template rPr is present."""
-    tf = shape.text_frame
-    # Harvest pPr + rPr templates per level from existing seed paragraphs
-    level_pPr, level_rPr = {}, {}
-    for p in tf.paragraphs:
-        lvl = p.level
-        if lvl not in level_pPr:
-            pPr = _pPr_of(p)
-            if pPr is not None:
-                level_pPr[lvl] = deepcopy(pPr)
-        if lvl not in level_rPr:
-            rPr = _first_run_rPr(p)
-            if rPr is not None:
-                level_rPr[lvl] = rPr
-    # Fallback: if only level 0 available, reuse it for missing levels
-    base_pPr = level_pPr.get(0)
-    base_rPr = level_rPr.get(0)
-
-    # Remove all paragraphs after the first, and clear runs/pPr on the first
-    while len(tf.paragraphs) > 1:
-        last = tf.paragraphs[-1]
-        last._p.getparent().remove(last._p)
-    first = tf.paragraphs[0]
-    for r in list(first.runs):
-        r._r.getparent().remove(r._r)
-    for child in list(first._p):
-        if child.tag.endswith("}pPr"):
-            first._p.remove(child)
-
-    for i, (text, level) in enumerate(items):
-        if i == 0:
-            p = first
-        else:
-            p = tf.add_paragraph()
-            for child in list(p._p):
-                if child.tag.endswith("}pPr"):
-                    p._p.remove(child)
-        # Apply pPr for this level
-        pPr = level_pPr.get(level) or base_pPr
-        if pPr is not None:
-            p._p.insert(0, deepcopy(pPr))
-        run = p.add_run()
-        run.text = text
-        # Prefer template rPr (preserves bold, italic, color, font)
-        rPr = level_rPr.get(level) or base_rPr
-        if rPr is not None:
-            existing = [c for c in run._r if c.tag.endswith("}rPr")]
-            for e in existing:
-                run._r.remove(e)
-            run._r.insert(0, deepcopy(rPr))
-        else:
-            run.font.name = PALATINO
-            run.font.size = Pt(default_sizes[level])
-
 def fmt_broker_value(kind, value):
     """Format a broker table value with $ prefix or % suffix by metric kind.
     kind: 'dollar' | 'per_share' | 'percent' | 'volume'
@@ -644,63 +586,116 @@ def set_cell_text(cell, text, size_pt=9, color_hex=None):
     if color_hex is not None:
         run.font.color.rgb = RGBColor.from_string(color_hex)
 
-def set_bullet_with_bold_prefix(shape, prefix_text, rest_text, level=1, prefix_bold=True,
-                                 size_pt=10.0, append=True):
-    """Write (or append) a bullet where the first part is bold and the rest is regular.
-    Useful for segment overviews: 'easyfinancial:' bold + ' direct-to-consumer...' regular.
-
-    If append=True, adds a new paragraph at the given level copying the seed pPr/rPr.
-    If append=False, overwrites paragraph 0."""
+def _harvest_bullet_templates(shape):
+    """Harvest pPr + rPr templates from a shape's seed paragraphs BEFORE any modification.
+    Returns {level_index: (pPr_copy, rPr_copy)} keyed 0, 1, 2... by sort order of marL
+    (ascending — smallest indent = main bullet = level 0).
+    For TextBox 16 on slide 2: level 0 = square bullet 10.5 pt, level 1 = dash 10 pt.
+    For TextBox 1067 on slide 3: level 0 = square bullet 10 pt.
+    """
     tf = shape.text_frame
-    # Harvest seed pPr / rPr for this level
-    level_pPr, level_rPr = None, None
-    for p in tf.paragraphs:
-        if p.level == level:
-            level_pPr = _pPr_of(p)
-            level_rPr = _first_run_rPr(p)
-            break
-    if level_pPr is None:
-        level_pPr = _pPr_of(tf.paragraphs[0])
-    if level_rPr is None:
-        level_rPr = _first_run_rPr(tf.paragraphs[0])
+    harvested = []
+    for para in tf.paragraphs:
+        pPr = _pPr_of(para)
+        rPr = _first_run_rPr(para)
+        if pPr is None:
+            continue
+        marL = int(pPr.get("marL") or "0")
+        harvested.append((marL, deepcopy(pPr), deepcopy(rPr) if rPr is not None else None))
+    harvested.sort(key=lambda t: t[0])
+    return {i: (pPr, rPr) for i, (_, pPr, rPr) in enumerate(harvested)}
 
-    if append:
-        p = tf.add_paragraph()
-        for child in list(p._p):
-            if child.tag.endswith("}pPr"):
-                p._p.remove(child)
-        if level_pPr is not None:
-            p._p.insert(0, deepcopy(level_pPr))
-    else:
-        p = tf.paragraphs[0]
-        for r in list(p.runs):
-            r._r.getparent().remove(r._r)
+def write_bulleted_shape(shape, items):
+    """Wipe the shape and rewrite all bullets with correct pPr + rPr preservation.
 
-    # Run 1 — bold prefix
-    r1 = p.add_run()
-    r1.text = prefix_text
-    if level_rPr is not None:
-        # Copy template rPr, then flip bold on
-        for c in list(r1._r):
-            if c.tag.endswith("}rPr"):
-                r1._r.remove(c)
-        r1._r.insert(0, deepcopy(level_rPr))
-    r1.font.name = PALATINO
-    r1.font.size = Pt(size_pt)
-    if prefix_bold:
-        r1.font.bold = True
+    items is a list of tuples:
+      (text, level)                          — simple single-run bullet
+      (prefix_bold, rest_regular, level)     — two-run bullet with bold prefix
 
-    # Run 2 — regular rest
-    r2 = p.add_run()
-    r2.text = rest_text
-    if level_rPr is not None:
-        for c in list(r2._r):
-            if c.tag.endswith("}rPr"):
-                r2._r.remove(c)
-        r2._r.insert(0, deepcopy(level_rPr))
-    r2.font.name = PALATINO
-    r2.font.size = Pt(size_pt)
-    r2.font.bold = False
+    level 0 = main bullet (square glyph, larger font)
+    level 1 = sub-bullet (dash glyph, smaller font)
+
+    Harvests pPr templates from the shape's existing seed paragraphs BEFORE wiping,
+    so bullet characters and indents survive. Sets run font.name = Palatino Linotype
+    and font.size explicitly (level 0 -> 10.5 pt on slide 2 / 10 pt on slide 3).
+
+    After writing, asserts every paragraph has a buChar element — if any paragraph
+    renders without a bullet, fails loudly instead of silently shipping a broken deck.
+    """
+    tf = shape.text_frame
+    templates = _harvest_bullet_templates(shape)  # BEFORE modification
+    if not templates:
+        raise RuntimeError(f"Shape {shape.name!r} has no bullet templates to harvest; cannot write_bulleted_shape")
+
+    # Derive default font size per level from the harvested rPr, falling back to 10.5/10
+    def _size_for(level):
+        _, rPr = templates.get(level, (None, None))
+        if rPr is not None:
+            sz = rPr.get("sz")
+            if sz is not None:
+                return Pt(int(sz) / 100)
+        return Pt(10.5 if level == 0 else 10.0)
+
+    # Wipe: remove all paragraphs except the first, then clear runs + pPr on the first
+    while len(tf.paragraphs) > 1:
+        last = tf.paragraphs[-1]
+        last._p.getparent().remove(last._p)
+    first = tf.paragraphs[0]
+    for r in list(first.runs):
+        r._r.getparent().remove(r._r)
+    for child in list(first._p):
+        if child.tag.endswith("}pPr"):
+            first._p.remove(child)
+
+    for i, item in enumerate(items):
+        if len(item) == 2:
+            prefix, rest, level = "", item[0], item[1]
+        elif len(item) == 3:
+            prefix, rest, level = item
+        else:
+            raise ValueError("items must be (text, level) or (prefix_bold, rest_regular, level)")
+
+        p = first if i == 0 else tf.add_paragraph()
+        if i != 0:
+            for child in list(p._p):
+                if child.tag.endswith("}pPr"):
+                    p._p.remove(child)
+
+        # Insert a fresh deepcopy of the level-appropriate pPr
+        tmpl_pPr, _ = templates.get(level, templates[0])
+        p._p.insert(0, deepcopy(tmpl_pPr))
+
+        size = _size_for(level)
+        if prefix:
+            r1 = p.add_run()
+            r1.text = prefix
+            r1.font.name = PALATINO
+            r1.font.size = size
+            r1.font.bold = True
+            r2 = p.add_run()
+            r2.text = rest
+            r2.font.name = PALATINO
+            r2.font.size = size
+            r2.font.bold = False
+        else:
+            r = p.add_run()
+            r.text = rest
+            r.font.name = PALATINO
+            r.font.size = size
+            r.font.bold = False
+
+    # Post-write verification — every paragraph must have a buChar
+    for i, para in enumerate(tf.paragraphs):
+        has_bu = False
+        for elem in para._p.iter():
+            if elem.tag.endswith("}buChar") or elem.tag.endswith("}buAutoNum"):
+                has_bu = True
+                break
+        if not has_bu:
+            raise RuntimeError(
+                f"Shape {shape.name!r} paragraph {i} has no bullet character — "
+                f"pPr template was not propagated. Refusing to ship a broken deck."
+            )
 
 prs = Presentation(output_path)
 
@@ -742,22 +737,17 @@ assert not any(t.rstrip().endswith((".", ";")) for t in _desc_full), "Slide 2 bu
 _height = sum(_lines_at_10_5(t) * 0.18 + 0.11 for t in _desc_full)
 assert _height <= 5.4, f"Slide 2 estimated height {_height:.2f} in exceeds 5.4 in budget"
 
-# Write: first bullet uses set_bullets to clear the shape; subsequent bullets append with
-# either a plain run or a bold-prefix+regular-rest run.
+# SINGLE CALL handles the entire description. write_bulleted_shape:
+#   1. Harvests both seed pPr templates from the template shape (level 0 = square glyph
+#      with marL=180975; level 1 = dash glyph with marL=360000)
+#   2. Wipes all paragraphs and rewrites each with a deepcopy of the level-appropriate pPr
+#   3. Sets explicit Palatino font + size on every run (no inherited formatting)
+#   4. Post-write asserts every paragraph has a buChar — if not, raises RuntimeError
+#
+# DO NOT hand-roll paragraph additions with tf.add_paragraph() + p.text = "..." — that
+# produces empty <a:pPr/> elements and PowerPoint renders without any bullet glyph.
 textbox16 = find_shape(slide2, "TextBox 16")
-# Start by wiping the shape with a single placeholder bullet at level 0
-set_bullets(textbox16, [("_placeholder_", 0)], default_sizes=(10.5, 10.0, 9.0))
-# Clear the placeholder text from para 0
-tf = textbox16.text_frame
-tf.paragraphs[0].runs[0].text = ""
-# Now overwrite para 0 and append the rest
-for i, (prefix, rest, level) in enumerate(description_items):
-    if i == 0:
-        set_bullet_with_bold_prefix(textbox16, prefix, rest, level=level, append=False,
-                                     size_pt=(10.5 if level == 0 else 10.0))
-    else:
-        set_bullet_with_bold_prefix(textbox16, prefix, rest, level=level, append=True,
-                                     size_pt=(10.5 if level == 0 else 10.0))
+write_bulleted_shape(textbox16, description_items)
 
 footnote = find_shape(slide2, "Text Placeholder 1")
 set_text(footnote, ["Source: Company filings, S&P CapIQ, equity research ",
@@ -784,10 +774,11 @@ assert not any(b.rstrip().endswith((".", ";")) for b in business_updates), \
     "Business Updates must not end with . or ;"
 _bu_height = sum(_lines_at_10(b) * 0.17 + 0.04 for b in business_updates)
 assert _bu_height <= 2.55, f"Business Updates estimated height {_bu_height:.2f} in exceeds 2.55 in budget"
-set_bullets(
+
+# Same write_bulleted_shape helper — preserves bullet glyph, asserts buChar post-write.
+write_bulleted_shape(
     find_shape(slide3, "TextBox 1067"),
     [(text, 0) for text in business_updates],
-    default_sizes=(10.0, 10.0, 10.0),
 )
 
 # Slide 3 — KPI tiles (rows list each hold (prior_box, current_box, delta_box, tri_l, tri_r, metric))
@@ -875,7 +866,7 @@ Use `"\u201C"` / `"\u201D"` for curly quotes and `"\u2013"` for en-dash — the 
 | Delta color | Positive delta → green `#00B050`; negative delta → red `#C00000`. Direction-based, not "good/bad" — charge-off rate going up is green. |
 | Rate / margin deltas | Always `%` (e.g., `+14.6%`), never `bps` (`+1,460 bps` is wrong) |
 | `set_text` must preserve formatting | The helper mutates `paragraph.runs[0].text` in place (preserving the template's `rPr` — font, size, bold, italic, color). It only creates fresh runs for brand-new paragraphs beyond the template's seed count, and when it does, it grafts a copy of paragraph 0's `rPr` onto the new run. **Do not pass `size_pt` / `color_hex` unless you intentionally want to override.** Overriding on shapes like `Title 1`, `Rectangle 7`, `Rectangle 1111`, `Subtitle 2` (date), or the quote/attribution TextBoxes would wipe out the template's bold/italic/color formatting. |
-| Bullet formatting (slide 2 + slide 3 business updates) | Use `set_bullets` which harvests each level's `pPr` AND `rPr` from the template's seed paragraphs. If the template has a seed paragraph for level 0 (Palatino 10.5 pt main bullet) and level 1 (Palatino 10 pt sub-bullet), new bullets at each level get both formatting layers. Empty `pPr` + missing `rPr` → PowerPoint falls back to Calibri 18 pt with no bullet character. |
+| Bullet formatting (slide 2 + slide 3 business updates) | Use `write_bulleted_shape(shape, items)` — single call that harvests both level `pPr` templates before wiping, inserts a deepcopy on each new paragraph, sets explicit Palatino run font/size, and asserts post-write that every paragraph has a `buChar`. Hand-rolled `tf.add_paragraph()` + `p.text = "..."` produces empty `<a:pPr/>` → no bullet glyph renders. |
 | Slide 2 main vs. sub bullets | Main bullets (level 0) = 10.5 pt, sub-bullets (level 1) = 10 pt. Description bullets use both levels to group segment-level detail under summary bullets. |
 | Business Updates overflow | Hard cap at 5 bullets (4 preferred), ≤30 words each, 10 pt Palatino, **all at level 0** (square bullet). Text must end above T≈4.13 to not collide with the Broker Estimates header at T=4.18. |
 | Broker table font | Every cell forced to Palatino Linotype 9 pt via `run.font.name` + `run.font.size` — do not trust inherited formatting |
@@ -884,7 +875,7 @@ Use `"\u201C"` / `"\u201D"` for curly quotes and `"\u2013"` for en-dash — the 
 | Business Updates tone | Narrative prose, not metric listings. Left side is events + segment commentary + outlook; right side carries the numbers. A bullet that is primarily a metric (`"Revenue grew 19.8% YoY to $5.51B"`) belongs in the KPI tiles, not here. |
 | Slide 2 density | **7–12 bullets, 1,200–1,500 chars total, ≤250 chars per bullet.** Let bullets run 2–4 lines each — variable length looks natural; uniformly 2-line bullets look mechanical (v1.9.15). Height budget 5.4 in; overflow past footer at T=7.03 is the failure mode. |
 | Slide 2 content focus | Description is a durable company profile — what the company DOES. Do NOT include quarterly earnings performance ("FY 2025 revenue of ...", "Q4 net loss of ..."). That belongs on slide 3. |
-| Segment bullet bolding | Sub-bullets naming a segment use a bold `SegmentName:` prefix + regular rest. Use `set_bullet_with_bold_prefix` — two-run paragraph. |
+| Segment bullet bolding | Sub-bullets naming a segment use a bold `SegmentName:` prefix + regular rest. Pass the item to `write_bulleted_shape` as a 3-tuple `(bold_prefix, rest, level)` — two-run paragraph. |
 | Slide 3 Business Updates density | **4–6 bullets, ≤250 chars each, ≤900 chars total.** Bullets may run 2–4 lines. Height budget 2.55 in; must end above Broker Estimates header at T=4.18. |
 | No trailing periods | Bullets on slide 2 (description) and slide 3 (business updates) are fragment-style — no trailing `.` or `;`. Asserts fail the run if any bullet ends with punctuation. |
 | Broker table number format | Dollar metrics: `$` prefix, 1 decimal, `()` for negatives (`$406.3`, `($121.1)`). Per-share: `$` prefix, 2 decimals. Margin/rate: `%` suffix, 1 decimal. Never a bare `406.3` with no `$` or `%`. |
