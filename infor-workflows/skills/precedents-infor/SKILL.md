@@ -5,7 +5,7 @@ description: >
   for a company. Researches 8 relevant M&A precedent transactions with disclosed Revenue, EBITDA,
   and AUM (where applicable) sourced from company press releases, financial statements, or reputable
   news sources, and populates the INFOR Precedents Template with the results.
-version: 1.9.6
+version: 1.9.7
 ---
 
 # INFOR Precedent Transactions Table — Workflow
@@ -14,14 +14,7 @@ This skill builds a precedent transactions table by researching 8 relevant M&A d
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch
 
----
-
-## Context
-
-- Today's date: !`date +%Y-%m-%d`
-- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1`
-- Outputs folder: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); echo "${REPO_ROOT:-.}/outputs"`
-- Current working directory: !`pwd`
+Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location, outputs folder, and working directory are resolved inline in Step 4.
 
 ---
 
@@ -90,13 +83,13 @@ Never include a transaction where deal value is undisclosed — a blank TEV make
 
 ### Step 4 — Locate and Copy the Template
 
-The template path is shown in the Context section above. If blank, locate it dynamically:
+Locate the template dynamically:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1
 ```
 
-The output folder path is also in the Context section. If blank, use:
+Resolve the output folder:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); echo "${REPO_ROOT:-.}/outputs"
 ```

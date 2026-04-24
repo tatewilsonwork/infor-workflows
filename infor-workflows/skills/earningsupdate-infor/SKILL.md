@@ -8,7 +8,7 @@ description: >
   performance summary. Activates on "earnings update", "earnings deck", "quarterly earnings",
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
-version: 1.9.18
+version: 1.9.19
 ---
 
 # INFOR Earnings Update — Workflow
@@ -17,14 +17,7 @@ This skill builds a branded 5-slide earnings update deck from a company's most r
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch, WebFetch
 
----
-
-## Context
-
-- Today's date: !`date +%Y-%m-%d`
-- Earnings template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Earnings Update Template.pptx" 2>/dev/null | head -1`
-- Cap table template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1`
-- Current working directory: !`pwd`
+Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Earnings template, cap table template, and working directory are resolved inline in their respective steps.
 
 ---
 
@@ -58,7 +51,7 @@ Wait for all required inputs before proceeding.
 
 ### Step 2 — Locate and Copy the Template
 
-The earnings template path is shown in the Context section. If blank, search for it:
+Search for the earnings template:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Earnings Update Template.pptx" 2>/dev/null | head -1
