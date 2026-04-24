@@ -4,7 +4,7 @@ description: >
   Use this skill when the user invokes /comps-infor or asks to build a public comparables table
   (comps, trading comps, public comps) for a company. Populates the INFOR Comps Template with
   18 CapIQ tickers split into three labelled groups, plus a short description for each company.
-version: 1.9.9
+version: 1.9.10
 ---
 
 # INFOR Public Comparables Table — Workflow
@@ -13,13 +13,7 @@ This skill builds a public comparable companies table by selecting 18 peers and 
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch
 
----
-
-## Context
-
-- Today's date: !`date +%Y-%m-%d`
-- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1`
-- Current working directory: !`pwd`
+Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location and working directory are resolved inline in Step 3.
 
 ---
 
@@ -65,7 +59,7 @@ For each company, draft a short description (see Description Rules in the Domain
 
 ### Step 3 — Locate and Copy the Template
 
-The template path is shown in the Context section above. If blank, search for it — check the repo's templates directory first, then the plugin cache, then fall back to $HOME:
+Search for the template — check the repo's templates directory first, then the plugin cache, then fall back to $HOME:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1

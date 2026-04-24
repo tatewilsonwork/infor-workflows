@@ -5,7 +5,7 @@ description: >
   statements to populate a capitalization table. Activates for tasks involving shares outstanding,
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
-version: 1.9.9
+version: 1.9.10
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
@@ -14,13 +14,7 @@ This skill guides you through populating the INFOR capitalization table template
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch, WebFetch
 
----
-
-## Context
-
-- Today's date: !`date +%Y-%m-%d`
-- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1`
-- Current working directory: !`pwd`
+Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location and working directory are resolved inline in Step 2.
 
 ---
 
@@ -43,7 +37,7 @@ Wait for both the ticker and at least one attached document before proceeding.
 
 ### Step 2 — Locate and Copy the Template
 
-The template path is shown in the Context section above. If the path is blank, search for it — check the repo's templates directory first, then the plugin cache, then fall back to $HOME:
+Search for the template — check the repo's templates directory first, then the plugin cache, then fall back to $HOME:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1

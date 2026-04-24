@@ -7,7 +7,7 @@ description: >
   Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C, plus an
   optional third category (e.g., family offices, international strategics, sovereign wealth, SPACs)
   when the user wants buyers that don't fit cleanly as Strategic or Financial.
-version: 1.9.6
+version: 1.9.7
 ---
 
 # INFOR Buyers List — Workflow & Domain Knowledge
@@ -16,13 +16,7 @@ This skill builds a buyer universe for a sell-side M&A process by identifying st
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch
 
----
-
-## Context
-
-- Today's date: !`date +%Y-%m-%d`
-- Template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Buyers List Template.xlsx" 2>/dev/null | head -1`
-- Current working directory: !`pwd`
+Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location and working directory are resolved inline in Step 6.
 
 ---
 
@@ -214,7 +208,7 @@ Total buyers across all sheets must not exceed **60** (20 strategic + 20 financi
 
 ### Step 6 — Locate and Copy the Template
 
-The template path is shown in the Context section above. If blank, search for it:
+Search for the template:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Buyers List Template.xlsx" 2>/dev/null | head -1

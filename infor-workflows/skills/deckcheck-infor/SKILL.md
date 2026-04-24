@@ -8,7 +8,7 @@ description: >
   Confidence and Impact, delivered as a Microsoft Word (.docx) document. Activates on "deck check",
   "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request
   to review a PowerPoint for errors.
-version: 1.9.6
+version: 1.9.7
 ---
 
 # INFOR Deck Check — Workflow
@@ -19,12 +19,7 @@ The output is a cleanly formatted Microsoft Word (.docx) document organized into
 
 Allowed tools: Read, Bash, Write, Glob, WebSearch, Agent
 
----
-
-## Context
-
-- Today's date: !`date +%Y-%m-%d`
-- Current working directory: !`pwd`
+Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Working directory is resolved inline where needed.
 
 ---
 

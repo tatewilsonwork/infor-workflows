@@ -6,7 +6,7 @@ description: >
   "format this deck", "branded presentation", "INFOR style", "make a deck", "pitch book",
   "discussion materials", or any request to create or fix a PowerPoint using INFOR branding.
   Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout standards.
-version: 1.9.6
+version: 1.9.7
 ---
 
 # INFOR Brand Guidelines — PowerPoint
@@ -17,15 +17,7 @@ This skill defines the visual identity and formatting rules for all INFOR Financ
 
 Allowed tools: Read, Bash, Write, Glob
 
----
-
-## Context
-
-- Today's date: !`date +%Y-%m-%d`
-- INFOR logo location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Logo - 1.png" 2>/dev/null | head -1`
-- INFOR deck template location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Deck Template.pptx" 2>/dev/null | head -1`
-- INFOR theme location: !`REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFORFG.thmx" 2>/dev/null | head -1`
-- Current working directory: !`pwd`
+Today's date is available from the system context (`currentDate`) — do not shell out to `date`. INFOR logo, deck template, theme, and working directory are resolved inline in Section 10 Step 2.
 
 ---
 
@@ -251,7 +243,7 @@ Determine what is being created or reviewed:
 
 ### Step 2 — Locate Assets
 
-The INFOR logo, deck template, and theme paths are shown in the Context section above. If any is blank, search for it:
+Locate the INFOR logo, deck template, and theme:
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Logo - 1.png" 2>/dev/null | head -1
