@@ -94,12 +94,12 @@ Write **exactly 39 cells** in the `Comps` sheet (3 group labels + 18 tickers + 1
 | B13  | Ticker 4 |
 | B14  | Ticker 5 |
 | B15  | Ticker 6 |
-| AM10 | Description for company 1 |
-| AM11 | Description for company 2 |
-| AM12 | Description for company 3 |
-| AM13 | Description for company 4 |
-| AM14 | Description for company 5 |
-| AM15 | Description for company 6 |
+| AL10 | Description for company 1 |
+| AL11 | Description for company 2 |
+| AL12 | Description for company 3 |
+| AL13 | Description for company 4 |
+| AL14 | Description for company 5 |
+| AL15 | Description for company 6 |
 | D19  | Group 2 label (e.g., `"U.S. Peers"`) — replaces `[Group #2]` |
 | B20  | Ticker 7 |
 | B21  | Ticker 8 |
@@ -107,12 +107,12 @@ Write **exactly 39 cells** in the `Comps` sheet (3 group labels + 18 tickers + 1
 | B23  | Ticker 10 |
 | B24  | Ticker 11 |
 | B25  | Ticker 12 |
-| AM20 | Description for company 7 |
-| AM21 | Description for company 8 |
-| AM22 | Description for company 9 |
-| AM23 | Description for company 10 |
-| AM24 | Description for company 11 |
-| AM25 | Description for company 12 |
+| AL20 | Description for company 7 |
+| AL21 | Description for company 8 |
+| AL22 | Description for company 9 |
+| AL23 | Description for company 10 |
+| AL24 | Description for company 11 |
+| AL25 | Description for company 12 |
 | D29  | Group 3 label (e.g., `"European Peers"`) — replaces `[Group #3]` |
 | B30  | Ticker 13 |
 | B31  | Ticker 14 |
@@ -120,14 +120,14 @@ Write **exactly 39 cells** in the `Comps` sheet (3 group labels + 18 tickers + 1
 | B33  | Ticker 16 |
 | B34  | Ticker 17 |
 | B35  | Ticker 18 |
-| AM30 | Description for company 13 |
-| AM31 | Description for company 14 |
-| AM32 | Description for company 15 |
-| AM33 | Description for company 16 |
-| AM34 | Description for company 17 |
-| AM35 | Description for company 18 |
+| AL30 | Description for company 13 |
+| AL31 | Description for company 14 |
+| AL32 | Description for company 15 |
+| AL33 | Description for company 16 |
+| AL34 | Description for company 17 |
+| AL35 | Description for company 18 |
 
-All 39 values are plain strings. Do not modify any other cell. Leave AM9, AM19, AM29 (group header rows) blank.
+All 39 values are plain strings. Do not modify any other cell. Leave AL9, AL19, AL29 (group header rows) blank.
 
 Save the file.
 
@@ -197,29 +197,29 @@ Close with:
 |------|---------|
 | D9        | Group 1 section header (text label — replaces `[Group #1]`) |
 | B10–B15   | CapIQ tickers for Group 1 companies (6 rows) |
-| AM10–AM15 | One-line descriptions for Group 1 companies |
+| AL10–AL15 | One-line descriptions for Group 1 companies |
 | D19       | Group 2 section header (text label — replaces `[Group #2]`) |
 | B20–B25   | CapIQ tickers for Group 2 companies (6 rows) |
-| AM20–AM25 | One-line descriptions for Group 2 companies |
+| AL20–AL25 | One-line descriptions for Group 2 companies |
 | D29       | Group 3 section header (text label — replaces `[Group #3]`) |
 | B30–B35   | CapIQ tickers for Group 3 companies (6 rows) |
-| AM30–AM35 | One-line descriptions for Group 3 companies |
+| AL30–AL35 | One-line descriptions for Group 3 companies |
 
-All other cells (D10–D15, D20–D25, D30–D35 and beyond columns E onward) contain CapIQ array formulas that auto-populate from the column B ticker when opened in Excel. **Never overwrite these.** Rows 17, 27, 37 contain Group Average formulas; rows 39–41 contain Global aggregates. Column AM cells are plain text input — no formulas.
+All other cells (D10–D15, D20–D25, D30–D35 and beyond columns E onward) contain CapIQ array formulas that auto-populate from the column B ticker when opened in Excel. **Never overwrite these.** Rows 17, 27, 37 contain Group Average formulas; rows 39–41 contain Global aggregates. Column AL cells are plain text input — no formulas.
 
 ### Description Rules
 
-Column AM has a width of ~75 characters. Descriptions that exceed this will overflow visually.
+Column AL has a width of ~66 characters. Descriptions that exceed this will overflow visually.
 
 - Describe **what the company does or sells** — product, service, asset class, client segment, or business model
-- Target **45–75 characters**; **never exceed 75**
+- Target **45–65 characters**; **never exceed 65**
 - Use the extra length to add meaningful specificity (e.g., end market, product focus, client segment) — do not pad with filler
 - **Do not include geography** — already visible from the exchange prefix in the ticker (e.g., `TSX:RY` signals Canada)
 - No trailing punctuation; title case preferred
 - Examples (character counts):
-  - `"Diversified multi-asset & alternatives manager for institutional LPs"` (68)
+  - `"Multi-asset & alternatives manager for institutional LPs"` (56)
   - `"Retail wealth platform offering mutual funds, ETFs, and advisory"` (64)
-  - `"Independent financial advisory across M&A, restructuring & capital markets"` (73)
+  - `"Independent advisory across M&A and capital markets"` (51)
   - `"Global payments & merchant acquiring for SMBs and enterprise"` (60)
   - `"Enterprise SaaS for financial services workflows and compliance"` (63)
 
