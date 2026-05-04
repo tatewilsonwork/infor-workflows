@@ -2,11 +2,11 @@
 name: precedents-infor
 description: >
   Use this skill when the user asks to build a precedent transactions table for a company.
-  Researches up to 15 relevant M&A precedent transactions — prioritising publicly traded
-  targets at the time of acquisition (where Revenue and EBITDA are verifiable from filings) —
-  with private targets included only when multiples or Revenue/EBITDA are disclosed in
-  acquiror press releases or reputable sources, and populates the INFOR Precedents Template.
-version: 1.9.10
+  Researches up to 15 relevant M&A precedent transactions — with a mild preference for
+  publicly traded targets at the time of acquisition (where Revenue and EBITDA are verifiable
+  from filings), but a closer-comparable private target with disclosed metrics or multiples
+  should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
+version: 1.9.11
 ---
 
 # INFOR Precedent Transactions Table — Workflow
@@ -41,15 +41,21 @@ Identify the **sector / business type** of the target company (e.g., wealth mana
 
 Search for up to 15 relevant M&A transactions where the **target company** is comparable to the input company.
 
-**Selection priority — public targets first:**
+**Selection priority — comparability first, public targets as a mild tiebreaker:**
 
-1. **Publicly traded targets at the time of acquisition** (strongly preferred). Their pre-deal annual filings (10-K, 20-F, AIF, annual MD&A) make Revenue and EBITDA directly verifiable.
+The strongest precedent is a transaction whose **target business closely resembles the input company** (sector, business model, client segment, asset class, scale). Public-target deals are mildly preferred because their financials are directly verifiable from filings — but a clearly closer-comparable **private** target with disclosed metrics or multiples should be selected over a weakly comparable public one.
+
+Categories, in rough order of preference when comparability is roughly equal:
+
+1. **Publicly traded targets at the time of acquisition.** Their pre-deal annual filings (10-K, 20-F, AIF, annual MD&A) make Revenue and EBITDA directly verifiable. Default tiebreaker when business-model fit is similar.
 2. **Private targets with disclosed multiples** in the acquiror's deal press release, investor deck, or reputable financial news (e.g., "acquired at ~12x EBITDA" or "~3x Revenue").
 3. **Private targets with disclosed absolute Revenue and/or EBITDA** in the acquiror's PR or reputable news (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global).
 
+When choosing between candidates, weigh comparability (sector / business model / segment / scale) more heavily than public-vs-private status. Recency and disclosure quality are secondary tiebreakers. Do **not** include a thin or off-sector public deal just to fill the public quota when a tighter-fit private deal is available.
+
 Never include a transaction where deal value (TEV) is undisclosed — a blank TEV makes the row unusable for multiple analysis.
 
-**Search strategy — run several targeted queries, biased toward public targets:**
+**Search strategy — run several targeted queries across both public and private deals:**
 - `"[sector] acquisition [year range] public company target 10-K revenue EBITDA"`
 - `"[target name] acquired [year] 10-K annual report"` (for known public targets)
 - `"[acquiror] acquires [target] press release LTM revenue EBITDA"`
@@ -70,7 +76,7 @@ Never include a transaction where deal value (TEV) is undisclosed — a blank TE
 **Source discipline — this is critical:**
 - All financial figures must come from: (1) target company filings (10-K, 20-F, AIF, annual MD&A), (2) acquiror deal press releases or investor decks, or (3) reputable financial news (Bloomberg, Reuters, Globe and Mail, Financial Post, WSJ, S&P Global).
 - Do not fabricate or estimate financial metrics. If a figure cannot be verified after a thorough search, leave the cell blank.
-- Aim for at least 80% of selected transactions to have disclosed Revenue and EBITDA (public-target priority makes this easy to hit).
+- Aim for at least 80% of selected transactions to have disclosed Revenue and EBITDA. The mild public-target preference helps hit this, but do not sacrifice comparability to do so — a tightly-fit private deal with one disclosed metric is more useful than an off-sector public deal with both.
 
 **Currency:** Use the currency as stated in the original source — TEV, EBITDA, and Revenue must all be in the **same currency**, matching the ISO 3-letter code entered in column B (e.g., `"USD"`, `"CAD"`, `"GBP"`). The template's column C FX formula converts to the output currency, and our formulas in I/J/K (see Step 5) apply that conversion automatically.
 
@@ -228,12 +234,13 @@ Report to the user:
 
 ### Precedent Transaction Research Tips
 
-**Good search queries (public-target priority):**
+**Good search queries (mix of public and private deals):**
 - `"[target name] 10-K [year] revenue EBITDA"`
 - `"[target name] 20-F annual report"` (for non-US public targets)
-- `"[sector] public company acquisition [year range] press release"`
+- `"[sector] acquisition [year range] press release"`
 - `"[acquiror] acquires [target] press release financial highlights"`
 - `"[sector] M&A transaction multiple disclosed EBITDA"`
+- `"[sector] private company acquired [year range] disclosed revenue EBITDA"`
 
 **Verifying financial figures — ranked by reliability:**
 1. Target's own annual filing (10-K, 20-F, AIF, annual MD&A) — income statement gives Revenue; EBITDA = Operating Income + D&A from cash flow statement
