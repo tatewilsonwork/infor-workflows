@@ -6,7 +6,7 @@ description: >
   targets at the time of acquisition (where Revenue and EBITDA are verifiable from filings) —
   with private targets included only when multiples or Revenue/EBITDA are disclosed in
   acquiror press releases or reputable sources, and populates the INFOR Precedents Template.
-version: 1.9.8
+version: 1.9.9
 ---
 
 # INFOR Precedent Transactions Table — Workflow
