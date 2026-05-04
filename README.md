@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin for analysts — automated deal workflows, branded presentations, and deck QC.
 
-Current version: **1.9.5**
+Current version: **1.9.19**
 
 ## Skills
 
@@ -12,7 +12,6 @@ Current version: **1.9.5**
 | precedents-infor | `/precedents-infor` | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template with verified Revenue, EBITDA, AUM, and deal metrics |
 | buyerslist-infor | `/buyerslist-infor` | Builds a strategic and financial buyer universe for a sell-side M&A process, tiered A/B/C, and populates the INFOR Buyers List Template |
 | captable-infor | `/captable-infor` | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A) |
-| lbo-infor | `/lbo-infor` | Builds an LBO model in Excel for PE transactions — starts from a populated cap table (via captable-infor), links balance-sheet assumptions, and fills in Sources & Uses, Operating Model, Debt Schedule, and Returns Analysis |
 | brand-guidelines-infor | `/brand-guidelines-infor` | Applies or reviews INFOR brand standards on PowerPoint decks — colors, fonts, layouts, charts, tables |
 | deckcheck-infor | `/deckcheck-infor` | Reviews an attached deck for grammar/spelling, INFOR brand formatting, and factual accuracy; delivers a tiered review (Tier I/II/III) with Confidence and Impact scores as a Word (.docx) document |
 
@@ -26,7 +25,6 @@ Invoke any skill by name, command, or by describing what you want:
 /buyerslist-infor Dye & Durham
 /deckcheck-infor (attach a .pptx)
 "Fill in the cap table for NasdaqGS:MSFT"
-"Build an LBO model for Dye & Durham"
 "Format this deck to INFOR brand guidelines"
 ```
 
@@ -49,7 +47,6 @@ infor-workflows/
 │   │   ├── captable-infor/
 │   │   ├── comps-infor/
 │   │   ├── deckcheck-infor/
-│   │   ├── lbo-infor/
 │   │   └── precedents-infor/
 │   └── templates/              # Excel templates and INFOR logo
 ├── outputs/                    # Deal outputs (gitignored)
