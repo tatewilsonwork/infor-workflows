@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin for analysts — automated deal workflows, branded presentations, and deck QC.
 
-Current version: **1.9.19**
+Current version: **1.9.20**
 
 ## Skills
 
@@ -12,6 +12,7 @@ Current version: **1.9.19**
 | precedents-infor | `/precedents-infor` | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template with verified Revenue, EBITDA, AUM, and deal metrics |
 | buyerslist-infor | `/buyerslist-infor` | Builds a strategic and financial buyer universe for a sell-side M&A process, tiered A/B/C, and populates the INFOR Buyers List Template |
 | captable-infor | `/captable-infor` | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A) |
+| lbo-model | `/lbo-model` | Completes LBO (Leveraged Buyout) model templates in Excel for PE transactions — fills in formulas, validates calculations, and applies professional formatting standards |
 | brand-guidelines-infor | `/brand-guidelines-infor` | Applies or reviews INFOR brand standards on PowerPoint decks — colors, fonts, layouts, charts, tables |
 | deckcheck-infor | `/deckcheck-infor` | Reviews an attached deck for grammar/spelling, INFOR brand formatting, and factual accuracy; delivers a tiered review (Tier I/II/III) with Confidence and Impact scores as a Word (.docx) document |
 
@@ -47,6 +48,7 @@ infor-workflows/
 │   │   ├── captable-infor/
 │   │   ├── comps-infor/
 │   │   ├── deckcheck-infor/
+│   │   ├── lbo-model/
 │   │   └── precedents-infor/
 │   └── templates/              # Excel templates and INFOR logo
 ├── outputs/                    # Deal outputs (gitignored)
