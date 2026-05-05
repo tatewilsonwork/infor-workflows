@@ -6,7 +6,7 @@ description: >
   publicly traded targets at the time of acquisition (where Revenue and EBITDA are verifiable
   from filings), but a closer-comparable private target with disclosed metrics or multiples
   should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
-version: 1.9.11
+version: 2.0.0
 ---
 
 # INFOR Precedent Transactions Table — Workflow
@@ -122,9 +122,9 @@ For each populated row N (where N is between 7 and 21), write the following:
 | F | Target Legal Name | `str` | Full legal name of target company |
 | G | Acquiror Legal Name | `str` | Full legal name of acquiror |
 | H | HQ Country Code | `str` | ISO 2-letter country code (e.g., `"CA"`, `"US"`, `"GB"`) |
-| I | Deal Value (TEV) | **formula string** | `f"={raw_tev}*C{row}"` — raw value in $MM of input currency |
-| J | EBITDA | **formula string** or unset | `f"={raw_ebitda}*C{row}"`; leave unset if undisclosed |
-| K | Revenue | **formula string** or unset | `f"={raw_revenue}*C{row}"`; leave unset if undisclosed |
+| I | Deal Value (TEV) | **formula string** | `f"={raw_tev}*C{row}"` — raw value in $MM of input currency. Attach a source-URL comment (see "Source comments" below) |
+| J | EBITDA | **formula string** or unset | `f"={raw_ebitda}*C{row}"`; leave unset if undisclosed. If written, attach a source-URL comment |
+| K | Revenue | **formula string** or unset | `f"={raw_revenue}*C{row}"`; leave unset if undisclosed. If written, attach a source-URL comment |
 | N | Target Description | `str` | ≤50 characters — see description rules below |
 
 **FX conversion — critical:**
@@ -140,6 +140,27 @@ ws['K7'] = "=850*C7"
 ```
 
 When the workbook is opened in Excel with the CapIQ add-in active, C7 resolves to the FX rate and I/J/K display the values in the output currency set in `H2`. Do **not** pre-convert the values yourself — write the source-currency number into the formula and let Excel handle FX.
+
+**Source comments — required on every written I/J/K cell:**
+
+For every cell you populate in columns I (TEV), J (EBITDA), and K (Revenue), attach an Excel comment whose **text is the source URL and nothing else**. No prefix, no label, no metric name, no figure — only the URL. If a cell is left unset because the metric is undisclosed, do not attach a comment.
+
+The URL should point to the specific document the figure was taken from — e.g., the SEC filing page (10-K / 20-F / 8-K), the SEDAR+ filing page, the acquiror's deal press release, the investor-deck PDF, or the Bloomberg/Reuters/WSJ article. Use one URL per cell. If the same source supports all three of TEV / EBITDA / Revenue for a row, write the same URL into all three comments — do not consolidate them.
+
+```python
+from openpyxl.comments import Comment
+
+ws['I7'] = "=1250*C7"
+ws['I7'].comment = Comment("https://www.sec.gov/Archives/edgar/data/.../press-release.htm", "Source")
+
+ws['J7'] = "=180*C7"
+ws['J7'].comment = Comment("https://www.sec.gov/Archives/edgar/data/.../10-k.htm", "Source")
+
+ws['K7'] = "=850*C7"
+ws['K7'].comment = Comment("https://www.sec.gov/Archives/edgar/data/.../10-k.htm", "Source")
+```
+
+The second `Comment(...)` argument is the comment author and is not the comment body — Excel only displays the first argument. The first argument must be the bare URL string.
 
 **Do NOT touch any other column.** In particular, do not write to:
 - C7:C21 — CapIQ FX array formulas
@@ -173,9 +194,10 @@ After saving, re-open the file and spot-check:
 1. Each populated row has values in B, E, F, G, H, I, and N
 2. Dates in column E are `datetime.date` objects (not strings)
 3. Cells I, J, K start with `=` and reference `C{same_row}` (i.e., they are formulas, not raw numbers)
-4. Column N values are all ≤50 characters
-5. No values were written to columns C, D, L, M, or any column past N
-6. No values were written outside rows 7–21
+4. Every populated I / J / K cell has a `.comment`, and the comment text is a bare URL (starts with `http://` or `https://`) with no other text
+5. Column N values are all ≤50 characters
+6. No values were written to columns C, D, L, M, or any column past N
+7. No values were written outside rows 7–21
 
 Report any issues found and fix before delivering.
 
@@ -207,9 +229,9 @@ Report to the user:
 | F7:F21 | Target legal name | **Write here** |
 | G7:G21 | Acquiror legal name | **Write here** |
 | H7:H21 | Target HQ country code (ISO 2-letter) | **Write here** |
-| I7:I21 | Deal Value (TEV) | **Write here as formula** `=raw*C{row}` |
-| J7:J21 | EBITDA | **Write here as formula** `=raw*C{row}` |
-| K7:K21 | Revenue | **Write here as formula** `=raw*C{row}` |
+| I7:I21 | Deal Value (TEV) | **Write here as formula** `=raw*C{row}` + bare-URL source comment |
+| J7:J21 | EBITDA | **Write here as formula** `=raw*C{row}` + bare-URL source comment (if written) |
+| K7:K21 | Revenue | **Write here as formula** `=raw*C{row}` + bare-URL source comment (if written) |
 | L7:L21 | TEV / EBITDA | **Never overwrite — formula** |
 | M7:M21 | TEV / Revenue | **Never overwrite — formula** |
 | N7:N21 | Target description (≤50 chars) | **Write here** |
