@@ -6,7 +6,7 @@ description: >
   publicly traded targets at the time of acquisition (where Revenue and EBITDA are verifiable
   from filings), but a closer-comparable private target with disclosed metrics or multiples
   should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
-version: 2.0.0
+version: 2.1.0
 ---
 
 # INFOR Precedent Transactions Table — Workflow
@@ -62,10 +62,31 @@ Never include a transaction where deal value (TEV) is undisclosed — a blank TE
 - `"[sector] M&A [year range] disclosed multiples EBITDA revenue"`
 - `"[company name] comparable transactions precedents investment banking"`
 
-**For each candidate transaction — retrieve financials as follows:**
-- **Public target:** pull Revenue and EBITDA from the most recent annual filing (10-K, 20-F, AIF, annual MD&A) before the announcement date. Use the LTM figure as of the announcement quarter where available; otherwise use the most recent fiscal year. EBITDA = Operating Income + D&A from the cash flow statement (or Adjusted EBITDA if disclosed and consistent with peers).
-- **Private target — disclosed metrics:** look in the acquiror's deal press release, investor presentation, or reputable financial news for explicit "$X revenue" / "$X EBITDA" / "Xx multiple" language.
+**For each candidate transaction — Revenue and EBITDA must be on an LTM (last-twelve-months) basis ending the most recent quarter before the announcement date.** Do **not** default to the last fiscal-year figure when a more recent quarter has been reported.
+
+**LTM stub-period formula:**
+
+> **LTM = YTD_MRQ + FY_prior − YTD_PYQ**
+
+…where `YTD_MRQ` is year-to-date through the most recent reported quarter before announcement, `FY_prior` is the most recent completed fiscal year, and `YTD_PYQ` is the matching year-to-date stub from the prior year. The two YTD stubs must cover the **same calendar period** (Q1 vs. Q1, H1 vs. H1, 9M vs. 9M).
+
+| MRQ before announce | YTD stubs to pull |
+|---|---|
+| Q1 | Q1 current vs. Q1 prior |
+| Q2 | H1 current vs. H1 prior |
+| Q3 | 9M current vs. 9M prior |
+| Q4 | No stub calc — `LTM = FY` (use the 10-K directly) |
+
+Worked example — AvidXchange acquired by TPG / Corpay, announced May 6, 2025. Most recent reported quarter is Q1 2025 (released May 7 — but Q1 had ended March 31, so the LTM convention uses Q1 stubs):
+- LTM Revenue = Q1 2025 ($107.9) + FY 2024 ($438.94) − Q1 2024 ($105.6)
+- LTM EBITDA = Q1 2025 ($17.517) + FY 2024 ($84.720) − Q1 2024 ($17.665)
+
+**For each candidate transaction — retrieve the stub figures as follows:**
+- **Public target:** pull each stub from its own filing — the most recent 10-Q / 6-K / interim MD&A (`YTD_MRQ`), the most recent 10-K / 20-F / AIF (`FY_prior`), and the prior-year 10-Q / 6-K / interim MD&A for the same calendar quarter (`YTD_PYQ`). Apply the same EBITDA definition (Operating Income + D&A from cash flow statement, or Adjusted EBITDA if consistently disclosed) to all three stubs. If MRQ is Q4, no stub calc is needed — use the 10-K's full-year figures.
+- **Private target — disclosed metrics:** look in the acquiror's deal press release, investor presentation, or reputable financial news for explicit "$X revenue" / "$X EBITDA" / "Xx multiple" language. Treat the disclosed figure as LTM if the source labels it that way; otherwise record the period the source quotes (e.g., FY 2023, calendar 2024). For private targets, **timing can drift by several months but never by years** — get as close to LTM as the disclosed data allows. If the only available figure is two-plus years stale, do not include the deal.
 - **Private target — multiples only:** if only TEV/EBITDA or TEV/Revenue is disclosed (and TEV is known), back into the implied EBITDA or Revenue and record that derived value. Note in your summary that the figure is implied from a disclosed multiple.
+
+**Excel does the math, not you.** Stub values must be written into the cell formula (see Step 5) — never pre-sum the stubs in Python and write a single number.
 
 **Selection criteria:**
 - Similar sector / business model to the input company
@@ -122,45 +143,69 @@ For each populated row N (where N is between 7 and 21), write the following:
 | F | Target Legal Name | `str` | Full legal name of target company |
 | G | Acquiror Legal Name | `str` | Full legal name of acquiror |
 | H | HQ Country Code | `str` | ISO 2-letter country code (e.g., `"CA"`, `"US"`, `"GB"`) |
-| I | Deal Value (TEV) | **formula string** | `f"={raw_tev}*C{row}"` — raw value in $MM of input currency. Attach a source-URL comment (see "Source comments" below) |
-| J | EBITDA | **formula string** or unset | `f"={raw_ebitda}*C{row}"`; leave unset if undisclosed. If written, attach a source-URL comment |
-| K | Revenue | **formula string** or unset | `f"={raw_revenue}*C{row}"`; leave unset if undisclosed. If written, attach a source-URL comment |
+| I | Deal Value (TEV) | **formula string** | `f"={raw_tev}*C{row}"` — raw value in $MM of input currency. Attach a single bare-URL source comment |
+| J | EBITDA | **formula string** or unset | LTM stub calc — `f"=({mrq}+{fy}-{pyq})*C{row}"` (e.g., `"=(17.517+84.720-17.665)*C7"`). FY-only / Q4 announcement — `f"={fy}*C{row}"`. Disclosed-metric private target — `f"={value}*C{row}"`. Leave unset if undisclosed. Attach a labeled multi-line source comment (see below) |
+| K | Revenue | **formula string** or unset | Same LTM convention as EBITDA. Leave unset if undisclosed. Attach a labeled multi-line source comment |
 | N | Target Description | `str` | ≤50 characters — see description rules below |
 
 **FX conversion — critical:**
 
 Cells I, J, and K are written as **formulas** that multiply the raw source-currency $MM value by the FX conversion in column C of the same row. Column C is a CapIQ array formula (`C7:C21`) that returns the rate from input currency (column B) to output currency (`$H$2`).
 
-For example, if the source data for row 7 is TEV of CAD 1,250 MM, EBITDA of CAD 180 MM, Revenue of CAD 850 MM:
+For example, if the source data for row 7 is a deal announced in Q2 with TEV of CAD 1,250 MM, LTM EBITDA stubs of (CAD 45 + 180 − 42) MM and LTM Revenue stubs of (CAD 220 + 850 − 205) MM:
 ```python
 ws['B7'] = "CAD"
 ws['I7'] = "=1250*C7"
-ws['J7'] = "=180*C7"
-ws['K7'] = "=850*C7"
+ws['J7'] = "=(45+180-42)*C7"      # LTM EBITDA = Q1 current + FY prior - Q1 prior
+ws['K7'] = "=(220+850-205)*C7"    # LTM Revenue = same stub convention
 ```
 
-When the workbook is opened in Excel with the CapIQ add-in active, C7 resolves to the FX rate and I/J/K display the values in the output currency set in `H2`. Do **not** pre-convert the values yourself — write the source-currency number into the formula and let Excel handle FX.
+When the workbook is opened in Excel with the CapIQ add-in active, C7 resolves to the FX rate and I/J/K display the values in the output currency set in `H2`. Do **not** pre-convert the values yourself, and do **not** pre-sum the LTM stubs — write each stub into the formula in source currency and let Excel handle both the LTM math and the FX conversion.
 
-**Source comments — required on every written I/J/K cell:**
+**Source comments — required on every written I / J / K cell:**
 
-For every cell you populate in columns I (TEV), J (EBITDA), and K (Revenue), attach an Excel comment whose **text is the source URL and nothing else**. No prefix, no label, no metric name, no figure — only the URL. If a cell is left unset because the metric is undisclosed, do not attach a comment.
+If a cell is left unset because the metric is undisclosed, do not attach a comment. Otherwise:
 
-The URL should point to the specific document the figure was taken from — e.g., the SEC filing page (10-K / 20-F / 8-K), the SEDAR+ filing page, the acquiror's deal press release, the investor-deck PDF, or the Bloomberg/Reuters/WSJ article. Use one URL per cell. If the same source supports all three of TEV / EBITDA / Revenue for a row, write the same URL into all three comments — do not consolidate them.
+- **Column I (TEV) — single bare URL.** The comment text is the source URL and nothing else. No prefix, no label, no figure. Use the deal press release / 8-K / news article that quotes the deal value.
+
+- **Columns J (EBITDA) and K (Revenue) — labeled, one line per stub.** The number of lines in the comment must match the number of operands in the cell formula. Each line uses the format:
+
+  > `<Period> ($<Value>): <URL>`
+
+  - **LTM stub calc (3 operands)** → 3 lines: MRQ, then FY, then PYQ.
+  - **FY-only / Q4 announcement (1 operand)** → 1 line: `FY<year> ($<value>): <URL>`.
+  - **Private target with disclosed metric (1 operand)** → 1 line labeled with the period the source quotes (e.g., `LTM ($85.0): URL` or `FY2023 ($72.0): URL`).
+  - **Private target with figure implied from a multiple (1 operand)** → 1 line: `Implied from <multiple> in: URL` (no `($value)` since the figure is derived).
+
+  Use one URL per stub. If the same filing covers two stubs (e.g., a 10-Q whose period table also shows the prior-year comparable), repeat that URL on both stub lines — do not consolidate.
 
 ```python
 from openpyxl.comments import Comment
 
+# TEV — single bare URL
 ws['I7'] = "=1250*C7"
-ws['I7'].comment = Comment("https://www.sec.gov/Archives/edgar/data/.../press-release.htm", "Source")
+ws['I7'].comment = Comment("https://www.sec.gov/Archives/edgar/data/.../8-k.htm", "Source")
 
-ws['J7'] = "=180*C7"
-ws['J7'].comment = Comment("https://www.sec.gov/Archives/edgar/data/.../10-k.htm", "Source")
+# LTM EBITDA — three stubs, three labeled lines
+ws['J7'] = "=(17.517+84.720-17.665)*C7"
+ws['J7'].comment = Comment(
+    "Q1 2025 ($17.517): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/\n"
+    "FY2024 ($84.720): https://www.globenewswire.com/news-release/2025/02/26/3032731/37161/en/AvidXchange-Announces-Fourth-Quarter-Full-Year-2024-Financial-Results.html\n"
+    "Q1 2024 ($17.665): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/",
+    "Source"
+)
 
-ws['K7'] = "=850*C7"
-ws['K7'].comment = Comment("https://www.sec.gov/Archives/edgar/data/.../10-k.htm", "Source")
+# LTM Revenue — three stubs, three labeled lines
+ws['K7'] = "=(107.9+438.94-105.6)*C7"
+ws['K7'].comment = Comment(
+    "Q1 2025 ($107.9): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/\n"
+    "FY2024 ($438.94): https://www.globenewswire.com/news-release/2025/02/26/3032731/37161/en/AvidXchange-Announces-Fourth-Quarter-Full-Year-2024-Financial-Results.html\n"
+    "Q1 2024 ($105.6): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/",
+    "Source"
+)
 ```
 
-The second `Comment(...)` argument is the comment author and is not the comment body — Excel only displays the first argument. The first argument must be the bare URL string.
+The second `Comment(...)` argument is the comment author and is not the comment body — Excel only displays the first argument. Use `\n` between stub lines so each appears on its own line in the Excel comment box.
 
 **Do NOT touch any other column.** In particular, do not write to:
 - C7:C21 — CapIQ FX array formulas
@@ -193,8 +238,10 @@ Save the file after writing all rows.
 After saving, re-open the file and spot-check:
 1. Each populated row has values in B, E, F, G, H, I, and N
 2. Dates in column E are `datetime.date` objects (not strings)
-3. Cells I, J, K start with `=` and reference `C{same_row}` (i.e., they are formulas, not raw numbers)
-4. Every populated I / J / K cell has a `.comment`, and the comment text is a bare URL (starts with `http://` or `https://`) with no other text
+3. Cells I, J, K start with `=` and end with `*C{same_row}` (formulas, not raw numbers). For J and K, the formula contains the LTM stub arithmetic — e.g., `=(17.517+84.720-17.665)*C7` — so Excel does the math; no pre-summed single number unless the row legitimately uses FY-only or a single disclosed metric.
+4. Every populated I / J / K cell has a `.comment`:
+   - **I** — comment text is a single bare URL (starts with `http://` or `https://`).
+   - **J / K** — one line per operand in the formula, each line formatted `<Period> ($<Value>): <URL>` (or `Implied from <multiple> in: URL` when derived). Operand count and line count must match (3 stubs in formula → 3 comment lines; 1 stub → 1 line).
 5. Column N values are all ≤50 characters
 6. No values were written to columns C, D, L, M, or any column past N
 7. No values were written outside rows 7–21
@@ -229,9 +276,9 @@ Report to the user:
 | F7:F21 | Target legal name | **Write here** |
 | G7:G21 | Acquiror legal name | **Write here** |
 | H7:H21 | Target HQ country code (ISO 2-letter) | **Write here** |
-| I7:I21 | Deal Value (TEV) | **Write here as formula** `=raw*C{row}` + bare-URL source comment |
-| J7:J21 | EBITDA | **Write here as formula** `=raw*C{row}` + bare-URL source comment (if written) |
-| K7:K21 | Revenue | **Write here as formula** `=raw*C{row}` + bare-URL source comment (if written) |
+| I7:I21 | Deal Value (TEV) | **Write here as formula** `=raw*C{row}` + single bare-URL source comment |
+| J7:J21 | EBITDA (LTM) | **Write here as formula** `=(mrq+fy-pyq)*C{row}` (or `=fy*C{row}` for Q4 / `=val*C{row}` for disclosed-metric private) + labeled multi-line source comment (one line per stub) |
+| K7:K21 | Revenue (LTM) | **Write here as formula** `=(mrq+fy-pyq)*C{row}` (or `=fy*C{row}` / `=val*C{row}`) + labeled multi-line source comment (one line per stub) |
 | L7:L21 | TEV / EBITDA | **Never overwrite — formula** |
 | M7:M21 | TEV / Revenue | **Never overwrite — formula** |
 | N7:N21 | Target description (≤50 chars) | **Write here** |
@@ -248,8 +295,8 @@ Report to the user:
 | G | Acquiror | String | — |
 | H | Target HQ | String | ISO 2-letter (CA, US, GB, AU, etc.) |
 | I | TEV | Formula | `=raw*C{row}` — raw in $MM of column B currency |
-| J | EBITDA | Formula | `=raw*C{row}`; blank if undisclosed |
-| K | Revenue | Formula | `=raw*C{row}`; blank if undisclosed |
+| J | EBITDA (LTM) | Formula | `=(mrq+fy-pyq)*C{row}` (LTM stubs) or `=fy*C{row}` / `=val*C{row}`; blank if undisclosed |
+| K | Revenue (LTM) | Formula | `=(mrq+fy-pyq)*C{row}` (LTM stubs) or `=fy*C{row}` / `=val*C{row}`; blank if undisclosed |
 | L | TEV / EBITDA | Formula | Auto-calculated — do not write |
 | M | TEV / Revenue | Formula | Auto-calculated — do not write |
 | N | Target Description | String | ≤50 chars |
@@ -265,8 +312,8 @@ Report to the user:
 - `"[sector] private company acquired [year range] disclosed revenue EBITDA"`
 
 **Verifying financial figures — ranked by reliability:**
-1. Target's own annual filing (10-K, 20-F, AIF, annual MD&A) — income statement gives Revenue; EBITDA = Operating Income + D&A from cash flow statement
-2. Acquiror's deal announcement press release — often states "LTM Revenue of $X" and "Adjusted EBITDA of $X" to justify valuation
+1. Target's own filings — for an LTM stub calc you usually need three: the most recent 10-Q / 6-K / interim MD&A (`YTD_MRQ`), the prior 10-K / 20-F / AIF (`FY_prior`), and the prior-year 10-Q / 6-K / interim MD&A for the same calendar quarter (`YTD_PYQ`). Apply the same EBITDA definition (Operating Income + D&A, or Adjusted EBITDA if consistently disclosed) across all three stubs. If the announcement falls right after a 10-K (MRQ = Q4), no stub calc is needed — use the 10-K alone.
+2. Acquiror's deal announcement press release — often states "LTM Revenue of $X" and "Adjusted EBITDA of $X" to justify valuation; useful as a cross-check, and sometimes the only source for a private target.
 3. Acquiror's investor presentation or deal supplement filed with the announcement
 4. Bloomberg, Reuters, Financial Post, or WSJ deal coverage that quotes disclosed metrics
 
@@ -281,6 +328,6 @@ Report to the user:
 
 **Handling undisclosed metrics:**
 - Never include a deal with no deal value — TEV must be populated for the row to be useful
-- For public targets, Revenue and EBITDA should always be findable from filings — do not leave them blank
-- For private targets, write only the metrics that are directly disclosed or cleanly implied from a disclosed multiple; leave the rest blank
+- For public targets, Revenue and EBITDA should always be findable from filings on an LTM basis — do not leave them blank, and do not fall back to FY when an MRQ has been reported
+- For private targets, write only the metrics that are directly disclosed or cleanly implied from a disclosed multiple; leave the rest blank. Disclosed metrics may drift from a true LTM end-date by a few months, but never by years — drop the deal if the only available figure is two-plus years stale.
 - Aim for at least 80% of selected transactions to have both Revenue and EBITDA populated
