@@ -6,7 +6,7 @@ description: >
   publicly traded targets at the time of acquisition (where Revenue and EBITDA are verifiable
   from filings), but a closer-comparable private target with disclosed metrics or multiples
   should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
-version: 2.4.0
+version: 2.5.0
 ---
 
 # INFOR Precedent Transactions Table — Workflow
@@ -70,7 +70,7 @@ Work this ladder top-down for both public and private targets. Stop at the first
 
 1. **Disclosed LTM (or close-to-LTM) $ figure in the transaction's own sources — strongly preferred for public AND private targets.** Look first in the acquiror's deal press release, deal-supplement investor deck or 8-K exhibit, deal conference call / earnings call transcript discussing the transaction, or reputable financial news coverage of the transaction (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global). Many deal announcements explicitly disclose "LTM Revenue of $X" and "LTM (or Adjusted) EBITDA of $Y" — those are typically the figures the buyer used to value the deal and what an investment banker would cite. Use the disclosed figure as the cell value as-is; do not "recalculate" over it. A reasonable sanity check against filings is fine — but if the deal source says $107.9 LTM Revenue, the cell value is $107.9.
 2. **Disclosed transaction multiple → derive from TEV.** If the deal source quotes a multiple but not the absolute $ figure (e.g., "acquired at ~12.5x LTM EBITDA" or "~3.0x Revenue"), derive the metric by dividing TEV by the multiple. Write the cell as a formula referencing the TEV cell directly — e.g., `=I7/12.5` for J7 (EBITDA) or `=I7/3.0` for K7 (Revenue). **Do not multiply by `C{row}`** — column I is already converted to output currency, so the derived metric inherits that conversion. **This rung is required when available — a disclosed multiple supersedes the filings-stub fallback (rung 3), not merely preferred over it.** The multiple reflects how the buyer valued the deal. Use it for both public and private targets when no $ LTM is disclosed.
-3. **Calculated LTM from target filings — public-target fallback only.** If, and only if, neither a disclosed $ figure nor a disclosed multiple can be found in the transaction sources, calculate LTM from the target's own filings using the stub-period formula below.
+3. **Calculated LTM from target filings — public-target fallback only.** If, and only if, neither a disclosed $ figure nor a disclosed multiple can be found in the transaction sources, calculate LTM from the target's own filings using the stub-period formula below. **At most 2 rows in the final table may use this 3-operand stub calc — see the "Stub-calc cap" sub-section below for the selection rule.**
 4. **Disclosed non-LTM period $ figure — private-target fallback.** For private targets where steps 1 and 2 fail, use whatever absolute Revenue / EBITDA figure is disclosed (e.g., FY 2023, calendar 2024). Label the period in the comment and accept that timing may drift by months, but never by years — drop the deal if the only available figure is two-plus years stale.
 
 There is no filings-based fallback for private targets. If steps 1, 2, and 4 all fail for a private target, leave the cell blank (or drop the deal if both Revenue and EBITDA are missing).
@@ -103,6 +103,18 @@ Worked example — AvidXchange acquired by TPG / Corpay, announced May 6, 2025. 
 For the stub calc, pull each stub from its own filing — the most recent 10-Q / 6-K / interim MD&A (`YTD_MRQ`), the most recent 10-K / 20-F / AIF (`FY_prior`), and the prior-year 10-Q / 6-K / interim MD&A for the same calendar quarter (`YTD_PYQ`). Apply the same EBITDA definition (Operating Income + D&A from cash flow statement, or Adjusted EBITDA if consistently disclosed) across all three stubs. If MRQ is Q4, no stub calc is needed — use the 10-K's full-year figures.
 
 **Pre-write checkpoint — before writing a 3-operand stub formula for J or K.** State in your response which deal sources you searched for a disclosed $ LTM figure and a disclosed multiple, and what you found. Required search set: the acquiror deal press release, 8-K exhibit / investor deck, and at least one of (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global) deal coverage. If a multiple was found but rejected, the rejection reason must be checked against the bad-reasons list above.
+
+**Stub-calc cap — at most 2 rows per table.**
+
+The 3-operand stub-calc path (rung 3) is by far the most token-expensive route to a row: it requires pulling and reading three separate filings (MRQ, FY prior, PYQ) plus reconciling EBITDA definitions across them. A table that leans heavily on stub calcs burns context that's better spent on broadening rung-1 / rung-2 search across more deals.
+
+**Cap:** at most **2 rows** in the final table may use the 3-operand stub formula `=(mrq+fy-pyq)*C{row}` in either column J or column K. A row with stub-calc on J only, K only, or both J and K counts as **one** row against the cap.
+
+**Selection rule when more than 2 stub-calc candidates exist:** rank the stub-calc candidates by comparability to the input company on sector, business model, client segment, asset class, and scale. Keep the top **2** most comparable. **Drop the remaining stub-calc candidates entirely from the table — do not replace them.** The total table simply has fewer rows. Rung 1 (disclosed $ LTM), rung 2 (disclosed multiple), and rung 4 (disclosed non-LTM private $) remain **uncapped** — only rung 3 is limited.
+
+**Filtering must happen BEFORE pulling the filings for the dropped candidates.** Identify all rung-3 candidates first, apply the comparability ranking, decide which ≤ 2 to keep, and only then fetch the MRQ / FY / PYQ filings for those kept rows. Do not compute stubs you will not write.
+
+**Selection log — required in the response.** Briefly state how many stub-calc candidates were identified, which 2 were kept, and which were dropped. Format: `X stub-calc candidates identified; kept the 2 most comparable: [Deal A], [Deal B]; dropped: [Deal C, ...].` If 2 or fewer rung-3 candidates exist in the first place, state that and skip the ranking.
 
 **Excel does the math, not you.** Whether the cell value is a single disclosed figure or a stub calc, it must live in a cell formula (see Step 5) — never pre-sum the stubs in Python and write a single number for the calculated case.
 
@@ -458,6 +470,7 @@ After saving, re-open the file and spot-check:
 8. Column C of the remaining data rows is intact (no `#REF!` in any populated row's C cell).
 9. **Source-rung consistency.** For each row using a 3-operand stub formula (`=(mrq+fy-pyq)*C{row}`), the response must contain an explicit log stating that no disclosed $ LTM and no disclosed multiple were found in the deal-source documents. A stub calc with no rung-1 / rung-2 search log is a fail — re-do the row with the disclosed value.
 10. **All Source URLs in I/J/K comments resolve to allow-listed domains** — or to a known acquiror domain (per `ACQUIROR_DOMAINS`) on a PR-keyword path — (re-run the Step 5b check on the saved file as a final audit).
+11. **Stub-calc row count.** Count rows whose J or K cell formula matches the 3-operand stub pattern `=(...+...-...)*C{row}` (a row counts **once** even if both J and K use the stub form). The count must be **≤ 2**. On failure: drop the lowest-comparability stub-calc rows until the count is ≤ 2, then re-run the Step 5b URL allow-list verification on the trimmed workbook before saving. Do not replace the dropped rows — the total table simply has fewer rows.
 
 Report any issues found and fix before delivering.
 
