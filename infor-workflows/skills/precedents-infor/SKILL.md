@@ -6,7 +6,7 @@ description: >
   publicly traded targets at the time of acquisition (where Revenue and EBITDA are verifiable
   from filings), but a closer-comparable private target with disclosed metrics or multiples
   should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
-version: 2.3.0
+version: 2.4.0
 ---
 
 # INFOR Precedent Transactions Table — Workflow
@@ -151,9 +151,9 @@ For each populated row N (where N is between 7 and 21), write the following:
 | F | Target Legal Name | `str` | Full legal name of target company |
 | G | Acquiror Legal Name | `str` | Full legal name of acquiror |
 | H | HQ Country Code | `str` | ISO 2-letter country code (e.g., `"CA"`, `"US"`, `"GB"`) |
-| I | Deal Value (TEV) | **formula string** | `f"={raw_tev}*C{row}"` — raw value in $MM of input currency. Attach a single bare-URL source comment |
-| J | EBITDA | **formula string** or unset | Disclosed $ LTM in transaction source (preferred) — `f"={ltm}*C{row}"` (e.g., `"=85.0*C7"`). **Disclosed multiple — `f"=I{row}/{multiple}"` (e.g., `"=I7/12.5"`) — no `*C{row}` because I is already in output currency.** Calculated LTM stub calc (public-target fallback) — `f"=({mrq}+{fy}-{pyq})*C{row}"` (e.g., `"=(17.517+84.720-17.665)*C7"`). FY-only / Q4 announcement — `f"={fy}*C{row}"`. Disclosed non-LTM private-target $ figure — `f"={value}*C{row}"`. Leave unset if undisclosed. Attach a labeled source comment (see below) |
-| K | Revenue | **formula string** or unset | Same precedence as EBITDA. For a disclosed Revenue multiple, use `f"=I{row}/{multiple}"` (e.g., `"=I7/3.0"`) — no `*C{row}`. Leave unset if undisclosed. Attach a labeled source comment |
+| I | Deal Value (TEV) | **formula string** | `f"={raw_tev}*C{row}"` — raw value in $MM of input currency. Attach a Quote + Source comment (Format A) |
+| J | EBITDA | **formula string** or unset | Disclosed $ LTM in transaction source (preferred) — `f"={ltm}*C{row}"` (e.g., `"=85.0*C7"`). **Disclosed multiple — `f"=I{row}/{multiple}"` (e.g., `"=I7/12.5"`) — no `*C{row}` because I is already in output currency.** Calculated LTM stub calc (public-target fallback) — `f"=({mrq}+{fy}-{pyq})*C{row}"` (e.g., `"=(17.517+84.720-17.665)*C7"`). FY-only / Q4 announcement — `f"={fy}*C{row}"`. Disclosed non-LTM private-target $ figure — `f"={value}*C{row}"`. Leave unset if undisclosed. Comment: Format A (Quote + Source) for 1-operand formulas; Format B (3-line stub list) for stub calc — see below |
+| K | Revenue | **formula string** or unset | Same precedence as EBITDA. For a disclosed Revenue multiple, use `f"=I{row}/{multiple}"` (e.g., `"=I7/3.0"`) — no `*C{row}`. Leave unset if undisclosed. Comment: same format rules as J |
 | N | Target Description | `str` | ≤50 characters — see description rules below |
 
 **FX conversion — critical:**
@@ -192,30 +192,63 @@ When the workbook is opened in Excel with the CapIQ add-in active, C7 resolves t
 
 **Source comments — required on every written I / J / K cell:**
 
-If a cell is left unset because the metric is undisclosed, do not attach a comment. Otherwise:
+If a cell is left unset because the metric is undisclosed, do not attach a comment. Otherwise pick the format by source-path:
 
-- **Column I (TEV) — single bare URL.** The comment text is the source URL and nothing else. No prefix, no label, no figure. Use the deal press release / 8-K / news article that quotes the deal value.
+**Format A — Quote + Source.** Used for column I (TEV) and for any J/K cell whose formula has a single operand (disclosed $ LTM rung 1, disclosed multiple rung 2, FY-only / Q4, disclosed non-LTM private $ figure rung 4). Two-block format with a blank line between:
 
-- **Columns J (EBITDA) and K (Revenue) — labeled, one line per stub.** The number of lines in the comment must match the number of operands in the cell formula. Each line uses the format:
+```
+Quote: "<short verbatim quote from the source containing the figure or multiple>"
 
-  > `<Period> ($<Value>): <URL>`
+Source: <URL>
+```
 
-  - **Disclosed $ LTM in transaction source** (rung 1, formula `=val*C{row}`) → 1 line: `LTM ($85.0): URL` — applies to both public and private targets when the deal PR / 8-K / IR deck / news quotes an LTM figure (the preferred path).
-  - **Disclosed multiple → derived from TEV** (rung 2, formula `=I{row}/multiple`) → 1 line: `<multiple>x <Metric> (<period if known>): URL` — e.g., `12.5x LTM EBITDA: URL`, `2.8x Revenue: URL`. No `($value)` since the figure is derived from `I{row}`.
-  - **Calculated LTM stub calc** (rung 3, formula `=(mrq+fy-pyq)*C{row}`) → 3 lines: MRQ, then FY, then PYQ.
-  - **FY-only / Q4 announcement** (formula `=fy*C{row}`) → 1 line: `FY<year> ($<value>): <URL>`.
-  - **Disclosed non-LTM $ metric for private target** (rung 4, formula `=val*C{row}`) → 1 line labeled with the period the source quotes (e.g., `FY2023 ($72.0): URL`, `CY2024 ($72.0): URL`).
+- The quote must be **verbatim from the source** — do not paraphrase. Copy the sentence or clause that directly supports the figure or multiple. Keep it short (one or two clauses, typically under 200 characters).
+- Always close the quote with `"`. If the verbatim text contains a colon, em dash, or other punctuation, preserve it inside the quotes.
+- One blank line between Quote and Source.
+- The Source line is a single URL pointing to the specific document the quote was taken from.
 
-  Use one URL per stub. If the same filing covers two stubs (e.g., a 10-Q whose period table also shows the prior-year comparable), repeat that URL on both stub lines — do not consolidate.
+**Format B — Multi-stub labeled lines.** Used **only** for the calculated LTM stub-calc case (rung 3, 3-operand formula `=(mrq+fy-pyq)*C{row}`). One line per stub, no Quote prefix:
+
+```
+<Period> ($<Value>): <URL>
+```
+
+- 3 lines: MRQ first, then FY, then PYQ.
+- One URL per stub. If the same filing covers two stubs (e.g., a 10-Q whose period table also shows the prior-year comparable), repeat that URL on both stub lines — do not consolidate.
+
+This per-stub labeled format is preserved for the multi-source case so a reviewer can map each operand of the formula directly to its source filing.
 
 ```python
 from openpyxl.comments import Comment
 
-# TEV — single bare URL
+# TEV (column I) — Format A
 ws['I7'] = "=1250*C7"
-ws['I7'].comment = Comment("https://www.sec.gov/Archives/edgar/data/.../8-k.htm", "Source")
+ws['I7'].comment = Comment(
+    'Quote: "OpenText agreed to acquire Micro Focus for $6.0 billion in total enterprise value"\n'
+    '\n'
+    'Source: https://investors.opentext.com/press-releases/press-releases-details/2023/OpenText-Buys-Micro-Focus/default.aspx',
+    "Source"
+)
 
-# LTM EBITDA — three stubs, three labeled lines
+# K (Revenue) from a disclosed multiple — Format A; formula references I, no *C{row}
+ws['K7'] = "=I7/2.3"
+ws['K7'].comment = Comment(
+    'Quote: "Total purchase price is 2.3x Micro Focus\' TTM revenues"\n'
+    '\n'
+    'Source: https://investors.opentext.com/press-releases/press-releases-details/2023/OpenText-Buys-Micro-Focus/default.aspx',
+    "Source"
+)
+
+# J (EBITDA) from a disclosed $ LTM — Format A
+ws['J7'] = "=85.0*C7"
+ws['J7'].comment = Comment(
+    'Quote: "Reported LTM Adjusted EBITDA of $85.0 million"\n'
+    '\n'
+    'Source: https://example.com/deal-press-release.htm',
+    "Source"
+)
+
+# J (EBITDA) from a calculated LTM stub — Format B (unchanged)
 ws['J7'] = "=(17.517+84.720-17.665)*C7"
 ws['J7'].comment = Comment(
     "Q1 2025 ($17.517): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/\n"
@@ -223,18 +256,12 @@ ws['J7'].comment = Comment(
     "Q1 2024 ($17.665): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/",
     "Source"
 )
-
-# LTM Revenue — three stubs, three labeled lines
-ws['K7'] = "=(107.9+438.94-105.6)*C7"
-ws['K7'].comment = Comment(
-    "Q1 2025 ($107.9): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/\n"
-    "FY2024 ($438.94): https://www.globenewswire.com/news-release/2025/02/26/3032731/37161/en/AvidXchange-Announces-Fourth-Quarter-Full-Year-2024-Financial-Results.html\n"
-    "Q1 2024 ($105.6): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/",
-    "Source"
-)
 ```
 
-The second `Comment(...)` argument is the comment author and is not the comment body — Excel only displays the first argument. Use `\n` between stub lines so each appears on its own line in the Excel comment box.
+Notes:
+- The second `Comment(...)` argument is the comment author and is not the comment body — Excel only displays the first argument.
+- Use `\n` between every line break and `\n\n` for the blank line between Quote and Source in Format A. In Excel, the blank line gives the comment readable separation.
+- Escape apostrophes in the Python string literal as needed (`Focus\'` inside a single-quoted string, or use a double-quoted string for the outer literal).
 
 **Do NOT touch any other column.** In particular, do not write to:
 - C7:C21 — CapIQ FX array formulas
@@ -299,13 +326,13 @@ After saving, re-open the file and spot-check:
    - **J / K from calculated stub** — three operands with arithmetic, ending `*C{same_row}` (e.g., `=(17.517+84.720-17.665)*C7`). ✓
    - **J / K from FY-only / disclosed non-LTM private $ figure** — single operand ending `*C{same_row}`. ✓
    - What's never valid: a pre-summed scalar where the source path was a stub calc, OR a `*C{row}` tail on a `=I{row}/multiple` formula (would double-apply FX).
-4. Every populated I / J / K cell has a `.comment`:
-   - **I** — comment text is a single bare URL (starts with `http://` or `https://`).
-   - **J / K** — comment line count matches formula operand count and source path:
-     - Disclosed $ LTM (1 op) → 1 line `LTM ($X): URL`
-     - Disclosed multiple (`=I{row}/m`, 1 op) → 1 line `<m>x <Metric> (<period>): URL`
-     - Calculated stub (3 ops) → 3 lines `MRQ ($X): URL`, `FY ($X): URL`, `PYQ ($X): URL`
-     - FY-only / non-LTM private (1 op) → 1 line `FY<year> ($X): URL` or `<period> ($X): URL`
+4. Every populated I / J / K cell has a `.comment`. Comment format depends on source-path:
+   - **Format A — Quote + Source.** Required for column I (TEV) and for any J/K with a 1-operand formula (disclosed $ LTM, disclosed multiple, FY-only, non-LTM private $). Comment text starts with `Quote: "`, contains a verbatim quote closed with `"`, then a blank line, then `Source: <URL>`. Verify:
+     - Starts with `Quote: "` and contains a closing `"` for the quoted text
+     - Has a blank line (i.e., `\n\n`) between Quote and Source blocks
+     - Source line starts with `Source: http`
+   - **Format B — Multi-stub labeled lines.** Required for J/K with the 3-operand stub-calc formula `=(mrq+fy-pyq)*C{row}`. Comment text is exactly 3 lines, each formatted `<Period> ($<Value>): <URL>` (MRQ, FY, PYQ). No `Quote:` prefix. Stub line count must equal formula operand count.
+   - **Format mismatch is a fail.** A `=I{row}/multiple` cell with a 3-line stub comment is wrong; a `=(a+b-c)*C{row}` cell with a Quote/Source comment is wrong.
 5. Column N values are all ≤50 characters
 6. No values were written to columns C, D, L, M, or any column past N
 7. After row deletion, the averages row at `23 - rows_to_drop` references the populated data range correctly — no `#REF!` and the AVERAGE range matches `L7:L{last_data_row}` / `M7:M{last_data_row}`.
@@ -341,9 +368,9 @@ Report to the user:
 | F7:F21 | Target legal name | **Write here** |
 | G7:G21 | Acquiror legal name | **Write here** |
 | H7:H21 | Target HQ country code (ISO 2-letter) | **Write here** |
-| I7:I21 | Deal Value (TEV) | **Write here as formula** `=raw*C{row}` + single bare-URL source comment |
-| J7:J21 | EBITDA (LTM) | **Write here as formula.** Preferred: `=ltm*C{row}` from disclosed $ LTM in deal source. **`=I{row}/multiple` from disclosed multiple — no `*C{row}`.** Public-target fallback: `=(mrq+fy-pyq)*C{row}` from filings. Other: `=fy*C{row}` (Q4 / private FY). Labeled source comment (1 line per operand). |
-| K7:K21 | Revenue (LTM) | **Write here as formula.** Same precedence as EBITDA, including `=I{row}/multiple` for disclosed Revenue multiples. Labeled source comment (1 line per operand). |
+| I7:I21 | Deal Value (TEV) | **Write here as formula** `=raw*C{row}` + Quote/Source comment (Format A). |
+| J7:J21 | EBITDA (LTM) | **Write here as formula.** Preferred: `=ltm*C{row}` from disclosed $ LTM in deal source. **`=I{row}/multiple` from disclosed multiple — no `*C{row}`.** Public-target fallback: `=(mrq+fy-pyq)*C{row}` from filings. Other: `=fy*C{row}` (Q4 / private FY). Comment: Format A (Quote + Source) for 1-operand formulas; Format B (3-line stub list) for stub calc. |
+| K7:K21 | Revenue (LTM) | **Write here as formula.** Same precedence as EBITDA, including `=I{row}/multiple` for disclosed Revenue multiples. Comment: same format rules as J. |
 | L7:L21 | TEV / EBITDA | **Never overwrite — formula** |
 | M7:M21 | TEV / Revenue | **Never overwrite — formula** |
 | N7:N21 | Target description (≤50 chars) | **Write here** |
