@@ -115,7 +115,7 @@ For the stub calc, pull each stub from its own filing — the most recent 10-Q /
 **Source discipline — this is critical:**
 - All financial figures must come from: (1) target company filings (10-K, 20-F, AIF, annual MD&A), (2) acquiror deal press releases or investor decks, or (3) reputable financial news (Bloomberg, Reuters, Globe and Mail, Financial Post, WSJ, S&P Global).
 - Do not fabricate or estimate financial metrics. If a figure cannot be verified after a thorough search, leave the cell blank.
-- Aim for at least 80% of selected transactions to have disclosed Revenue and EBITDA. The mild public-target preference helps hit this, but do not sacrifice comparability to do so — a tightly-fit private deal with one disclosed metric is more useful than an off-sector public deal with both.
+- Aim for at least 80% of selected transactions to have both Revenue and EBITDA populated. The mild public-target preference helps hit this, but do not sacrifice comparability to do so — a tightly-fit private deal with one disclosed metric is more useful than an off-sector public deal with both.
 
 **Currency:** Use the currency as stated in the original source — when EBITDA / Revenue are written as $ figures (`*C{row}` formulas), they must be in the **same currency** as TEV, matching the ISO 3-letter code entered in column B. The template's column C FX formula converts to the output currency, and the `*C{row}` factor applies that conversion. **Multiple-derived J/K cells (`=I{row}/multiple`) are dimensionless inputs and inherit their currency from I — currency consistency is automatic; do not add `*C{row}`.**
 
@@ -156,7 +156,7 @@ For each populated row N (where N is between 7 and 21), write the following:
 
 | Column | Field | Python type | Notes |
 |--------|-------|-------------|-------|
-| B | Input Currency | `str` | ISO 3-letter code, e.g. `"USD"`, `"CAD"`, `"GBP"` |
+| B | Input Currency | `str` | ISO 3-letter code, e.g. `"USD"`, `"CAD"`, `"GBP"`, `"EUR"`, `"AUD"` |
 | E | Announce Date | `datetime.date` | Use `datetime.date(YYYY, M, D)` |
 | F | Target Legal Name | `str` | Full legal name of target company |
 | G | Acquiror Legal Name | `str` | Full legal name of acquiror |
@@ -232,7 +232,7 @@ This per-stub labeled format is preserved for the multi-source case so a reviewe
 from openpyxl.comments import Comment
 
 # TEV (column I) — Format A
-ws['I7'] = "=1250*C7"
+ws['I7'] = "=6000*C7"
 ws['I7'].comment = Comment(
     'Quote: "OpenText agreed to acquire Micro Focus for $6.0 billion in total enterprise value"\n'
     '\n'
@@ -427,7 +427,7 @@ These complement the AvidXchange stub-calc example in Step 3 by showing rung 2 i
 **Sourcing financial figures — preferred order (matches the Step 3 ladder):**
 1. Acquiror's deal announcement press release / 8-K exhibit — often states "LTM Revenue of $X" and "Adjusted EBITDA of $X" to justify valuation. **First place to look for both public and private targets.**
 2. Acquiror's investor presentation or deal supplement filed with the announcement
-3. Bloomberg, Reuters, Financial Post, WSJ, or Globe and Mail deal coverage that quotes disclosed metrics, or deal-day conference call transcripts
+3. Bloomberg, Reuters, Financial Post, WSJ, Globe and Mail, or S&P Global deal coverage that quotes disclosed metrics, or deal-day conference call transcripts
 4. Target's own filings — used only when the deal sources above don't disclose LTM. For a stub calc you usually need three: the most recent 10-Q / 6-K / interim MD&A (`YTD_MRQ`), the prior 10-K / 20-F / AIF (`FY_prior`), and the prior-year 10-Q / 6-K / interim MD&A for the same calendar quarter (`YTD_PYQ`). Apply the same EBITDA definition (Operating Income + D&A, or Adjusted EBITDA if consistently disclosed) across all three stubs. If MRQ = Q4, use the 10-K alone.
 
 **HQ country codes — common examples:**
