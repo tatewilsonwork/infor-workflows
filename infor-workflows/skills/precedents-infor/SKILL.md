@@ -69,11 +69,19 @@ Never include a transaction where deal value (TEV) is undisclosed — a blank TE
 Work this ladder top-down for both public and private targets. Stop at the first rung that produces a usable figure.
 
 1. **Disclosed LTM (or close-to-LTM) $ figure in the transaction's own sources — strongly preferred for public AND private targets.** Look first in the acquiror's deal press release, deal-supplement investor deck or 8-K exhibit, deal conference call / earnings call transcript discussing the transaction, or reputable financial news coverage of the transaction (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global). Many deal announcements explicitly disclose "LTM Revenue of $X" and "LTM (or Adjusted) EBITDA of $Y" — those are typically the figures the buyer used to value the deal and what an investment banker would cite. Use the disclosed figure as the cell value as-is; do not "recalculate" over it. A reasonable sanity check against filings is fine — but if the deal source says $107.9 LTM Revenue, the cell value is $107.9.
-2. **Disclosed transaction multiple → derive from TEV.** If the deal source quotes a multiple but not the absolute $ figure (e.g., "acquired at ~12.5x LTM EBITDA" or "~3.0x Revenue"), derive the metric by dividing TEV by the multiple. Write the cell as a formula referencing the TEV cell directly — e.g., `=I7/12.5` for J7 (EBITDA) or `=I7/3.0` for K7 (Revenue). **Do not multiply by `C{row}`** — column I is already converted to output currency, so the derived metric inherits that conversion. This rung is preferred over the filings-stub fallback because the multiple reflects how the buyer valued the deal. Use it for both public and private targets when no $ LTM is disclosed.
+2. **Disclosed transaction multiple → derive from TEV.** If the deal source quotes a multiple but not the absolute $ figure (e.g., "acquired at ~12.5x LTM EBITDA" or "~3.0x Revenue"), derive the metric by dividing TEV by the multiple. Write the cell as a formula referencing the TEV cell directly — e.g., `=I7/12.5` for J7 (EBITDA) or `=I7/3.0` for K7 (Revenue). **Do not multiply by `C{row}`** — column I is already converted to output currency, so the derived metric inherits that conversion. **This rung is required when available — a disclosed multiple supersedes the filings-stub fallback (rung 3), not merely preferred over it.** The multiple reflects how the buyer valued the deal. Use it for both public and private targets when no $ LTM is disclosed.
 3. **Calculated LTM from target filings — public-target fallback only.** If, and only if, neither a disclosed $ figure nor a disclosed multiple can be found in the transaction sources, calculate LTM from the target's own filings using the stub-period formula below.
 4. **Disclosed non-LTM period $ figure — private-target fallback.** For private targets where steps 1 and 2 fail, use whatever absolute Revenue / EBITDA figure is disclosed (e.g., FY 2023, calendar 2024). Label the period in the comment and accept that timing may drift by months, but never by years — drop the deal if the only available figure is two-plus years stale.
 
 There is no filings-based fallback for private targets. If steps 1, 2, and 4 all fail for a private target, leave the cell blank (or drop the deal if both Revenue and EBITDA are missing).
+
+**Do not skip a disclosed multiple — common bad reasons agents reach for the stub calc instead:**
+- The multiple says "approximately Nx" or "~Nx" — still rung 2.
+- Wanting to verify from filings — verifying is fine, but the cell value is the disclosed multiple.
+- "It's pro forma" — see the pro-forma note below.
+- Wanting the standalone number rather than the deal number — the precedents table shows what buyers paid, not target-standalone fundamentals.
+
+**"Pro forma" almost never means synergies.** In deal-source multiples, "pro forma" almost always means pro forma for divestitures or continuing operations — not pro forma for buyer synergies. Synergies are virtually always called out as a separate line item ("$X of expected run-rate cost savings"), not embedded in the headline multiple. Treat the multiple as synergy-inclusive only if the source explicitly says "including synergies," "post-synergy," or "synergized."
 
 **LTM stub-period formula — used only for step 3 (public-target fallback):**
 
@@ -93,6 +101,8 @@ Worked example — AvidXchange acquired by TPG / Corpay, announced May 6, 2025. 
 - LTM EBITDA = Q1 2025 ($17.517) + FY 2024 ($84.720) − Q1 2024 ($17.665)
 
 For the stub calc, pull each stub from its own filing — the most recent 10-Q / 6-K / interim MD&A (`YTD_MRQ`), the most recent 10-K / 20-F / AIF (`FY_prior`), and the prior-year 10-Q / 6-K / interim MD&A for the same calendar quarter (`YTD_PYQ`). Apply the same EBITDA definition (Operating Income + D&A from cash flow statement, or Adjusted EBITDA if consistently disclosed) across all three stubs. If MRQ is Q4, no stub calc is needed — use the 10-K's full-year figures.
+
+**Pre-write checkpoint — before writing a 3-operand stub formula for J or K.** State in your response which deal sources you searched for a disclosed $ LTM figure and a disclosed multiple, and what you found. Required search set: the acquiror deal press release, 8-K exhibit / investor deck, and at least one of (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global) deal coverage. If a multiple was found but rejected, the rejection reason must be checked against the bad-reasons list above.
 
 **Excel does the math, not you.** Whether the cell value is a single disclosed figure or a stub calc, it must live in a cell formula (see Step 5) — never pre-sum the stubs in Python and write a single number for the calculated case.
 
@@ -337,6 +347,7 @@ After saving, re-open the file and spot-check:
 6. No values were written to columns C, D, L, M, or any column past N
 7. After row deletion, the averages row at `23 - rows_to_drop` references the populated data range correctly — no `#REF!` and the AVERAGE range matches `L7:L{last_data_row}` / `M7:M{last_data_row}`.
 8. Column C of the remaining data rows is intact (no `#REF!` in any populated row's C cell).
+9. **Source-rung consistency.** For each row using a 3-operand stub formula (`=(mrq+fy-pyq)*C{row}`), the response must contain an explicit log stating that no disclosed $ LTM and no disclosed multiple were found in the deal-source documents. A stub calc with no rung-1 / rung-2 search log is a fail — re-do the row with the disclosed value.
 
 Report any issues found and fix before delivering.
 
@@ -352,6 +363,16 @@ Report to the user:
 4. **Missing data:** note any EBITDA or Revenue cells left blank due to non-disclosure
 5. **Sources:** brief summary of where financial figures were sourced (filings vs. acquiror PRs vs. news)
 6. **Reminder:** Open in Excel with the CapIQ add-in active — column C (FX rate) will populate, and columns I/J/K formulas will resolve to output-currency $MM. Columns L/M (multiples) and the averages row (originally row 23, shifted up by however many rows were trimmed) auto-calculate.
+
+---
+
+## Worked Examples — Rung 2 (Disclosed Multiple)
+
+These complement the AvidXchange stub-calc example in Step 3 by showing rung 2 in action.
+
+**Micro Focus / OpenText (announced August 25, 2022).** OpenText's deal press release quotes "6.3x Micro Focus' pro forma TTM adjusted EBITDA" and separately calls out "$400M of run-rate cost savings." The multiple is on standalone Micro Focus (pro forma for divestitures), **not** synergy-inclusive. Correct: `J{row} = "=I{row}/6.3"` with a Format A (Quote + Source) comment. Wrong: a 3-operand stub calc from FY21 + H1 stubs, even though the underlying data is available — rung 2 is required when the multiple is disclosed.
+
+**Citrix / Vista (announced January 31, 2022).** Source quotes "~24.8x LTM EBITDA." Correct: `J{row} = "=I{row}/24.8"` — no `*C{row}`.
 
 ---
 
