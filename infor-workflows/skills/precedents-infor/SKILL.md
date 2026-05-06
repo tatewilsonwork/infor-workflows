@@ -112,9 +112,32 @@ For the stub calc, pull each stub from its own filing — the most recent 10-Q /
 - Disclosed deal value (TEV) — **required**
 - Disclosed Revenue and/or EBITDA — required for public targets; private targets require either disclosed metrics or a disclosed multiple from which a value can be inferred
 
-**Source discipline — this is critical:**
-- All financial figures must come from: (1) target company filings (10-K, 20-F, AIF, annual MD&A), (2) acquiror deal press releases or investor decks, or (3) reputable financial news (Bloomberg, Reuters, Globe and Mail, Financial Post, WSJ, S&P Global).
-- Do not fabricate or estimate financial metrics. If a figure cannot be verified after a thorough search, leave the cell blank.
+**Source Domain Allow-List — hard gate, in prose AND in code:**
+
+URLs cited in any cell comment on column I, J, or K (both Format A's `Source:` line and every URL in Format B's per-stub list) **MUST** resolve to one of these allow-listed domain families. Sub-domains are OK; suffix-matching applies.
+
+- The **target's** investor relations site (any sub-domain containing `investor` or beginning `ir.`)
+- The **acquiror's** investor relations site (same matching rule)
+- `sec.gov` (EDGAR)
+- `sedarplus.ca`, `sedar.com` (Canadian filings)
+- `bloomberg.com`, `reuters.com`, `wsj.com`, `ft.com`, `theglobeandmail.com`, `financialpost.com`, `spglobal.com`
+- `businesswire.com`, `globenewswire.com`, `prnewswire.com` — **only** when carrying the verbatim issuer press release (not when republishing third-party deal-recap copy)
+
+Any other domain is **non-reputable** and may not be cited as the primary source for any $ figure or multiple in columns I, J, or K. This explicitly excludes (non-exhaustive): mergersight.com, eresearch.com, financierworldwide.com, tipranks.com, marketscreener.com, channelfutures.com, channele2e.com, techcrunch.com, cnbc.com, cnet.com, growjo.com, last10k.com, fintel.io, mlq.ai, substack.com, medium.com, linkedin.com/pulse, and any analyst-blog or deal-recap site.
+
+If the only available source for a figure is off-list: (a) keep searching primary sources, (b) fall to a lower rung (e.g., the public-target filings stub calc), or (c) drop the deal. **Never write the cell using the off-list source.**
+
+**"Disclosed" — precise definition.** A $ figure or multiple is "disclosed" only if it appears in:
+- the target's or acquiror's deal press release;
+- an 8-K / 6-K / 40-F exhibit or investor deck filed with the announcement;
+- the deal-day conference call transcript; or
+- major news (Bloomberg, Reuters, WSJ, FT, Globe and Mail, Financial Post, S&P Global) **quoting deal-day materials**.
+
+Numbers computed post-hoc by analysis blogs (mergersight, eResearch, etc.) are **implied by a third party**, not disclosed, and do **not** satisfy rung 1 or rung 2 — even if the blog domain were somehow allow-listed, the figure itself would still be implied rather than disclosed.
+
+This allow-list is enforced programmatically before the workbook saves — see **Step 5b**. A row whose comment URL fails the check raises and blocks the save; the cell must be re-sourced from an allow-listed domain (or the row dropped) before the workbook can be written.
+
+- Do not fabricate or estimate financial metrics. If a figure cannot be verified from an allow-listed source after a thorough search, leave the cell blank.
 - Aim for at least 80% of selected transactions to have both Revenue and EBITDA populated. The mild public-target preference helps hit this, but do not sacrifice comparability to do so — a tightly-fit private deal with one disclosed metric is more useful than an off-sector public deal with both.
 
 **Currency:** Use the currency as stated in the original source — when EBITDA / Revenue are written as $ figures (`*C{row}` formulas), they must be in the **same currency** as TEV, matching the ISO 3-letter code entered in column B. The template's column C FX formula converts to the output currency, and the `*C{row}` factor applies that conversion. **Multiple-derived J/K cells (`=I{row}/multiple`) are dimensionless inputs and inherit their currency from I — currency consistency is automatic; do not add `*C{row}`.**
@@ -320,7 +343,62 @@ ws.cell(row=new_avg_row, column=13).value = f'=IFERROR(AVERAGE(M7:M{last_data_ro
 
 If the column-C CapIQ formula in the template is a single multi-cell array spanning C7:C21, deleting rows from inside that array can produce a `#REF!` in Excel. The column-C formulas in this template are per-cell (one CIQ call per row), so `delete_rows` works cleanly — but if a `#REF!` appears in column C of a remaining row during Step 6 verification, that's the diagnosis.
 
-Save the file after trimming.
+---
+
+### Step 5b — URL allow-list verification
+
+Before saving the workbook, programmatically verify that every URL cited in an I/J/K comment resolves to a domain on the Step 3 allow-list. This is the hard gate — a single off-list URL aborts the save. Run this snippet **between** the trim-empty-rows block above and `wb.save(PATH)`:
+
+```python
+import re
+from urllib.parse import urlparse
+
+ALLOW_DOMAINS = {
+    "sec.gov",
+    "sedarplus.ca", "sedar.com",
+    "bloomberg.com", "reuters.com", "wsj.com", "ft.com",
+    "theglobeandmail.com", "financialpost.com", "spglobal.com",
+    "businesswire.com", "globenewswire.com", "prnewswire.com",
+}
+
+URL_RE = re.compile(r"https?://\S+")
+last_data_row = 7 + n - 1   # n = number_of_transactions_written (from the trim block)
+urls_checked = 0
+
+for row in range(7, last_data_row + 1):
+    for col in ("I", "J", "K"):
+        cell = ws[f"{col}{row}"]
+        if cell.comment is None:
+            continue
+        text = cell.comment.text or ""
+        for raw_url in URL_RE.findall(text):
+            url = raw_url.rstrip(').,;]>"\'')
+            host = (urlparse(url).hostname or "").lower()
+            if not host:
+                raise ValueError(
+                    f"{col}{row}: unparseable URL {url!r}\nComment: {text!r}"
+                )
+            allow_listed = any(host == d or host.endswith("." + d) for d in ALLOW_DOMAINS)
+            ir_site = ("investor" in host) or host.startswith("ir.") or (".ir." in host)
+            if not (allow_listed or ir_site):
+                raise ValueError(
+                    f"{col}{row}: off-list source domain {host!r} in URL {url!r}\n"
+                    f"Comment: {text!r}"
+                )
+            urls_checked += 1
+
+print(f"URL allow-list verification: PASSED ({urls_checked} URLs checked)")
+```
+
+How the gate works:
+- Walks every cell in `I7:K{last_data_row}` that has a `.comment`.
+- Extracts every URL from the comment text via `re.findall(r"https?://\S+", text)`, stripping common trailing punctuation.
+- Suffix-matches each URL's hostname against the hard-coded `ALLOW_DOMAINS` set (so `investors.opentext.com` would match its acquiror IR family, and `www.sec.gov` matches `sec.gov`).
+- Additionally accepts any host containing `investor` or beginning `ir.` / containing `.ir.` as an investor-relations subdomain (target/acquiror IR sites vary in shape).
+- On any URL whose host doesn't match, raises `ValueError` with the cell reference, the offending URL, and the full comment text — **the workbook does not save.** Re-source that cell from an allow-listed domain (or drop the row) and re-run from Step 5b.
+- On success, prints `URL allow-list verification: PASSED (n URLs checked)`.
+
+Save the workbook (`wb.save(PATH)`) only after the check passes.
 
 ---
 
@@ -348,6 +426,7 @@ After saving, re-open the file and spot-check:
 7. After row deletion, the averages row at `23 - rows_to_drop` references the populated data range correctly — no `#REF!` and the AVERAGE range matches `L7:L{last_data_row}` / `M7:M{last_data_row}`.
 8. Column C of the remaining data rows is intact (no `#REF!` in any populated row's C cell).
 9. **Source-rung consistency.** For each row using a 3-operand stub formula (`=(mrq+fy-pyq)*C{row}`), the response must contain an explicit log stating that no disclosed $ LTM and no disclosed multiple were found in the deal-source documents. A stub calc with no rung-1 / rung-2 search log is a fail — re-do the row with the disclosed value.
+10. **All Source URLs in I/J/K comments resolve to allow-listed domains** (re-run the Step 5b check on the saved file as a final audit).
 
 Report any issues found and fix before delivering.
 
