@@ -6,7 +6,7 @@ description: >
   publicly traded targets at the time of acquisition (where Revenue and EBITDA are verifiable
   from filings), but a closer-comparable private target with disclosed metrics or multiples
   should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
-version: 2.2.0
+version: 2.3.0
 ---
 
 # INFOR Precedent Transactions Table — Workflow
@@ -64,18 +64,18 @@ Never include a transaction where deal value (TEV) is undisclosed — a blank TE
 
 **For each candidate transaction — Revenue and EBITDA must be on an LTM (last-twelve-months) basis ending the most recent quarter before the announcement date.** Do **not** default to the last fiscal-year figure when a more recent quarter has been reported.
 
-**Source priority — find a disclosed LTM figure first; only calculate from filings when nothing is disclosed.**
+**Source priority — find a disclosed figure first; only calculate from filings when nothing is disclosed.**
 
 Work this ladder top-down for both public and private targets. Stop at the first rung that produces a usable figure.
 
-1. **Disclosed LTM (or close-to-LTM) figure in the transaction's own sources — strongly preferred for public AND private targets.** Look first in the acquiror's deal press release, deal-supplement investor deck or 8-K exhibit, deal conference call / earnings call transcript discussing the transaction, or reputable financial news coverage of the transaction (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global). Many deal announcements explicitly disclose "LTM Revenue of $X" and "LTM (or Adjusted) EBITDA of $Y" — those are typically the figures the buyer used to value the deal and what an investment banker would cite. Use the disclosed figure as the cell value as-is; do not "recalculate" over it. A reasonable sanity check against filings is fine — but if the deal source says $107.9 LTM Revenue, the cell value is $107.9.
-2. **Calculated LTM from target filings — public-target fallback only.** If, and only if, no disclosed LTM figure can be found in the transaction sources, calculate LTM from the target's own filings using the stub-period formula below.
-3. **Disclosed non-LTM period figure — private-target fallback.** For private targets where step 1 fails, use whatever absolute Revenue / EBITDA figure is disclosed (e.g., FY 2023, calendar 2024). Label the period in the comment and accept that timing may drift by months, but never by years — drop the deal if the only available figure is two-plus years stale.
-4. **Figure implied from a disclosed multiple — last resort.** When only TEV/EBITDA or TEV/Revenue is disclosed (and TEV is known), back into the implied EBITDA or Revenue and note in the comment that the figure is derived.
+1. **Disclosed LTM (or close-to-LTM) $ figure in the transaction's own sources — strongly preferred for public AND private targets.** Look first in the acquiror's deal press release, deal-supplement investor deck or 8-K exhibit, deal conference call / earnings call transcript discussing the transaction, or reputable financial news coverage of the transaction (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global). Many deal announcements explicitly disclose "LTM Revenue of $X" and "LTM (or Adjusted) EBITDA of $Y" — those are typically the figures the buyer used to value the deal and what an investment banker would cite. Use the disclosed figure as the cell value as-is; do not "recalculate" over it. A reasonable sanity check against filings is fine — but if the deal source says $107.9 LTM Revenue, the cell value is $107.9.
+2. **Disclosed transaction multiple → derive from TEV.** If the deal source quotes a multiple but not the absolute $ figure (e.g., "acquired at ~12.5x LTM EBITDA" or "~3.0x Revenue"), derive the metric by dividing TEV by the multiple. Write the cell as a formula referencing the TEV cell directly — e.g., `=I7/12.5` for J7 (EBITDA) or `=I7/3.0` for K7 (Revenue). **Do not multiply by `C{row}`** — column I is already converted to output currency, so the derived metric inherits that conversion. This rung is preferred over the filings-stub fallback because the multiple reflects how the buyer valued the deal. Use it for both public and private targets when no $ LTM is disclosed.
+3. **Calculated LTM from target filings — public-target fallback only.** If, and only if, neither a disclosed $ figure nor a disclosed multiple can be found in the transaction sources, calculate LTM from the target's own filings using the stub-period formula below.
+4. **Disclosed non-LTM period $ figure — private-target fallback.** For private targets where steps 1 and 2 fail, use whatever absolute Revenue / EBITDA figure is disclosed (e.g., FY 2023, calendar 2024). Label the period in the comment and accept that timing may drift by months, but never by years — drop the deal if the only available figure is two-plus years stale.
 
-There is no filings-based fallback for private targets. If steps 1, 3, and 4 all fail for a private target, leave the cell blank (or drop the deal if both Revenue and EBITDA are missing).
+There is no filings-based fallback for private targets. If steps 1, 2, and 4 all fail for a private target, leave the cell blank (or drop the deal if both Revenue and EBITDA are missing).
 
-**LTM stub-period formula — used only for step 2 (public-target fallback):**
+**LTM stub-period formula — used only for step 3 (public-target fallback):**
 
 > **LTM = YTD_MRQ + FY_prior − YTD_PYQ**
 
@@ -107,7 +107,7 @@ For the stub calc, pull each stub from its own filing — the most recent 10-Q /
 - Do not fabricate or estimate financial metrics. If a figure cannot be verified after a thorough search, leave the cell blank.
 - Aim for at least 80% of selected transactions to have disclosed Revenue and EBITDA. The mild public-target preference helps hit this, but do not sacrifice comparability to do so — a tightly-fit private deal with one disclosed metric is more useful than an off-sector public deal with both.
 
-**Currency:** Use the currency as stated in the original source — TEV, EBITDA, and Revenue must all be in the **same currency**, matching the ISO 3-letter code entered in column B (e.g., `"USD"`, `"CAD"`, `"GBP"`). The template's column C FX formula converts to the output currency, and our formulas in I/J/K (see Step 5) apply that conversion automatically.
+**Currency:** Use the currency as stated in the original source — when EBITDA / Revenue are written as $ figures (`*C{row}` formulas), they must be in the **same currency** as TEV, matching the ISO 3-letter code entered in column B. The template's column C FX formula converts to the output currency, and the `*C{row}` factor applies that conversion. **Multiple-derived J/K cells (`=I{row}/multiple`) are dimensionless inputs and inherit their currency from I — currency consistency is automatic; do not add `*C{row}`.**
 
 ---
 
@@ -152,15 +152,15 @@ For each populated row N (where N is between 7 and 21), write the following:
 | G | Acquiror Legal Name | `str` | Full legal name of acquiror |
 | H | HQ Country Code | `str` | ISO 2-letter country code (e.g., `"CA"`, `"US"`, `"GB"`) |
 | I | Deal Value (TEV) | **formula string** | `f"={raw_tev}*C{row}"` — raw value in $MM of input currency. Attach a single bare-URL source comment |
-| J | EBITDA | **formula string** or unset | Disclosed LTM in transaction source (preferred — public + private) — `f"={ltm}*C{row}"` (e.g., `"=85.0*C7"`). Calculated LTM stub calc (public-target fallback) — `f"=({mrq}+{fy}-{pyq})*C{row}"` (e.g., `"=(17.517+84.720-17.665)*C7"`). FY-only / Q4 announcement — `f"={fy}*C{row}"`. Implied from multiple — `f"={implied}*C{row}"`. Leave unset if undisclosed. Attach a labeled source comment (see below) |
-| K | Revenue | **formula string** or unset | Same precedence as EBITDA. Leave unset if undisclosed. Attach a labeled source comment |
+| J | EBITDA | **formula string** or unset | Disclosed $ LTM in transaction source (preferred) — `f"={ltm}*C{row}"` (e.g., `"=85.0*C7"`). **Disclosed multiple — `f"=I{row}/{multiple}"` (e.g., `"=I7/12.5"`) — no `*C{row}` because I is already in output currency.** Calculated LTM stub calc (public-target fallback) — `f"=({mrq}+{fy}-{pyq})*C{row}"` (e.g., `"=(17.517+84.720-17.665)*C7"`). FY-only / Q4 announcement — `f"={fy}*C{row}"`. Disclosed non-LTM private-target $ figure — `f"={value}*C{row}"`. Leave unset if undisclosed. Attach a labeled source comment (see below) |
+| K | Revenue | **formula string** or unset | Same precedence as EBITDA. For a disclosed Revenue multiple, use `f"=I{row}/{multiple}"` (e.g., `"=I7/3.0"`) — no `*C{row}`. Leave unset if undisclosed. Attach a labeled source comment |
 | N | Target Description | `str` | ≤50 characters — see description rules below |
 
 **FX conversion — critical:**
 
 Cells I, J, and K are written as **formulas** that multiply the raw source-currency $MM value by the FX conversion in column C of the same row. Column C is a CapIQ array formula (`C7:C21`) that returns the rate from input currency (column B) to output currency (`$H$2`).
 
-**Disclosed-LTM example** (preferred path) — row 7 is a deal whose press release / 8-K discloses LTM Revenue of CAD 880 MM and LTM EBITDA of CAD 195 MM:
+**Disclosed-$-LTM example** (rung 1, preferred path) — row 7 is a deal whose press release / 8-K discloses LTM Revenue of CAD 880 MM and LTM EBITDA of CAD 195 MM:
 ```python
 ws['B7'] = "CAD"
 ws['I7'] = "=1250*C7"
@@ -168,7 +168,15 @@ ws['J7'] = "=195*C7"              # disclosed LTM EBITDA
 ws['K7'] = "=880*C7"              # disclosed LTM Revenue
 ```
 
-**Calculated-stub example** (public-target fallback when no LTM is disclosed) — same TEV but LTM is built from filings:
+**Disclosed-multiple example** (rung 2 — used when no $ LTM figure is disclosed but a multiple is) — same row, deal source quotes 12.5x LTM EBITDA and 2.8x LTM Revenue:
+```python
+ws['B7'] = "CAD"
+ws['I7'] = "=1250*C7"             # TEV in output currency after FX
+ws['J7'] = "=I7/12.5"             # EBITDA = TEV / 12.5x — no *C7 (I7 already converted)
+ws['K7'] = "=I7/2.8"              # Revenue = TEV / 2.8x — no *C7 either
+```
+
+**Calculated-stub example** (rung 3 — public-target fallback when neither $ LTM nor multiples are disclosed) — same TEV but LTM is built from filings:
 ```python
 ws['B7'] = "CAD"
 ws['I7'] = "=1250*C7"
@@ -177,6 +185,10 @@ ws['K7'] = "=(220+850-205)*C7"    # LTM Revenue = same stub convention
 ```
 
 When the workbook is opened in Excel with the CapIQ add-in active, C7 resolves to the FX rate and I/J/K display the values in the output currency set in `H2`. Do **not** pre-convert the values yourself, and do **not** pre-sum the LTM stubs in Python — write each stub into the formula in source currency and let Excel handle both the LTM math and the FX conversion.
+
+**Critical — FX is applied exactly once:**
+- $ LTM figures and stub-period figures are in **input currency**, so the formula multiplies by `C{row}` to convert.
+- A disclosed multiple is **dimensionless**, and `I{row}` is already in **output currency** (its own formula did the FX). Dividing `I{row}` by a multiple yields output-currency $MM directly. Adding `*C{row}` would double-apply FX. **Never write `=I7/12.5*C7`.** The multiple-derived formula is `=I7/<multiple>` — full stop.
 
 **Source comments — required on every written I / J / K cell:**
 
@@ -188,11 +200,11 @@ If a cell is left unset because the metric is undisclosed, do not attach a comme
 
   > `<Period> ($<Value>): <URL>`
 
-  - **Disclosed LTM in transaction source (1 operand)** → 1 line: `LTM ($85.0): URL` — applies to both public and private targets when the deal PR / 8-K / IR deck / news quotes an LTM figure (the preferred path).
-  - **Calculated LTM stub calc (3 operands)** → 3 lines: MRQ, then FY, then PYQ.
-  - **FY-only / Q4 announcement (1 operand)** → 1 line: `FY<year> ($<value>): <URL>`.
-  - **Disclosed non-LTM metric for private target (1 operand)** → 1 line labeled with the period the source quotes (e.g., `FY2023 ($72.0): URL`, `CY2024 ($72.0): URL`).
-  - **Figure implied from a multiple (1 operand)** → 1 line: `Implied from <multiple> in: URL` (no `($value)` since the figure is derived).
+  - **Disclosed $ LTM in transaction source** (rung 1, formula `=val*C{row}`) → 1 line: `LTM ($85.0): URL` — applies to both public and private targets when the deal PR / 8-K / IR deck / news quotes an LTM figure (the preferred path).
+  - **Disclosed multiple → derived from TEV** (rung 2, formula `=I{row}/multiple`) → 1 line: `<multiple>x <Metric> (<period if known>): URL` — e.g., `12.5x LTM EBITDA: URL`, `2.8x Revenue: URL`. No `($value)` since the figure is derived from `I{row}`.
+  - **Calculated LTM stub calc** (rung 3, formula `=(mrq+fy-pyq)*C{row}`) → 3 lines: MRQ, then FY, then PYQ.
+  - **FY-only / Q4 announcement** (formula `=fy*C{row}`) → 1 line: `FY<year> ($<value>): <URL>`.
+  - **Disclosed non-LTM $ metric for private target** (rung 4, formula `=val*C{row}`) → 1 line labeled with the period the source quotes (e.g., `FY2023 ($72.0): URL`, `CY2024 ($72.0): URL`).
 
   Use one URL per stub. If the same filing covers two stubs (e.g., a 10-Q whose period table also shows the prior-year comparable), repeat that URL on both stub lines — do not consolidate.
 
@@ -280,13 +292,20 @@ Save the file after trimming.
 After saving, re-open the file and spot-check:
 1. Exactly `n` data rows remain (rows 7 through 7+n-1), each with values in B, E, F, G, H, I, and N. There should be no blank data rows between the last transaction and the averages row.
 2. Dates in column E are `datetime.date` objects (not strings)
-3. Cells I, J, K start with `=` and end with `*C{same_row}` (formulas, not raw numbers). For J and K:
-   - **Disclosed-LTM rows** — single operand: `=85.0*C7` ✓
-   - **Calculated-LTM stub rows** — three operands with arithmetic: `=(17.517+84.720-17.665)*C7` ✓
-   - Either is valid; what's never valid is a pre-summed scalar where the source path was a stub calc.
+3. Cells I, J, K start with `=` (formulas, not raw numbers). Tail check by source path:
+   - **I** — always ends with `*C{same_row}` (e.g., `=1250*C7`). Always.
+   - **J / K from disclosed $ LTM** — single operand ending `*C{same_row}` (e.g., `=85.0*C7`). ✓
+   - **J / K from disclosed multiple** — references `I{same_row}` and divides by the multiple (e.g., `=I7/12.5`). **No `*C{row}`** — column I is already in output currency. ✓
+   - **J / K from calculated stub** — three operands with arithmetic, ending `*C{same_row}` (e.g., `=(17.517+84.720-17.665)*C7`). ✓
+   - **J / K from FY-only / disclosed non-LTM private $ figure** — single operand ending `*C{same_row}`. ✓
+   - What's never valid: a pre-summed scalar where the source path was a stub calc, OR a `*C{row}` tail on a `=I{row}/multiple` formula (would double-apply FX).
 4. Every populated I / J / K cell has a `.comment`:
    - **I** — comment text is a single bare URL (starts with `http://` or `https://`).
-   - **J / K** — one line per operand in the formula, each line formatted `<Period> ($<Value>): <URL>` (or `Implied from <multiple> in: URL` when derived). Operand count and line count must match (3 stubs in formula → 3 comment lines; 1 disclosed-LTM operand → 1 line labeled `LTM ($X): URL`).
+   - **J / K** — comment line count matches formula operand count and source path:
+     - Disclosed $ LTM (1 op) → 1 line `LTM ($X): URL`
+     - Disclosed multiple (`=I{row}/m`, 1 op) → 1 line `<m>x <Metric> (<period>): URL`
+     - Calculated stub (3 ops) → 3 lines `MRQ ($X): URL`, `FY ($X): URL`, `PYQ ($X): URL`
+     - FY-only / non-LTM private (1 op) → 1 line `FY<year> ($X): URL` or `<period> ($X): URL`
 5. Column N values are all ≤50 characters
 6. No values were written to columns C, D, L, M, or any column past N
 7. After row deletion, the averages row at `23 - rows_to_drop` references the populated data range correctly — no `#REF!` and the AVERAGE range matches `L7:L{last_data_row}` / `M7:M{last_data_row}`.
@@ -323,8 +342,8 @@ Report to the user:
 | G7:G21 | Acquiror legal name | **Write here** |
 | H7:H21 | Target HQ country code (ISO 2-letter) | **Write here** |
 | I7:I21 | Deal Value (TEV) | **Write here as formula** `=raw*C{row}` + single bare-URL source comment |
-| J7:J21 | EBITDA (LTM) | **Write here as formula.** Preferred: `=ltm*C{row}` from a disclosed LTM in the deal source. Public-target fallback: `=(mrq+fy-pyq)*C{row}` from filings. Other: `=fy*C{row}` (Q4 / private FY), `=implied*C{row}` (from multiple). Labeled source comment (1 line per operand). |
-| K7:K21 | Revenue (LTM) | **Write here as formula.** Same precedence as EBITDA. Labeled source comment (1 line per operand). |
+| J7:J21 | EBITDA (LTM) | **Write here as formula.** Preferred: `=ltm*C{row}` from disclosed $ LTM in deal source. **`=I{row}/multiple` from disclosed multiple — no `*C{row}`.** Public-target fallback: `=(mrq+fy-pyq)*C{row}` from filings. Other: `=fy*C{row}` (Q4 / private FY). Labeled source comment (1 line per operand). |
+| K7:K21 | Revenue (LTM) | **Write here as formula.** Same precedence as EBITDA, including `=I{row}/multiple` for disclosed Revenue multiples. Labeled source comment (1 line per operand). |
 | L7:L21 | TEV / EBITDA | **Never overwrite — formula** |
 | M7:M21 | TEV / Revenue | **Never overwrite — formula** |
 | N7:N21 | Target description (≤50 chars) | **Write here** |
@@ -341,8 +360,8 @@ Report to the user:
 | G | Acquiror | String | — |
 | H | Target HQ | String | ISO 2-letter (CA, US, GB, AU, etc.) |
 | I | TEV | Formula | `=raw*C{row}` — raw in $MM of column B currency |
-| J | EBITDA (LTM) | Formula | Preferred `=ltm*C{row}` (disclosed LTM); fallback `=(mrq+fy-pyq)*C{row}` (calculated stubs); also `=fy*C{row}` / `=implied*C{row}`; blank if undisclosed |
-| K | Revenue (LTM) | Formula | Same precedence as EBITDA; blank if undisclosed |
+| J | EBITDA (LTM) | Formula | Preferred `=ltm*C{row}` (disclosed $ LTM) or `=I{row}/multiple` (disclosed multiple, no FX); fallback `=(mrq+fy-pyq)*C{row}` (calc stubs); also `=fy*C{row}`; blank if undisclosed |
+| K | Revenue (LTM) | Formula | Same precedence as EBITDA, incl. `=I{row}/multiple` for disclosed Revenue multiples; blank if undisclosed |
 | L | TEV / EBITDA | Formula | Auto-calculated — do not write |
 | M | TEV / Revenue | Formula | Auto-calculated — do not write |
 | N | Target Description | String | ≤50 chars |
@@ -374,7 +393,8 @@ Report to the user:
 
 **Handling undisclosed metrics:**
 - Never include a deal with no deal value — TEV must be populated for the row to be useful
-- For both public and private targets, look for a disclosed LTM figure in the deal sources first. If found, use it as-is — do not "recalculate" over a disclosed LTM.
-- For public targets where no LTM is disclosed, fall back to the stub-period filings calc — do not leave Revenue / EBITDA blank, and do not fall back to bare FY when an MRQ has been reported.
-- For private targets, write only the metrics that are directly disclosed or cleanly implied from a disclosed multiple; leave the rest blank. Disclosed metrics may drift from a true LTM end-date by a few months, but never by years — drop the deal if the only available figure is two-plus years stale.
+- For both public and private targets, look for a disclosed $ LTM figure in the deal sources first. If found, use it as-is — do not "recalculate" over a disclosed LTM.
+- If no $ LTM is disclosed but a transaction multiple is, derive the metric in-cell as `=I{row}/multiple`. No `*C{row}` — column I is already in output currency.
+- For public targets where neither $ LTM nor a multiple is disclosed, fall back to the stub-period filings calc — do not leave Revenue / EBITDA blank, and do not fall back to bare FY when an MRQ has been reported.
+- For private targets, write only the metrics that are directly disclosed (as a $ figure or via a multiple); leave the rest blank. Disclosed metrics may drift from a true LTM end-date by a few months, but never by years — drop the deal if the only available figure is two-plus years stale.
 - Aim for at least 80% of selected transactions to have both Revenue and EBITDA populated
