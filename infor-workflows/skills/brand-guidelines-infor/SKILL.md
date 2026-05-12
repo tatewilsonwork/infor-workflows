@@ -1,17 +1,48 @@
 ---
 name: brand-guidelines-infor
 description: >
-  Use this skill when creating, formatting, or reviewing any PowerPoint presentation that must
-  follow INFOR Financial Group brand guidelines. Activates on "brand guidelines", "INFOR formatting",
-  "format this deck", "branded presentation", "INFOR style", "make a deck", "pitch book",
-  "discussion materials", or any request to create or fix a PowerPoint using INFOR branding.
-  Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout standards.
-version: 2.0.0
+  Use this skill when creating, formatting, or reviewing the visual presentation of any PowerPoint
+  that must follow INFOR Financial Group brand guidelines — colors, fonts, layouts, table styles,
+  chart styles, logo placement, slide dimensions, template structure. Activates on "brand guidelines",
+  "INFOR formatting", "format this deck", "branded presentation", "INFOR style", "make a deck",
+  "pitch book", "discussion materials", or any request to create or fix a PowerPoint using INFOR
+  branding. Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout
+  standards. For drafting the words on the slide (tone, voice, bullets, titles, number / period
+  notation, slide-type recipes), use `infor-deck-writing` instead — this skill governs visual
+  formatting only.
+version: 2.1.0
 ---
 
 # INFOR Brand Guidelines — PowerPoint
 
-This skill defines the visual identity and formatting rules for all INFOR Financial Group PowerPoint presentations. Use it as the authoritative reference when generating or reviewing any deck.
+This skill defines the visual identity and formatting rules for all INFOR Financial Group PowerPoint presentations. Use it as the authoritative reference when generating or reviewing the look of a deck.
+
+## Scope — Visual vs. Voice
+
+This skill governs **visual formatting only** — slide dimensions, colors, fonts, layouts, bullet styles, tables, charts, logo placement, and template structure.
+
+**Writing the words on a slide is handled by [`infor-deck-writing`](../infor-deck-writing/SKILL.md).** Whenever you draft, edit, or rewrite any text that will appear on a slide — titles, bullets, headlines, paragraphs, footnotes, callout copy, KPI captions, quotes, source lines — load and follow `infor-deck-writing` (and its companion `slide-type-recipes.md`).
+
+`infor-deck-writing` is the authoritative reference for:
+- INFOR voice (formal, institutional, Canadian English, defined-term capitalisation, hedged forward-looking claims, semicolon-chained bullets)
+- Title and bullet conventions (Title-Case noun phrases, length budgets, fragment vs. sentence rules, punctuation)
+- Number, currency, multiple, range, and period notation (`C$MM`, `~`, `x`, en-dash ranges, `FY2024A` / `FY2025E` / `FY2026F`, `LTM`)
+- Defined-term and boilerplate patterns (engagement line, teaser disclaimer, confidentiality stamp, source-line format)
+- Per-slide-type recipes (executive summary, investment highlights, market overview, valuation commentary, fairness opinion language, etc.)
+
+**Minimum voice rules — fallback when `infor-deck-writing` is not loaded.** If for any reason you cannot load the writing skill, fall back to these defaults so the words still pass an INFOR smoke test:
+
+- Third person ("the Company", "Management", "INFOR"). No first-person, no contractions, no exclamation marks.
+- Canadian English: favourable, colour, centres, amongst. `Acquirors` (not "Acquirers").
+- Titles are Title-Case noun phrases — never full sentences or questions.
+- Bullets are content-rich (15–35 words standard) and may chain related ideas with semicolons; no terminal periods on fragments.
+- Forward-looking claims are hedged: "expected to", "anticipated", "could", "may". No absolute superlatives without proof.
+- Numbers: `C$MM` default, `~` for approximate, `x` for multiples, en-dash for ranges, `FY2024A` / `FY2025E` / `FY2026F`, `LTM`.
+- Defined terms capitalised after first use — `the Company`, `the Transaction`, `the Process`, `Management`.
+- Top-of-slide note on every financial slide: `Note: All figures in C$MM unless indicated otherwise; FYE [Month Day]`.
+- Avoid: delve, embark, harness, supercharge, transformative-without-proof, em-dash overuse, undefended hype.
+
+Treat these as the minimum — the full guidance in `infor-deck-writing` always takes precedence when both are available.
 
 **Always start from the INFOR Deck Template** (see Section 11). The template carries the branded slide master, theme colors, fonts, and example slides for every common layout. Starting from scratch almost always loses master-level formatting (title bars, footers, page numbers, bullet styles, theme font) and produces off-brand output.
 
@@ -201,32 +232,11 @@ The INFOR logo file is located in the templates directory as `INFOR Logo - 1.png
 
 ---
 
-## 9 — Number & Text Formats
+## 9 — Number, Text & Footnote Formats — see `infor-deck-writing`
 
-### Periods
+Number, currency, multiple, range, and period notation — and footnote / source-line conventions — are governed by [`infor-deck-writing`](../infor-deck-writing/SKILL.md) Section 3. Use that skill's reference for `C$MM` / `~` / `x` / en-dash ranges / `FY2024A` / `FY2025E` / `FY2026F` / `LTM`, and for the top-of-slide currency note (`Note: All figures in C$MM unless indicated otherwise; FYE [Month Day]`).
 
-| Format | Example |
-|--------|---------|
-| Quarter | Q1-24, Q1 CY2024, Q1 FY2024 |
-| Calendar year | CY2024 |
-| Fiscal year | FY2024 |
-| Actual | Q1-24A, FY2024A |
-| Estimate | FY2024E |
-
-### Units
-
-| Unit | Usage |
-|------|-------|
-| C$MM | Default for all figures (millions) |
-| C$M | Mining sector only |
-| C$B | Billions |
-| C$000s | Thousands |
-
-### Footnotes
-
-- No capitals unless a proper title
-- Comma-separated, not semicolons
-- Standard note: "Note: in C$MM, unless otherwise noted"
+This skill does not duplicate those rules.
 
 ---
 
@@ -280,7 +290,8 @@ Enforce every rule in sections 2 through 9 above. Most of these are pre-applied 
 - [ ] Charts follow color order: Mid Blue, Light Blue, Gold, Dark Grey, Light Grey
 - [ ] Gold for all chart line series
 - [ ] Tables: white gridlines (0.75pt), alternating light grey, no vertical lines
-- [ ] Number formats: C$MM default, correct period notation
+- [ ] Number / period notation per `infor-deck-writing` Section 3 (C$MM default, ~ for approximate, FY2024A / FY2025E / FY2026F, LTM)
+- [ ] All on-slide text drafted using `infor-deck-writing` (voice, titles, bullets, defined terms, footnotes)
 
 ### Step 5 — Summary
 
@@ -450,7 +461,7 @@ These rules come from analyst review of generated decks. They override any gener
 **Cover slide (#1).** Edit only: company name, subtitle ("Internal Discussion Materials" or "Confidential Discussion Materials"), date, and (optionally) the "Private and Confidential" text. Do not move or modify `Picture 1` (INFOR logo).
 
 **Earnings slide (#4) — specific rules.**
-- **Business Updates box** (top-left, `Rectangle 5` section header + adjacent text): write 2–3 short paragraphs of **professional investment-banking commentary**, not bullet-pointed metrics. Tone: observational, analytical, forward-looking. Example opener: *"Company continues to execute on its long-term strategic plan, with Q1 results reflecting momentum across core verticals..."* Metrics belong in the financial-highlights comparison blocks on the right, not here.
+- **Business Updates box** (top-left, `Rectangle 5` section header + adjacent text): this is the prose-commentary slot — 2–3 short paragraphs of investment-banking commentary, not bullet-pointed metrics. Draft the actual words using [`infor-deck-writing`](../infor-deck-writing/SKILL.md) (see the earnings / business-update voice rules and recipes there). Metrics belong in the financial-highlights comparison blocks on the right, not here.
 - **Financial highlights blocks** (top-right): keep the template's structure intact — prior-period callout, current-period callout, delta rectangle with up/down triangle, and the horizontal connector line between rows. Edit only the numbers and metric labels (Revenue, EBITDA, Gross Margin, EPS, etc.).
 - **Bottom-left placeholder** (`Rectangle 2` at (0.35, 4.55), labelled `[BBG Comparison Placeholder]` or similar): **leave the placeholder rectangle in place**. Do not replace it with metrics, text, or a backlog/KPI block. The analyst pastes the Excel/BBG table in manually after generation.
 - **Bottom-right quote-paper groups** (`Group 1070` at (5.14, 4.55) and `Group 1086` at (5.08, 5.72)): these are two decorative "paper" graphics holding management/analyst quotes. **Always include two quotes** (e.g., CEO + CFO, or CEO + analyst). Edit the text *inside* each group — never replace the groups with a plain `TextBox`, which deletes the paper graphic.
@@ -486,5 +497,6 @@ BULLETS: Square > Dash > Open Circle
 CHARTS: Mid Blue > Light Blue > Gold > Dark Grey > Light Grey
          Gold for lines. Black font/axis. 1pt lines.
 
-UNITS: C$MM (default), C$M (mining), C$B, C$000s
+WORDS, UNITS & PERIOD NOTATION: governed by `infor-deck-writing`
+  (titles, bullets, voice, C$MM, FY2024A/E/F, footnotes, etc.)
 ```
