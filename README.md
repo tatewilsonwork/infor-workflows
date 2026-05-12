@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin for analysts — automated deal workflows, branded presentations, and deck QC.
 
-Current version: **2.0.0**
+Current version: **2.5.0**
 
 ## Skills
 
@@ -14,6 +14,7 @@ Current version: **2.0.0**
 | captable-infor | `/captable-infor` | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A) |
 | lbo-model | `/lbo-model` | Completes LBO (Leveraged Buyout) model templates in Excel for PE transactions — fills in formulas, validates calculations, and applies professional formatting standards |
 | brand-guidelines-infor | `/brand-guidelines-infor` | Applies or reviews INFOR brand standards on PowerPoint decks — colors, fonts, layouts, charts, tables |
+| infor-deck-writing | — | Writes slide-ready text in INFOR voice: executive summaries, investment highlights, market overviews, valuation commentary, buyer commentary, fairness-opinion language. Calibrated from a corpus of INFOR CIMs, pitches, teasers, fairness opinions, and formal valuations |
 | deckcheck-infor | `/deckcheck-infor` | Reviews an attached deck for grammar/spelling, INFOR brand formatting, and factual accuracy; delivers a tiered review (Tier I/II/III) with Confidence and Impact scores as a Word (.docx) document |
 
 ## Usage
@@ -27,6 +28,9 @@ Invoke any skill by name, command, or by describing what you want:
 /deckcheck-infor (attach a .pptx)
 "Fill in the cap table for NasdaqGS:MSFT"
 "Format this deck to INFOR brand guidelines"
+"Draft an executive summary for [Company]"
+"Write 5 investment highlights for the teaser"
+"Rewrite these notes in INFOR voice"
 ```
 
 ## Installation
@@ -48,6 +52,7 @@ infor-workflows/
 │   │   ├── captable-infor/
 │   │   ├── comps-infor/
 │   │   ├── deckcheck-infor/
+│   │   ├── infor-deck-writing/
 │   │   ├── lbo-model/
 │   │   └── precedents-infor/
 │   └── templates/              # Excel templates and INFOR logo
