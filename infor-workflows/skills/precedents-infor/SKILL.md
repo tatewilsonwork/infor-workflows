@@ -161,10 +161,9 @@ This allow-list is enforced programmatically before the workbook saves — see *
 
 ### Step 4 — Locate and Copy the Template
 
-Locate the template dynamically:
+Locate the template via the plugin's shared helper:
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Precedents Template.xlsx" 2>/dev/null | head -1
+bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Precedents Template.xlsx"
 ```
 
 Resolve the output folder:

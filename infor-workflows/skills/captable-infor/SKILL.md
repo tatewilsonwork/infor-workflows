@@ -37,18 +37,16 @@ Wait for both the ticker and at least one attached document before proceeding.
 
 ### Step 2 — Locate and Copy the Template
 
-Search for the template — check the repo's templates directory first, then the plugin cache, then fall back to $HOME:
+Resolve the template via the plugin's shared helper:
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1
+bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Cap Table Template.xlsx"
 ```
 
 Sanitize the ticker for use as a filename by replacing `:` with `-` (e.g., `NasdaqGS:MSFT` → `NasdaqGS-MSFT`).
 
 Copy the template to the current working directory using this exact shell pattern (note the quoting — required because the path contains spaces):
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-TEMPLATE=$(find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Cap Table Template.xlsx" 2>/dev/null | head -1)
+TEMPLATE=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Cap Table Template.xlsx")
 OUTPUT="./$SANITIZED_TICKER - Capitalization Table.xlsx"
 cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```

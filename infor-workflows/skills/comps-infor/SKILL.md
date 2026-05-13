@@ -59,18 +59,16 @@ For each company, draft a short description (see Description Rules in the Domain
 
 ### Step 3 — Locate and Copy the Template
 
-Search for the template — check the repo's templates directory first, then the plugin cache, then fall back to $HOME:
+Resolve the template via the plugin's shared helper:
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1
+bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Comps Template.xlsx"
 ```
 
 Sanitize the target company name for use as a filename (remove special characters, replace spaces with hyphens).
 
 Copy the template to the current working directory:
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-TEMPLATE=$(find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Comps Template.xlsx" 2>/dev/null | head -1)
+TEMPLATE=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Comps Template.xlsx")
 OUTPUT="./$SANITIZED_COMPANY_NAME - Comparable Companies.xlsx"
 cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```

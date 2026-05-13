@@ -12,6 +12,7 @@ Current version: **2.7.0**
 | precedents-infor | `/precedents-infor` | Researches 8 relevant M&A precedent transactions and populates the INFOR Precedents Template with verified Revenue, EBITDA, AUM, and deal metrics |
 | buyerslist-infor | `/buyerslist-infor` | Builds a strategic and financial buyer universe for a sell-side M&A process, tiered A/B/C, and populates the INFOR Buyers List Template |
 | captable-infor | `/captable-infor` | Populates the INFOR Capitalization Table from a CapIQ ticker and attached financial statements (10-K, annual report, MD&A) |
+| earningsupdate-infor | `/earningsupdate-infor` | Builds a branded 5-slide quarterly earnings update deck from a recent 10-Q/10-K and Bloomberg EEO snip — company overview, KPI tiles, Broker Estimates vs Actuals table, business updates, and management quotes |
 | lbo-model | `/lbo-model` | Completes LBO (Leveraged Buyout) model templates in Excel for PE transactions — fills in formulas, validates calculations, and applies professional formatting standards |
 | brand-guidelines-infor | `/brand-guidelines-infor` | Applies or reviews INFOR brand standards on PowerPoint decks — colors, fonts, layouts, charts, tables. Cross-links to `infor-deck-writing` for all on-slide text |
 | infor-deck-writing | — | Writes slide-ready text in INFOR voice: executive summaries, investment highlights, market overviews, valuation commentary, buyer commentary, fairness-opinion language. Calibrated from a corpus of INFOR CIMs, pitches, teasers, fairness opinions, and formal valuations |
@@ -27,6 +28,7 @@ Invoke any skill by name, command, or by describing what you want:
 /precedents-infor CI Financial Corp
 /buyerslist-infor Dye & Durham
 /deckcheck-infor (attach a .pptx)
+/earningsupdate-infor (attach 10-Q + Bloomberg EEO snip)
 "Fill in the cap table for NasdaqGS:MSFT"
 "Format this deck to INFOR brand guidelines"
 "Draft an executive summary for [Company]"
