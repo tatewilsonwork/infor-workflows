@@ -61,10 +61,15 @@ Long workflows split into a short `SKILL.md` (workflow + step outline) plus `ref
   from pptx_helpers import set_text, write_bulleted_shape, find_shape
   ```
 
-### Versioning
-- Plugin version (in [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json)) bumps when any skill ships a behavior change or a new skill is added.
-- Each skill's own `version:` in its frontmatter bumps independently when that skill changes.
-- Update [CHANGELOG.md](CHANGELOG.md) when bumping the plugin version. Format: Keep-a-Changelog (`## [x.y.z] — YYYY-MM-DD` with Added / Changed / Fixed sections).
+### Versioning — single plugin version, all skills tied to it
+
+There is one version for the entire plugin. **Any change to any skill bumps the plugin version, and every skill's `version:` frontmatter field is kept in lock-step.** No per-skill version drift.
+
+- Plugin version lives in [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json).
+- Every [`SKILL.md`](infor-workflows/skills/) carries a `version:` frontmatter field that **must equal** the plugin version. When you bump the plugin, bump all ten skills to match.
+- Update [CHANGELOG.md](CHANGELOG.md) on every bump. Format: Keep-a-Changelog (`## [x.y.z] — YYYY-MM-DD` with Added / Changed / Fixed sections). One CHANGELOG covers the plugin; per-skill changelogs are not maintained.
+
+Why one version: with 10 skills sharing helpers, templates, and conventions, drift between skill versions creates support questions ("which version of which skill am I running?") with no useful answer. A single number for the whole plugin keeps the bug-report / changelog story simple.
 
 ### Templates
 All templates live in [`infor-workflows/templates/`](infor-workflows/templates/). They are binary `.xlsx`, `.pptx`, `.thmx`, `.png` — keep them in git. If a template changes, increment the corresponding skill's version because the cell map / shape names may move.

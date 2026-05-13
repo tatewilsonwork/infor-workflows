@@ -3,12 +3,12 @@ name: infor-deck-writing
 description: >
   Writing, drafting, or rewriting slide-ready text for an INFOR Financial Group PowerPoint —
   exec summaries, investment highlights, company overviews, market pages, valuation and buyer
-  commentary, KPI tiles, teaser headlines, fairness-opinion language. Activates on "write slide
-  text", "draft a bullet", "draft an exec summary", "INFOR voice", "rewrite in INFOR voice",
+  commentary, KPI tiles, teaser headlines, fairness-opinion language. Activates on /infor-deck-writing,
+  "write slide text", "draft a bullet", "draft an exec summary", "INFOR voice", "rewrite in INFOR voice",
   "investment highlight bullet", "market overview", "valuation commentary", "teaser copy",
   "punch up these bullets", or any request to turn raw notes into slide-ready language for a
   CIM, pitch, teaser, fairness opinion, or formal valuation.
-version: 1.0.0
+version: 2.8.0
 allowed-tools: [Read, Write, Edit, Glob, Grep, WebSearch]
 ---
 

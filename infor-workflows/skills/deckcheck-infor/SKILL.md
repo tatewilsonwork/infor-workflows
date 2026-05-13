@@ -6,7 +6,7 @@ description: >
   dates) via web search. Produces a tiered review (Tier I / II / III) with Confidence and Impact
   scored 1–10 per suggestion, delivered as a Word (.docx) document. Activates on /deckcheck-infor,
   "deck check", "review this deck", "proofread deck", "QC deck", or "deck review".
-version: 2.0.0
+version: 2.8.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch, Agent]
 ---
 

@@ -1,12 +1,13 @@
 ---
 name: precedents-infor
 description: >
-  Use this skill when the user asks to build a precedent transactions table for a company.
-  Researches up to 15 relevant M&A precedent transactions — with a mild preference for
-  publicly traded targets at the time of acquisition (where Revenue and EBITDA are verifiable
-  from filings), but a closer-comparable private target with disclosed metrics or multiples
-  should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
-version: 2.6.0
+  Use this skill when the user invokes /precedents-infor or asks to build a precedent transactions
+  table for a company. Researches up to 15 relevant M&A precedent transactions — with a mild
+  preference for publicly traded targets at the time of acquisition (where Revenue and EBITDA are
+  verifiable from filings), but a closer-comparable private target with disclosed metrics or
+  multiples should be selected over a weakly comparable public one. Populates the INFOR Precedents
+  Template.
+version: 2.8.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 

@@ -3,10 +3,10 @@ name: infor-wireframe
 description: >
   Slide-by-slide wireframe for a new INFOR Financial Group PowerPoint deliverable — CIM, pitch,
   fairness opinion, or teaser. Outputs page order, slide purpose, recommended layout, and content
-  blocks that another agent or analyst can use to draft the deck. Activates on "wireframe a CIM",
-  "outline a pitch", "plan a fairness opinion", "teaser wireframe", "draft the deck order",
-  "what slides go in a CIM", "skeleton of a pitch book".
-version: 1.0.0
+  blocks that another agent or analyst can use to draft the deck. Activates on /infor-wireframe,
+  "wireframe a CIM", "outline a pitch", "plan a fairness opinion", "teaser wireframe",
+  "draft the deck order", "what slides go in a CIM", "skeleton of a pitch book".
+version: 2.8.0
 allowed-tools: [Read, Write, Edit, Glob, Grep]
 ---
 
