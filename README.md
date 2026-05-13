@@ -2,7 +2,7 @@
 
 INFOR Financial Group plugin for analysts — automated deal workflows, branded presentations, and deck QC.
 
-Current version: **2.7.0**
+Current version: **2.7.0** — see [CHANGELOG.md](CHANGELOG.md) for per-version changes. Contributors: see [CLAUDE.md](CLAUDE.md).
 
 ## Skills
 

@@ -6,13 +6,12 @@ description: >
   debt schedules, lease obligations, options/RSU/warrant tables, convertible debentures, cash balances,
   preferred shares, or non-controlling interest sourced from company filings.
 version: 2.0.0
+allowed-tools: [Read, Bash, Write, Glob, WebSearch, WebFetch]
 ---
 
 # INFOR Capitalization Table — Workflow & Domain Knowledge
 
 This skill guides you through populating the INFOR capitalization table template from a CapIQ ticker and attached financial statements, and provides domain knowledge for accurate data extraction.
-
-Allowed tools: Read, Bash, Write, Glob, WebSearch, WebFetch
 
 Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location and working directory are resolved inline in Step 2.
 

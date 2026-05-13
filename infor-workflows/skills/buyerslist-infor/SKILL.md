@@ -8,13 +8,12 @@ description: >
   optional third category (e.g., family offices, international strategics, sovereign wealth, SPACs)
   when the user wants buyers that don't fit cleanly as Strategic or Financial.
 version: 2.1.0
+allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 
 # INFOR Buyers List — Workflow
 
 This skill builds a buyer universe for a sell-side M&A process by identifying strategic and financial buyers, tiering them A/B/C, and writing the results into the INFOR Buyers List Template.
-
-Allowed tools: Read, Bash, Write, Glob, WebSearch
 
 Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location and working directory are resolved inline in Step 6.
 

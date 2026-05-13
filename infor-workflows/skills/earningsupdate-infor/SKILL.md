@@ -9,13 +9,12 @@ description: >
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
 version: 2.1.0
+allowed-tools: [Read, Bash, Write, Glob, WebSearch, WebFetch]
 ---
 
 # INFOR Earnings Update — Workflow
 
 This skill builds a branded 5-slide earnings update deck from a company's most recent quarter of financials, a Bloomberg EEO screenshot, and optionally an earnings call transcript. It also produces a companion capitalization table XLSX that the analyst manually inserts into the deck in place of the Macabacus placeholder on slide 2.
-
-Allowed tools: Read, Bash, Write, Glob, WebSearch, WebFetch
 
 Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Earnings template, cap table template, and working directory are resolved inline in their respective steps.
 

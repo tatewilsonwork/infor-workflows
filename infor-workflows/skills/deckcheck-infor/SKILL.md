@@ -1,14 +1,13 @@
 ---
 name: deckcheck-infor
 description: >
-  Use this skill when the user invokes /deckcheck-infor or asks to review, proofread, or QC a
-  PowerPoint deck. Checks grammar, spelling, tone, INFOR brand formatting (fonts, colors, alignment,
-  sizing), and verifies factual claims (HQ locations, company descriptions, event dates) via web
-  search. Produces a tiered review (Tier I / II / III) where each suggestion is scored 1–10 on
-  Confidence and Impact, delivered as a Microsoft Word (.docx) document. Activates on "deck check",
-  "review this deck", "proofread deck", "QC deck", "check my deck", "deck review", or any request
-  to review a PowerPoint for errors.
+  Reviews an attached PowerPoint for grammar, spelling, tone, INFOR brand formatting (fonts,
+  colors, alignment, sizing), and factual accuracy (HQ locations, company descriptions, event
+  dates) via web search. Produces a tiered review (Tier I / II / III) with Confidence and Impact
+  scored 1–10 per suggestion, delivered as a Word (.docx) document. Activates on /deckcheck-infor,
+  "deck check", "review this deck", "proofread deck", "QC deck", or "deck review".
 version: 2.0.0
+allowed-tools: [Read, Bash, Write, Glob, WebSearch, Agent]
 ---
 
 # INFOR Deck Check — Workflow
@@ -16,8 +15,6 @@ version: 2.0.0
 This skill reviews an attached PowerPoint presentation for three categories of issues: (1) language quality — grammar, spelling, and tone; (2) formatting compliance — alignment, fonts, sizes, colors, and layout against INFOR brand standards; and (3) factual accuracy — verifiable claims like headquarters locations, company descriptions, dates of events, and other publicly available facts.
 
 The output is a cleanly formatted Microsoft Word (.docx) document organized into three tiers, with specific, actionable suggestions scored on Confidence and Impact.
-
-Allowed tools: Read, Bash, Write, Glob, WebSearch, Agent
 
 Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Working directory is resolved inline where needed.
 
