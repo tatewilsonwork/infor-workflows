@@ -19,8 +19,10 @@ infor-workflows/
 │       └── references/            Progressive-disclosure detail loaded on demand
 ├── scripts/                       Plugin-wide helpers + tests
 │   ├── find_template.sh           Resolves a template filename across install paths
-│   ├── pptx_helpers.py            Shared python-pptx helpers (set_text, write_bulleted_shape, …)
-│   └── test_pptx_helpers.py       Unit tests for the helpers
+│   ├── sanitize_name.sh           Sanitizes a string for safe use as a filename component
+│   ├── pptx_helpers.py            Shared python-pptx helpers (set_text, write_bulleted_shape, clone_slide, …)
+│   ├── test_pptx_helpers.py       Unit tests for the Python helpers
+│   └── test_shell_helpers.py      Unit tests for the bash helpers
 └── templates/                     Excel + PowerPoint templates shipped with the plugin
 README.md
 CHANGELOG.md
@@ -54,6 +56,7 @@ Long workflows split into a short `SKILL.md` (workflow + step outline) plus `ref
 
 ### Shared helpers (don't re-implement)
 - **Templates** — never hardcode template paths or re-implement the `find` search. Use `bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR X Template.xlsx"` from the skill, and the script handles every install path.
+- **Filename sanitization** — never re-implement the "remove special chars, replace spaces with hyphens" logic per skill. Use `SANITIZED=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/sanitize_name.sh" "$RAW_NAME")` — handles company names, CapIQ tickers (`NasdaqGS:MSFT` → `NasdaqGS-MSFT`), ampersands, leading / trailing whitespace, consecutive specials.
 - **python-pptx formatting** — `set_text`, `write_bulleted_shape`, `set_cell_text`, `find_shape`, `find_shape_in_group`, `fmt_broker_value` live in [`infor-workflows/scripts/pptx_helpers.py`](infor-workflows/scripts/pptx_helpers.py) with brand constants (`PALATINO`, `COLOR_UP`, `COLOR_DOWN`). Skills import them via:
   ```python
   import sys, os
@@ -80,13 +83,63 @@ Every file-producing skill writes to the **current working directory** (`./`). W
 ## Testing
 
 ```bash
-python -m unittest infor-workflows/scripts/test_pptx_helpers.py
-python infor-workflows/skills/precedents-infor/test_allow_list.py
+python -m unittest infor-workflows/scripts/test_pptx_helpers.py    # pptx helpers (set_text, clone_slide, …)
+python -m unittest infor-workflows/scripts/test_shell_helpers.py   # find_template.sh + sanitize_name.sh
+python infor-workflows/skills/precedents-infor/test_allow_list.py  # precedents URL allow-list gate
 ```
 
-Both should pass before opening a PR. The `pptx_helpers` tests build fresh in-memory decks; the allow-list test runs the URL gate against PASS/FAIL fixtures.
+All three should pass before opening a PR. CI runs them automatically on every PR and push to `main` — see [`.github/workflows/tests.yml`](.github/workflows/tests.yml). The same workflow also enforces the single-version policy, the `/<skill-name>` mention rule, and the `allowed-tools` frontmatter requirement.
 
 End-to-end smoke testing (e.g., invoking `/comps-infor` against a real CapIQ workbook) is manual — there is no fixture deck checked into the repo.
+
+## Skill relationships
+
+The skills aren't independent — they compose into common workflows. When an analyst kicks off a real deliverable, expect to chain several skills:
+
+```
+                           ┌─────────────────────┐
+                           │  infor-wireframe    │  (plan the deck)
+                           └──────────┬──────────┘
+                                      │
+                ┌─────────────────────┼─────────────────────┐
+                ▼                     ▼                     ▼
+   ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐
+   │ infor-deck-writing │  │ brand-guidelines   │  │ Data-table skills  │
+   │ (words on slides)  │  │ (visual format)    │  │ (comps / precedents│
+   │                    │  │                    │  │  / buyerslist /    │
+   │                    │  │                    │  │  captable)         │
+   └────────────────────┘  └──────────┬─────────┘  └─────────┬──────────┘
+                                      │                       │
+                                      └───────┬───────────────┘
+                                              ▼
+                                  ┌────────────────────┐
+                                  │  Output deck       │
+                                  └──────────┬─────────┘
+                                             │
+                                             ▼
+                                  ┌────────────────────┐
+                                  │  deckcheck-infor   │  (QC the result)
+                                  └────────────────────┘
+```
+
+Typical chains by deliverable:
+
+| Deliverable | Skill chain |
+|---|---|
+| **CIM** | `infor-wireframe` → `infor-deck-writing` → `brand-guidelines-infor` + (`comps-infor` / `precedents-infor` / `buyerslist-infor` / `captable-infor` for embedded tables) → `deckcheck-infor` |
+| **Teaser** | `infor-wireframe` → `infor-deck-writing` → `brand-guidelines-infor` → `deckcheck-infor` |
+| **Pitch deck** | `infor-wireframe` → `infor-deck-writing` → `brand-guidelines-infor` + (`comps-infor` / `precedents-infor` / `buyerslist-infor`) → `deckcheck-infor` |
+| **Fairness opinion** | `infor-wireframe` → `infor-deck-writing` (fairness-opinion-recipes) → `brand-guidelines-infor` + (`comps-infor` / `precedents-infor`) → `deckcheck-infor` |
+| **Quarterly earnings update** | `earningsupdate-infor` (built-in; also invokes `captable-infor` as Step 8) |
+| **LBO model** | `lbo-model` (standalone — produces .xlsx, not a deck) |
+
+Cross-skill rules embedded in the SKILL.md files:
+- `brand-guidelines-infor` defers all on-slide-text guidance to `infor-deck-writing` (don't restate voice rules)
+- `deckcheck-infor` defers all visual-formatting rules to `brand-guidelines-infor` (don't restate brand colors / fonts)
+- `infor-wireframe` hands off to `infor-deck-writing` for copy and `brand-guidelines-infor` for construction
+- `earningsupdate-infor` invokes `captable-infor` directly as a sub-step
+
+Skills that don't compose with the rest of the chain: `lbo-model` (produces an Excel model, not slide content).
 
 ## Conventions Claude should respect
 

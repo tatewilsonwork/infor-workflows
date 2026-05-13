@@ -4,6 +4,20 @@ All notable changes to the **infor-workflows** plugin. The version listed is the
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are YYYY-MM-DD.
 
+## [2.10.0] — 2026-05-13 ([#78](https://github.com/tatewilsonwork/infor-workflows/pull/78))
+
+### Added
+- `.editorconfig` and `.gitattributes` — pin LF line endings, UTF-8, no trailing whitespace. Silences the "LF will be replaced by CRLF" git warnings on Windows checkouts (#9).
+- `infor-workflows/scripts/sanitize_name.sh` — shared bash helper that turns a raw string (`"Rogers Communications Inc."`, `"NasdaqGS:MSFT"`, `"Dye & Durham"`) into a safe filename component. Replaces the per-skill "remove special chars, replace spaces with hyphens" inline rule (#15).
+- `infor-workflows/scripts/test_shell_helpers.py` — 13 unit tests covering both `find_template.sh` (resolves every shipped template, errors on missing template with the searched-paths list) and `sanitize_name.sh` (company names, CapIQ tickers, ampersands, whitespace, consecutive specials, Unicode) (#7, #15).
+- `.github/workflows/tests.yml` — GitHub Actions CI runs all three test suites (pptx_helpers, shell_helpers, allow_list) plus three policy checks (single-version sync, slash-command-in-description, allowed-tools frontmatter) on every PR and push to main (#8).
+- **Skill relationships** section in [CLAUDE.md](CLAUDE.md) — diagram + table mapping each deliverable (CIM, teaser, pitch, fairness opinion, earnings update, LBO) to its skill chain, plus the cross-skill defer rules (e.g., `deckcheck-infor` defers brand rules to `brand-guidelines-infor`) (#12).
+
+### Changed
+- All six file-producing skills (`comps-infor`, `precedents-infor`, `buyerslist-infor`, `captable-infor`, `earningsupdate-infor`, `lbo-model`) now call `sanitize_name.sh` for filename sanitization instead of restating the rule inline. One-liner per skill (#15).
+- [CLAUDE.md](CLAUDE.md) scripts table picks up `sanitize_name.sh` and `test_shell_helpers.py`, and the "Shared helpers" section documents the sanitization convention.
+- Single-version policy bump: plugin 2.9.0 → 2.10.0; every skill's `version:` synced to 2.10.0.
+
 ## [2.9.0] — 2026-05-13 ([#77](https://github.com/tatewilsonwork/infor-workflows/pull/77))
 
 ### Added

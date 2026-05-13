@@ -5,7 +5,7 @@ description: >
   statements to populate a capitalization table. Activates on /captable-infor and on tasks involving
   shares outstanding, debt schedules, lease obligations, options/RSU/warrant tables, convertible
   debentures, cash balances, preferred shares, or non-controlling interest sourced from company filings.
-version: 2.9.0
+version: 2.10.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch, WebFetch]
 ---
 
@@ -41,7 +41,10 @@ Resolve the template via the plugin's shared helper:
 bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Cap Table Template.xlsx"
 ```
 
-Sanitize the ticker for use as a filename by replacing `:` with `-` (e.g., `NasdaqGS:MSFT` → `NasdaqGS-MSFT`).
+Sanitize the ticker for use as a filename via the shared helper (e.g., `NasdaqGS:MSFT` → `NasdaqGS-MSFT`):
+```bash
+SANITIZED_TICKER=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/sanitize_name.sh" "$TICKER")
+```
 
 Copy the template to the current working directory using this exact shell pattern (note the quoting — required because the path contains spaces):
 ```bash

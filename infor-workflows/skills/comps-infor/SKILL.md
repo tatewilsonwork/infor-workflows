@@ -4,7 +4,7 @@ description: >
   Use this skill when the user invokes /comps-infor or asks to build a public comparables table
   (comps, trading comps, public comps) for a company. Populates the INFOR Comps Template with
   18 CapIQ tickers split into three labelled groups, plus a short description for each company.
-version: 2.9.0
+version: 2.10.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 
@@ -63,7 +63,10 @@ Resolve the template via the plugin's shared helper:
 bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Comps Template.xlsx"
 ```
 
-Sanitize the target company name for use as a filename (remove special characters, replace spaces with hyphens).
+Sanitize the target company name for use as a filename via the shared helper:
+```bash
+SANITIZED_COMPANY_NAME=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/sanitize_name.sh" "$COMPANY_NAME")
+```
 
 Copy the template to the current working directory:
 ```bash

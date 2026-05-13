@@ -6,7 +6,7 @@ description: >
   blocks that another agent or analyst can use to draft the deck. Activates on /infor-wireframe,
   "wireframe a CIM", "outline a pitch", "plan a fairness opinion", "teaser wireframe",
   "draft the deck order", "what slides go in a CIM", "skeleton of a pitch book".
-version: 2.9.0
+version: 2.10.0
 allowed-tools: [Read, Write, Edit, Glob, Grep]
 ---
 

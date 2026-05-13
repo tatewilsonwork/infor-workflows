@@ -6,7 +6,7 @@ description: >
   "brand guidelines", "INFOR formatting", "format this deck", "branded presentation", "INFOR style",
   "make a deck", "pitch book", "discussion materials". For the words on the slide (voice, bullets,
   titles, number / period notation), use `infor-deck-writing` instead — this skill governs visuals only.
-version: 2.9.0
+version: 2.10.0
 allowed-tools: [Read, Bash, Write, Glob]
 ---
 

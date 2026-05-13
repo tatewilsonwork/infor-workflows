@@ -7,7 +7,7 @@ description: >
   verifiable from filings), but a closer-comparable private target with disclosed metrics or
   multiples should be selected over a weakly comparable public one. Populates the INFOR Precedents
   Template.
-version: 2.9.0
+version: 2.10.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 
@@ -84,7 +84,10 @@ Resolve the template via the plugin's shared helper:
 bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Precedents Template.xlsx"
 ```
 
-Sanitize the company name for use as a filename (remove special characters, replace spaces with hyphens).
+Sanitize the company name for use as a filename via the shared helper:
+```bash
+SANITIZED_COMPANY_NAME=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/sanitize_name.sh" "$COMPANY_NAME")
+```
 
 Copy the template to the current working directory:
 ```bash

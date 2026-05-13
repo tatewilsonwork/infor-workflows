@@ -8,7 +8,7 @@ description: >
   "investment highlight bullet", "market overview", "valuation commentary", "teaser copy",
   "punch up these bullets", or any request to turn raw notes into slide-ready language for a
   CIM, pitch, teaser, fairness opinion, or formal valuation.
-version: 2.9.0
+version: 2.10.0
 allowed-tools: [Read, Write, Edit, Glob, Grep, WebSearch]
 ---
 

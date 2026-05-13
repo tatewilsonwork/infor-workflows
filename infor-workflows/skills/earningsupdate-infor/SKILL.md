@@ -8,7 +8,7 @@ description: >
   performance summary. Activates on "earnings update", "earnings deck", "quarterly earnings",
   "earnings summary deck", or any request to build a branded update deck off a recent 10-Q/10-K
   and Bloomberg EEO snip.
-version: 2.9.0
+version: 2.10.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch, WebFetch]
 ---
 
@@ -63,8 +63,9 @@ Resolve the earnings template via the plugin's shared helper:
 bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Earnings Update Template.pptx"
 ```
 
-Sanitize the company name (remove special chars, replace spaces with hyphens) and copy:
+Sanitize the company name via the shared helper, then copy:
 ```bash
+SANITIZED_COMPANY=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/sanitize_name.sh" "$COMPANY_NAME")
 TEMPLATE=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Earnings Update Template.pptx")
 OUTPUT="./Earnings Update - $SANITIZED_COMPANY.pptx"
 cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
