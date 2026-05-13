@@ -6,7 +6,7 @@ description: >
   dates) via web search. Produces a tiered review (Tier I / II / III) with Confidence and Impact
   scored 1–10 per suggestion, delivered as a Word (.docx) document. Activates on /deckcheck-infor,
   "deck check", "review this deck", "proofread deck", "QC deck", or "deck review".
-version: 2.8.0
+version: 2.9.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch, Agent]
 ---
 
@@ -84,55 +84,18 @@ Review all extracted text for:
 
 ### Step 4 — Formatting Review (INFOR Brand Compliance)
 
-Check every slide against the INFOR brand guidelines below. Flag any deviation.
+The authoritative source for every brand rule is [`brand-guidelines-infor/SKILL.md`](../brand-guidelines-infor/SKILL.md) — load it before this step. Audit every slide against those rules and flag any deviation. The key categories to check:
 
-#### 4a — Fonts
-- **All text** must be Palatino Linotype — flag any other font
-- Check font sizes against expected values:
-  - Slide titles: 22 pt bold, white
-  - Section headers (navy boxes): 14 pt bold, white
-  - Main bullets: 12 pt (full page) / 11 pt (half/quad)
-  - Sub-bullets: 11 pt (full page) / 10 pt (half/quad)
-  - Footnotes/sources: 7 pt
-  - Cover company name: 30 pt bold
-  - Cover subtitle: 24 pt regular
+| Category | Where defined in `brand-guidelines-infor` | What to flag |
+|---|---|---|
+| Fonts | Section 3 — Typography (sizes per element type) | Non-Palatino fonts; wrong size for title / header / bullets / footnotes / cover |
+| Colors | Section 2 — Color Palette | Colors outside the INFOR palette; Navy used outside title bars / section headers / standalone table headers; white text on non-navy/non-mid-blue fills |
+| Layout & alignment | Sections 1 (slide dimensions) and 6 (layouts — title bar, section header, content area, footer, page numbers) | Slide not 10.00×7.50in; section header boxes not exactly 0.34in tall; missing page numbers in bottom-right; shapes off-grid by >0.05in; overlapping or off-slide shapes |
+| Bullets & spacing | Sections 4 (bullet hierarchy: square / dash / open circle) and 5 (symmetric paragraph spacing) | Wrong glyph at each level; asymmetric before / after spacing |
+| Tables | Section 7 | Missing white gridlines (0.75pt); no alternating light-grey shading; vertical separator lines present; wrong header fill (Navy when standalone, Mid Blue when under section header) |
+| Charts | Section 8 | Wrong color order (must be Mid Blue → Light Blue → Gold → Dark Grey → Light Grey); line series not Gold; non-Palatino/non-black axis/labels |
 
-#### 4b — Colors
-- Navy Blue (#0E213F) — only for title bar fills, section header box fills, standalone table header fills
-- Mid Blue (#46566E) — table headers under section headers, primary chart color
-- Light Blue (#ADB9CA) — secondary chart color, subtotals
-- Gold (#A4844B) — chart lines (mandatory for all line series)
-- Dark Grey (#767171) — additional chart color, totals rows
-- Light Grey (#E5E3E3) — alternating row shading, subtotals
-- White text on Navy or Mid Blue fills; black text everywhere else
-- Flag any colors outside the INFOR palette
-
-#### 4c — Layout & Alignment
-- Slide dimensions: 10.00 x 7.50 inches
-- Title bar: left=0.26in, top=0.13in, 9.38 x 0.96in
-- Section header boxes: height exactly 0.34in, navy fill
-- Content area starts at ~1.47in from top
-- Footer line at ~6.82in from top
-- Page numbers bottom-right
-- Sources/footnotes at 7 pt, bottom of slide
-- Shapes that appear intended to be aligned but are offset by more than 0.05in
-- Text boxes or shapes that overlap unintentionally
-- Shapes that extend beyond the slide boundary
-
-#### 4d — Bullets & Spacing
-- Level 1: solid square; Level 2: dash/hyphen; Level 3: open circle
-- Paragraph spacing must be symmetric (equal before and after)
-
-#### 4e — Tables
-- White gridlines (0.75 pt)
-- Alternating light grey row shading
-- No vertical separator lines
-- Header row: Navy (standalone) or Mid Blue (under section header)
-
-#### 4f — Charts
-- Color order: Mid Blue, Light Blue, Gold, Dark Grey, Light Grey
-- Line series must use Gold
-- Font: Palatino Linotype, black
+For specific hex values, font-size tables, layout positions, and chart conventions, read [`brand-guidelines-infor/SKILL.md`](../brand-guidelines-infor/SKILL.md) directly — keep this file in sync with that one as the source of truth.
 
 ---
 
@@ -308,38 +271,6 @@ Do not paste the full review content into the chat response — the Word documen
 
 ---
 
-## INFOR Brand Quick Reference
+## INFOR Brand Reference
 
-```
-COLORS
-  Navy:       #0E213F  (title bars, section headers, standalone table headers)
-  Mid Blue:   #46566E  (tables under headers, primary chart, target highlight)
-  Light Blue: #ADB9CA  (secondary chart, subtotals)
-  Gold:       #A4844B  (chart lines, tertiary chart)
-  Dark Grey:  #767171  (chart extra, totals rows)
-  Light Grey: #E5E3E3  (chart extra, alternating rows, subtotals)
-
-FONTS — Palatino Linotype everywhere
-  Title:       22pt bold (white on navy)
-  Header:      14pt bold (white on navy)
-  Bullets:     12pt full / 11pt half
-  Sub-bullets: 11pt full / 10pt half
-  Footnotes:   7pt
-  Cover name:  30pt bold
-  Cover sub:   24pt regular
-
-SLIDE SIZE: 10.00 x 7.50 inches
-
-SECTION HEADER BOX: 0.34in tall, navy fill, full section width
-
-BULLETS: Square > Dash > Open Circle
-
-SPACING: Always symmetric (equal before and after)
-
-TABLES: White gridlines (0.75pt), alternating light grey, no vertical lines
-  Standalone header: Navy
-  Under section header: Mid Blue
-
-CHARTS: Mid Blue > Light Blue > Gold > Dark Grey > Light Grey
-         Gold for lines. Black font/axis.
-```
+For colors, fonts, layout positions, table and chart conventions, see [`brand-guidelines-infor/SKILL.md`](../brand-guidelines-infor/SKILL.md) — the Quick Reference Card at the bottom of that file is a one-page cheat sheet. This skill audits decks against those rules; keeping the rules in one place avoids drift between the audit and the source of truth.

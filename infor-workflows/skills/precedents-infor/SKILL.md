@@ -7,7 +7,7 @@ description: >
   verifiable from filings), but a closer-comparable private target with disclosed metrics or
   multiples should be selected over a weakly comparable public one. Populates the INFOR Precedents
   Template.
-version: 2.8.0
+version: 2.9.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 

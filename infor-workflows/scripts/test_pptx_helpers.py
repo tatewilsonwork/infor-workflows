@@ -14,12 +14,15 @@ from copy import deepcopy
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from pptx import Presentation
+from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 from pptx_helpers import (
     COLOR_DOWN,
     COLOR_UP,
     PALATINO,
+    clone_slide,
+    delete_slide,
     find_shape,
     find_shape_in_group,
     fmt_broker_value,
@@ -307,6 +310,83 @@ class TestFindShape(unittest.TestCase):
         slide = prs.slides.add_slide(prs.slide_layouts[5])
         with self.assertRaises(KeyError):
             find_shape(slide, "Nonexistent")
+
+
+# ─── clone_slide / delete_slide tests ────────────────────────────────────────
+
+class TestCloneSlide(unittest.TestCase):
+    def _make_source_slide_with_shapes(self):
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank layout
+        # Add two distinguishable shapes
+        tb1 = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(3), Inches(1))
+        tb1.name = "Source TextBox A"
+        tb1.text_frame.paragraphs[0].add_run().text = "alpha"
+        tb2 = slide.shapes.add_textbox(Inches(1), Inches(3), Inches(3), Inches(1))
+        tb2.name = "Source TextBox B"
+        tb2.text_frame.paragraphs[0].add_run().text = "beta"
+        return prs, slide, [tb1.name, tb2.name]
+
+    def test_clone_copies_shape_xml(self):
+        prs, source, names = self._make_source_slide_with_shapes()
+        new_slide = clone_slide(prs, source)
+        new_names = [s.name for s in new_slide.shapes]
+        for name in names:
+            self.assertIn(name, new_names)
+
+    def test_clone_preserves_text(self):
+        prs, source, _ = self._make_source_slide_with_shapes()
+        new_slide = clone_slide(prs, source)
+        texts = [s.text_frame.text for s in new_slide.shapes if s.has_text_frame]
+        self.assertIn("alpha", texts)
+        self.assertIn("beta", texts)
+
+    def test_clone_inherits_layout(self):
+        prs, source, _ = self._make_source_slide_with_shapes()
+        new_slide = clone_slide(prs, source)
+        self.assertEqual(new_slide.slide_layout.name, source.slide_layout.name)
+
+    def test_clone_picture_remaps_rid(self):
+        """A picture has an r:embed rId — the new slide must own a fresh rId
+        pointing at the same image so the picture renders instead of red-X."""
+        import io
+        # Tiny valid PNG (1x1 black pixel)
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+            b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8"
+            b"\xcf\xc0\x00\x00\x00\x03\x00\x01\\\xcd\xff\x69\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        prs = Presentation()
+        source = prs.slides.add_slide(prs.slide_layouts[6])
+        source.shapes.add_picture(io.BytesIO(png_bytes), Inches(1), Inches(1), Inches(1), Inches(1))
+
+        new_slide = clone_slide(prs, source)
+
+        # Find the picture on the new slide and confirm its r:embed rId
+        # resolves to an existing relationship (would raise KeyError if not)
+        found_picture = False
+        for shp in new_slide.shapes:
+            for el in shp._element.iter():
+                embed = el.get(qn("r:embed"))
+                if embed:
+                    found_picture = True
+                    self.assertIn(embed, new_slide.part.rels,
+                                  "cloned picture's r:embed must point at a new-slide rel")
+        self.assertTrue(found_picture, "cloned slide must contain the picture")
+
+
+class TestDeleteSlide(unittest.TestCase):
+    def test_delete_removes_slide(self):
+        prs = Presentation()
+        s0 = prs.slides.add_slide(prs.slide_layouts[6])
+        s0.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1)).name = "keep-me"
+        s1 = prs.slides.add_slide(prs.slide_layouts[6])
+        s1.shapes.add_textbox(Inches(1), Inches(1), Inches(2), Inches(1)).name = "delete-me"
+        self.assertEqual(len(prs.slides), 2)
+        delete_slide(prs, 1)
+        self.assertEqual(len(prs.slides), 1)
+        remaining = [s.name for s in prs.slides[0].shapes]
+        self.assertIn("keep-me", remaining)
 
 
 # ─── Constants ───────────────────────────────────────────────────────────────

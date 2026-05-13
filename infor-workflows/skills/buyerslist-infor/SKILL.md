@@ -7,7 +7,7 @@ description: >
   Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C, plus an
   optional third category (e.g., family offices, international strategics, sovereign wealth, SPACs)
   when the user wants buyers that don't fit cleanly as Strategic or Financial.
-version: 2.8.0
+version: 2.9.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 

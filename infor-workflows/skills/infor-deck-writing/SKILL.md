@@ -8,7 +8,7 @@ description: >
   "investment highlight bullet", "market overview", "valuation commentary", "teaser copy",
   "punch up these bullets", or any request to turn raw notes into slide-ready language for a
   CIM, pitch, teaser, fairness opinion, or formal valuation.
-version: 2.8.0
+version: 2.9.0
 allowed-tools: [Read, Write, Edit, Glob, Grep, WebSearch]
 ---
 
@@ -18,7 +18,16 @@ This skill teaches Claude to write text that sounds like it was drafted by an IN
 
 **Companion skill — formatting:** for visual formatting (fonts, colors, layout, table styles, file structure) use [`brand-guidelines-infor`](../brand-guidelines-infor/SKILL.md). This skill is about **what the words say**, not how they look on the slide.
 
-**Companion reference — slide-type recipes:** detailed templates and verbatim opening lines for every common slide type live in [`slide-type-recipes.md`](slide-type-recipes.md). Open it whenever the request maps to a specific slide type (e.g., "draft an executive summary", "write a market overview", "draft fairness opinion language").
+**Companion reference — slide-type recipes:** detailed templates and verbatim opening lines live in [`references/`](references/), split by deliverable type so only the relevant ~150 lines load on demand instead of the full corpus. Pick the file that matches the request:
+
+| Request maps to | Open |
+|---|---|
+| Teaser cover line, teaser page 1 / page 2 | [`references/teaser-recipes.md`](references/teaser-recipes.md) |
+| CIM executive summary, CIM section framing | [`references/cim-recipes.md`](references/cim-recipes.md) |
+| Pitch firm-overview, buyer-approach, risks, timeline, summary | [`references/pitch-recipes.md`](references/pitch-recipes.md) |
+| Fairness opinion language, formal valuation | [`references/fairness-opinion-recipes.md`](references/fairness-opinion-recipes.md) |
+| Strategic review section structure | [`references/strategic-review-recipes.md`](references/strategic-review-recipes.md) |
+| Investment Highlights, Company Overview, Industry, Process, Buyer Commentary, Valuation Commentary, Management Bios, Financial Summary (cross-cutting — appears in multiple deliverables) | [`references/building-blocks.md`](references/building-blocks.md) |
 
 ---
 
@@ -201,22 +210,25 @@ Use these. They appear repeatedly across decks and signal INFOR voice.
 
 ## 5 — Slide-type recipes
 
-For per-slide-type templates, opening sentences, structure, and verbatim examples by deck type (Teaser, CIM, Pitch, Fairness Opinion, Formal Valuation, Strategic Review), **open [`slide-type-recipes.md`](slide-type-recipes.md)**. It covers:
+Recipes live in [`references/`](references/), split by deliverable so the model loads only the relevant ~150–300 lines on demand. See the table at the top of this file for which file to open per request. The recipes cover:
 
-- Executive summary / "The Opportunity"
-- Investment highlights (Core, Expanded, numbered)
-- Company overview / Business description
-- Business segments / "What We Do"
-- Industry / Market overview
-- Process pages (Key Process Milestones, Buyer Approach Strategy, Timeline)
-- Buyer-list commentary (Strategic / Financial / Other)
-- Valuation commentary (DCF, Comps, Precedents, Football Field)
-- Management team bios
-- Financial summary / KPI tile blocks
-- Teaser headline & cover line
-- Fairness opinion: Disclaimer, Independence, Assumptions & Limitations, Approach to Fairness, Conclusion
-- Risk & Mitigants
-- Summary and Near-Term Next Steps
+**By deliverable:**
+- [`teaser-recipes.md`](references/teaser-recipes.md) — cover line, page 1 ("The Opportunity"), page 2, full worked example
+- [`cim-recipes.md`](references/cim-recipes.md) — executive summary, section map, disclaimer boilerplate
+- [`pitch-recipes.md`](references/pitch-recipes.md) — INFOR firm overview, buyer approach strategy, risks & mitigants, illustrative timeline, summary & next steps
+- [`fairness-opinion-recipes.md`](references/fairness-opinion-recipes.md) — cover, disclaimer, introduction, independence, assumptions & limitations, scope of review, approach to fairness, conclusion; plus formal valuation additions (valuation date, methodology weighting, implied range)
+- [`strategic-review-recipes.md`](references/strategic-review-recipes.md) — section structure, alternatives comparison, recommendation pattern
+
+**Cross-cutting building blocks** ([`building-blocks.md`](references/building-blocks.md)) — these appear in multiple deliverables so they live in one place:
+- Investment Highlights (Core + Expanded)
+- Company Overview / Business Description
+- Business Segments
+- Industry / Market Overview
+- Process — Key Process Milestones / Timeline
+- Buyer-List Commentary
+- Valuation Commentary (Comps, Precedents, DCF, Football Field)
+- Management Team / Bios
+- Financial Summary / KPI Tile Blocks
 
 ---
 
@@ -226,7 +238,7 @@ When given source material (call notes, management slides, a CIM draft, a resear
 
 ### Step 1 — Clarify the slide type and audience
 
-Ask (only if not obvious from context) which slide type and which deck type the text is for. The slide type drives the structure (see `slide-type-recipes.md`); the deck type drives the formality dial:
+Ask (only if not obvious from context) which slide type and which deck type the text is for. The slide type drives the structure (see the recipes table at the top of this file); the deck type drives the formality dial:
 
 | Deck type | Formality dial | Defended forward-looking claims |
 |-----------|----------------|-------------------------------|
@@ -245,7 +257,7 @@ Read the source material and pull out:
 
 ### Step 3 — Draft using the appropriate recipe
 
-Open `slide-type-recipes.md` and find the matching slide type. Use the template's opening line and structure. Adapt verbatim examples to the target Company.
+Open the matching recipe file in [`references/`](references/) (see the table at the top of this SKILL.md). Use the template's opening line and structure. Adapt verbatim examples to the target Company.
 
 ### Step 4 — Apply the INFOR style filter
 
@@ -370,4 +382,4 @@ CONFIDENTIALITY: every slide carries "Strictly Private & Confidential".
 
 ---
 
-For per-slide-type templates and verbatim opening lines, see [`slide-type-recipes.md`](slide-type-recipes.md).
+For per-slide-type templates and verbatim opening lines, see the recipe files in [`references/`](references/) — the routing table at the top of this file maps every request type to the right file.
