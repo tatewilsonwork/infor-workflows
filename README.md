@@ -47,6 +47,10 @@ In Co-work, open the **Customize** panel → **Add plugin** → type the repo na
 
 All Excel templates and the INFOR logo are included in the plugin source tree (`infor-workflows/templates/`) and are installed automatically when you add the plugin. Skills locate them at runtime — no manual path configuration needed.
 
+## Output Files
+
+Every skill saves its output (`.xlsx`, `.pptx`, or `.docx`) to the **current working directory**. When invoked from the repo root, outputs land at the project root and are excluded from git via `.gitignore` patterns on `/*.xlsx`, `/*.pptx`, and `/*.docx`. When invoked elsewhere, outputs land in whatever directory you ran from.
+
 ## Folder Structure
 
 ```
@@ -58,11 +62,12 @@ infor-workflows/
 │   │   ├── captable-infor/
 │   │   ├── comps-infor/
 │   │   ├── deckcheck-infor/
+│   │   ├── earningsupdate-infor/
 │   │   ├── infor-deck-writing/
 │   │   ├── infor-wireframe/
 │   │   ├── lbo-model/
 │   │   └── precedents-infor/
+│   ├── scripts/                # Shared helpers (find_template.sh, pptx_helpers.py) + tests
 │   └── templates/              # Excel templates and INFOR logo
-├── outputs/                    # Deal outputs (gitignored)
 └── README.md
 ```

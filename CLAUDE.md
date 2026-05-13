@@ -69,6 +69,9 @@ Long workflows split into a short `SKILL.md` (workflow + step outline) plus `ref
 ### Templates
 All templates live in [`infor-workflows/templates/`](infor-workflows/templates/). They are binary `.xlsx`, `.pptx`, `.thmx`, `.png` — keep them in git. If a template changes, increment the corresponding skill's version because the cell map / shape names may move.
 
+### Output files
+Every file-producing skill writes to the **current working directory** (`./`). When invoked from the repo root, generated files land at the project root; `.gitignore` patterns on `/*.xlsx`, `/*.pptx`, and `/*.docx` keep them out of git without affecting the tracked templates under `infor-workflows/templates/`. When invoked elsewhere, outputs land in whatever cwd the analyst was in. The legacy `outputs/` directory is still gitignored defensively but no skill writes there anymore.
+
 ## Testing
 
 ```bash

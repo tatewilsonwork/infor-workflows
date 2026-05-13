@@ -221,7 +221,7 @@ Produce the review as a **Microsoft Word (.docx) file** using `python-docx`. **O
 Within each tier, sort suggestions by Priority Score descending (highest first).
 
 **File naming & location:**
-- Save to the `outputs/` directory at the repo root (create it if it does not exist)
+- Save to the current working directory (`./`)
 - Filename: `DeckReview_<OriginalDeckStem>_<YYYY-MM-DD>.docx` — strip the `.pptx` extension, keep the stem, append today's date
 - If a file with that name already exists, append `_v2`, `_v3`, etc.
 
@@ -295,8 +295,7 @@ table.style = "Light Grid Accent 1"
 # ...populate tier counts + total row
 doc.add_paragraph(category_breakdown_line)
 
-out_path = Path("outputs") / f"DeckReview_{stem}_{today}.docx"
-out_path.parent.mkdir(exist_ok=True)
+out_path = Path(f"./DeckReview_{stem}_{today}.docx")
 doc.save(out_path)
 ```
 
