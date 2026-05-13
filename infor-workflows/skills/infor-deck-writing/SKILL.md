@@ -1,16 +1,15 @@
 ---
 name: infor-deck-writing
 description: >
-  Use this skill when writing, drafting, editing, or rewriting any slide-ready text for an INFOR
-  Financial Group PowerPoint deck — including executive summaries, investment highlights, company
-  overviews, market / industry pages, process updates, buyer-list commentary, valuation commentary,
-  management bios, financial KPI tiles, teaser headlines, and fairness-opinion language. Activates
-  on "write slide text", "draft a bullet", "draft an exec summary", "INFOR-style", "rewrite this
-  in INFOR voice", "phrase this for the deck", "investment highlight bullet", "market overview
-  paragraph", "valuation commentary", "buyer commentary", "executive summary", "teaser copy",
-  "punch up these bullets", or any request to turn raw notes into slide-ready language for an
-  INFOR pitch, CIM, teaser, fairness opinion, formal valuation, or strategic review.
+  Writing, drafting, or rewriting slide-ready text for an INFOR Financial Group PowerPoint —
+  exec summaries, investment highlights, company overviews, market pages, valuation and buyer
+  commentary, KPI tiles, teaser headlines, fairness-opinion language. Activates on "write slide
+  text", "draft a bullet", "draft an exec summary", "INFOR voice", "rewrite in INFOR voice",
+  "investment highlight bullet", "market overview", "valuation commentary", "teaser copy",
+  "punch up these bullets", or any request to turn raw notes into slide-ready language for a
+  CIM, pitch, teaser, fairness opinion, or formal valuation.
 version: 1.0.0
+allowed-tools: [Read, Write, Edit, Glob, Grep, WebSearch]
 ---
 
 # INFOR Deck Writing — Voice, Style, and Slide-Ready Text
@@ -20,8 +19,6 @@ This skill teaches Claude to write text that sounds like it was drafted by an IN
 **Companion skill — formatting:** for visual formatting (fonts, colors, layout, table styles, file structure) use [`brand-guidelines-infor`](../brand-guidelines-infor/SKILL.md). This skill is about **what the words say**, not how they look on the slide.
 
 **Companion reference — slide-type recipes:** detailed templates and verbatim opening lines for every common slide type live in [`slide-type-recipes.md`](slide-type-recipes.md). Open it whenever the request maps to a specific slide type (e.g., "draft an executive summary", "write a market overview", "draft fairness opinion language").
-
-Allowed tools: Read, Write, Edit, Glob, Grep, WebSearch
 
 ---
 

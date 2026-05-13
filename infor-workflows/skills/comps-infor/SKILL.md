@@ -5,13 +5,12 @@ description: >
   (comps, trading comps, public comps) for a company. Populates the INFOR Comps Template with
   18 CapIQ tickers split into three labelled groups, plus a short description for each company.
 version: 2.0.0
+allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 
 # INFOR Public Comparables Table — Workflow
 
 This skill builds a public comparable companies table by selecting 18 peers and writing their CapIQ tickers, group labels, and one-line descriptions into the INFOR Comps Template.
-
-Allowed tools: Read, Bash, Write, Glob, WebSearch
 
 Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location and working directory are resolved inline in Step 3.
 

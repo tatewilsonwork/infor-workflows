@@ -7,13 +7,12 @@ description: >
   from filings), but a closer-comparable private target with disclosed metrics or multiples
   should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
 version: 2.6.0
+allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 
 # INFOR Precedent Transactions Table — Workflow
 
 This skill builds a precedent transactions table by researching up to 15 relevant M&A deals and writing the transaction data into the INFOR Precedents Template (rows 7–21, specific columns only — see the cell map).
-
-Allowed tools: Read, Bash, Write, Glob, WebSearch
 
 Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location, outputs folder, and working directory are resolved inline in Step 4.
 

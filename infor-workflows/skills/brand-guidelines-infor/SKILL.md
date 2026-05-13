@@ -1,16 +1,13 @@
 ---
 name: brand-guidelines-infor
 description: >
-  Use this skill when creating, formatting, or reviewing the visual presentation of any PowerPoint
-  that must follow INFOR Financial Group brand guidelines — colors, fonts, layouts, table styles,
-  chart styles, logo placement, slide dimensions, template structure. Activates on "brand guidelines",
+  Visual formatting of INFOR Financial Group PowerPoint decks — colors, fonts, layouts, tables,
+  charts, logo placement, slide dimensions, template structure. Activates on "brand guidelines",
   "INFOR formatting", "format this deck", "branded presentation", "INFOR style", "make a deck",
-  "pitch book", "discussion materials", or any request to create or fix a PowerPoint using INFOR
-  branding. Also use when answering questions about INFOR colors, fonts, logo usage, or slide layout
-  standards. For drafting the words on the slide (tone, voice, bullets, titles, number / period
-  notation, slide-type recipes), use `infor-deck-writing` instead — this skill governs visual
-  formatting only.
+  "pitch book", "discussion materials". For the words on the slide (voice, bullets, titles,
+  number / period notation), use `infor-deck-writing` instead — this skill governs visuals only.
 version: 2.1.0
+allowed-tools: [Read, Bash, Write, Glob]
 ---
 
 # INFOR Brand Guidelines — PowerPoint
@@ -45,8 +42,6 @@ This skill governs **visual formatting only** — slide dimensions, colors, font
 Treat these as the minimum — the full guidance in `infor-deck-writing` always takes precedence when both are available.
 
 **Always start from the INFOR Deck Template** (see [`references/deck-template.md`](references/deck-template.md)). The template carries the branded slide master, theme colors, fonts, and example slides for every common layout. Starting from scratch almost always loses master-level formatting (title bars, footers, page numbers, bullet styles, theme font) and produces off-brand output.
-
-Allowed tools: Read, Bash, Write, Glob
 
 Today's date is available from the system context (`currentDate`) — do not shell out to `date`. INFOR logo, deck template, theme, and working directory are resolved inline in Section 10 Step 2.
 

@@ -1,14 +1,13 @@
 ---
 name: infor-wireframe
 description: >
-  Use this skill when the user asks to plan, outline, or wireframe a new INFOR Financial Group
-  PowerPoint deliverable — CIM, pitch deck, fairness opinion, or teaser. Produces a slide-by-slide
-  wireframe (page order, slide purpose, recommended layout, content blocks, when to include or
-  omit each slide) that another agent or analyst can use to draft the deck. Activates on "wireframe
-  a CIM", "outline a pitch", "plan a fairness opinion", "teaser wireframe", "draft the deck order",
-  "skeleton of a pitch book", "what slides go in a CIM", "structure of an INFOR fairness opinion",
-  or any request for a slide-by-slide plan of an INFOR deliverable before drafting begins.
+  Slide-by-slide wireframe for a new INFOR Financial Group PowerPoint deliverable — CIM, pitch,
+  fairness opinion, or teaser. Outputs page order, slide purpose, recommended layout, and content
+  blocks that another agent or analyst can use to draft the deck. Activates on "wireframe a CIM",
+  "outline a pitch", "plan a fairness opinion", "teaser wireframe", "draft the deck order",
+  "what slides go in a CIM", "skeleton of a pitch book".
 version: 1.0.0
+allowed-tools: [Read, Write, Edit, Glob, Grep]
 ---
 
 # INFOR Deck Wireframe — Slide-by-Slide Plans for the Four Deliverable Types
@@ -37,8 +36,6 @@ Two companion skills handle those:
 The wireframe sits **between** the kick-off conversation and the drafting / formatting work. It is
 the one place where the analyst can see the whole deck in outline form before any words or shapes
 are committed.
-
-Allowed tools: Read, Write, Edit, Glob, Grep
 
 ---
 
