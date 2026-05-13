@@ -78,22 +78,18 @@ See [`references/source-ladder.md`](references/source-ladder.md) for the full ru
 
 ### Step 4 — Locate and Copy the Template
 
-Locate the template via the plugin's shared helper:
+Resolve the template via the plugin's shared helper:
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Precedents Template.xlsx"
 ```
 
-Resolve the output folder:
-```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); echo "${REPO_ROOT:-.}/outputs"
-```
-
 Sanitize the company name for use as a filename (remove special characters, replace spaces with hyphens).
 
-Create the outputs folder if it doesn't exist, then copy the template:
+Copy the template to the current working directory:
 ```bash
-mkdir -p "[outputs_folder]"
-cp "[template_path]" "[outputs_folder]/[SANITIZED_COMPANY_NAME] - Precedent Transactions.xlsx"
+TEMPLATE=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Precedents Template.xlsx")
+OUTPUT="./$SANITIZED_COMPANY_NAME - Precedent Transactions.xlsx"
+cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ```
 
 Confirm the copy succeeded before proceeding.

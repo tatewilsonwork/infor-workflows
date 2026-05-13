@@ -1,7 +1,10 @@
 # Zip archives
 *.zip
 
-# Skill outputs
+# Skill outputs at the repo root (templates under infor-workflows/templates/ are tracked)
+/*.xlsx
+/*.pptx
+/*.docx
 outputs/
 
 # Local Claude settings
