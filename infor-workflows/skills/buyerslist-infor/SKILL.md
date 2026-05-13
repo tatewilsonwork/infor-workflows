@@ -2,12 +2,12 @@
 name: buyerslist-infor
 description: >
   Use this skill when the user asks to build a buyer list, buyer universe, or potential acquirer list
-  for a company in a sell-side M&A process. Activates on "buyer list", "buyer universe",
+  for a company in a sell-side M&A process. Activates on /buyerslist-infor, "buyer list", "buyer universe",
   "potential acquirers", "who would buy", "strategic buyers", "financial sponsors", or "sell-side process".
   Populates the INFOR Buyers List Template with strategic and financial buyers, tiered A/B/C, plus an
   optional third category (e.g., family offices, international strategics, sovereign wealth, SPACs)
   when the user wants buyers that don't fit cleanly as Strategic or Financial.
-version: 2.1.0
+version: 2.8.0
 allowed-tools: [Read, Bash, Write, Glob, WebSearch]
 ---
 

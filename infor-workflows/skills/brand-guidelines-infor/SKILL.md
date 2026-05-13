@@ -2,11 +2,11 @@
 name: brand-guidelines-infor
 description: >
   Visual formatting of INFOR Financial Group PowerPoint decks — colors, fonts, layouts, tables,
-  charts, logo placement, slide dimensions, template structure. Activates on "brand guidelines",
-  "INFOR formatting", "format this deck", "branded presentation", "INFOR style", "make a deck",
-  "pitch book", "discussion materials". For the words on the slide (voice, bullets, titles,
-  number / period notation), use `infor-deck-writing` instead — this skill governs visuals only.
-version: 2.1.0
+  charts, logo placement, slide dimensions, template structure. Activates on /brand-guidelines-infor,
+  "brand guidelines", "INFOR formatting", "format this deck", "branded presentation", "INFOR style",
+  "make a deck", "pitch book", "discussion materials". For the words on the slide (voice, bullets,
+  titles, number / period notation), use `infor-deck-writing` instead — this skill governs visuals only.
+version: 2.8.0
 allowed-tools: [Read, Bash, Write, Glob]
 ---
 

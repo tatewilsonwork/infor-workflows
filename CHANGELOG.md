@@ -1,18 +1,27 @@
 # Changelog
 
-All notable changes to the **infor-workflows** plugin. The version listed is the plugin version from [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json); individual skills carry their own `version:` in frontmatter and bump independently.
+All notable changes to the **infor-workflows** plugin. The version listed is the plugin version from [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json); every skill's `version:` frontmatter is kept in lock-step with the plugin version (see [CLAUDE.md](CLAUDE.md) → Versioning).
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are YYYY-MM-DD.
 
-## [Unreleased]
+## [2.8.0] — 2026-05-13 ([#76](https://github.com/tatewilsonwork/infor-workflows/pull/76), [#75](https://github.com/tatewilsonwork/infor-workflows/pull/75), [#74](https://github.com/tatewilsonwork/infor-workflows/pull/74))
 
 ### Added
-- `allowed-tools` array in every skill's frontmatter — the harness now enforces tool restrictions instead of relying on prose `Allowed tools:` lines.
-- Repo-root [`CLAUDE.md`](CLAUDE.md) — contributor brief on plugin layout, conventions, version policy, shared helpers, and testing.
-- This `CHANGELOG.md`.
+- `allowed-tools` array in every skill's frontmatter — the harness now enforces tool restrictions instead of relying on prose `Allowed tools:` lines (#74).
+- Repo-root [`CLAUDE.md`](CLAUDE.md) — contributor brief on plugin layout, conventions, version policy, shared helpers, and testing (#74).
+- `CHANGELOG.md` (this file) (#74).
+- `lbo-model` rewritten to build the LBO workbook from scratch via openpyxl — five standard tabs (Assumptions, Sources & Uses, Operating Model, Debt Schedule, Returns), PE-standard conventions, every calculation an Excel formula. No template required (#75).
+- `/<skill-name>` slash command listed in every skill's `description:` so the router fires reliably on the slash form for all 10 skills (#76).
 
 ### Changed
-- Tightened skill descriptions on `brand-guidelines-infor`, `infor-deck-writing`, `infor-wireframe`, and `deckcheck-infor` (~25–40% shorter each) by removing redundant prose while preserving the trigger phrases the router uses.
+- **Single plugin version policy** — every skill's `version:` frontmatter field is now kept in lock-step with the plugin version. Per-skill version drift is no longer allowed. All 10 skills bumped to 2.8.0 (#76).
+- All file-producing skills now write outputs to the **current working directory** (`./`). Previously `precedents-infor` wrote to `${REPO_ROOT}/outputs/` and `deckcheck-infor` wrote to a relative `outputs/`. `.gitignore` now ignores `/*.xlsx`, `/*.pptx`, `/*.docx` at the repo root so generated files don't pollute git status (#75).
+- `lbo-model` aligned with the other nine skills' style — YAML folded-scalar description, Title-Case section headers, standard "Workflow Steps + Domain Reference" outline (#75).
+- README skill table now links each skill name to its `SKILL.md` file. `infor-deck-writing` and `infor-wireframe` rows now show their slash commands (previously dashed) (#76).
+- Tightened skill descriptions on `brand-guidelines-infor`, `infor-deck-writing`, `infor-wireframe`, and `deckcheck-infor` (~25–40% shorter each) by removing redundant prose while preserving the trigger phrases the router uses (#74).
+
+### Removed
+- Broken references in the old `lbo-model` SKILL.md to `examples/LBO_Model.xlsx` (which never existed in the repo) and the load-bearing dependency on `/mnt/skills/public/xlsx/recalc.py` (#75).
 
 ## [2.7.0] — 2026-05-12 ([#73](https://github.com/tatewilsonwork/infor-workflows/pull/73), [#72](https://github.com/tatewilsonwork/infor-workflows/pull/72), [#71](https://github.com/tatewilsonwork/infor-workflows/pull/71))
 
