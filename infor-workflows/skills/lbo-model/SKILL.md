@@ -7,7 +7,7 @@ description: >
   (never a Python-computed scalar) so the model is dynamic. Activates on /lbo-model, "LBO model",
   "leveraged buyout", "PE model", "build an LBO", "Sources and Uses", "returns analysis", or any
   request to model a sponsor-led acquisition with debt financing.
-version: 2.8.0
+version: 2.9.0
 allowed-tools: [Read, Bash, Write, Glob]
 ---
 

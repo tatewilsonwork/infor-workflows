@@ -6,7 +6,7 @@ description: >
   "brand guidelines", "INFOR formatting", "format this deck", "branded presentation", "INFOR style",
   "make a deck", "pitch book", "discussion materials". For the words on the slide (voice, bullets,
   titles, number / period notation), use `infor-deck-writing` instead — this skill governs visuals only.
-version: 2.8.0
+version: 2.9.0
 allowed-tools: [Read, Bash, Write, Glob]
 ---
 
@@ -18,7 +18,7 @@ This skill defines the visual identity and formatting rules for all INFOR Financ
 
 This skill governs **visual formatting only** — slide dimensions, colors, fonts, layouts, bullet styles, tables, charts, logo placement, and template structure.
 
-**Writing the words on a slide is handled by [`infor-deck-writing`](../infor-deck-writing/SKILL.md).** Whenever you draft, edit, or rewrite any text that will appear on a slide — titles, bullets, headlines, paragraphs, footnotes, callout copy, KPI captions, quotes, source lines — load and follow `infor-deck-writing` (and its companion `slide-type-recipes.md`).
+**Writing the words on a slide is handled by [`infor-deck-writing`](../infor-deck-writing/SKILL.md).** Whenever you draft, edit, or rewrite any text that will appear on a slide — titles, bullets, headlines, paragraphs, footnotes, callout copy, KPI captions, quotes, source lines — load and follow `infor-deck-writing` (which routes to the right recipe file under [`references/`](../infor-deck-writing/references/) per deliverable type).
 
 `infor-deck-writing` is the authoritative reference for:
 - INFOR voice (formal, institutional, Canadian English, defined-term capitalisation, hedged forward-looking claims, semicolon-chained bullets)

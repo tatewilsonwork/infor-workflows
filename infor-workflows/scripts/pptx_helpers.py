@@ -11,12 +11,15 @@ work and that have a history of regressing when re-derived inline in a skill:
   - `set_cell_text(cell, text, size_pt, color_hex)` forces Palatino on table
     cells (PowerPoint's default fallback is Calibri, which has been observed
     to slip in when cells are rewritten).
+  - `clone_slide(prs, source_slide)` duplicates a slide and rewires every
+    relationship (images, charts, hyperlinks) so the copy renders correctly
+    instead of showing red-X placeholders.
 
 Skills can load these via:
 
     import sys, os
     sys.path.insert(0, os.environ.get("CLAUDE_PLUGIN_ROOT", "./infor-workflows") + "/scripts")
-    from pptx_helpers import set_text, write_bulleted_shape, set_cell_text, find_shape
+    from pptx_helpers import set_text, write_bulleted_shape, set_cell_text, clone_slide, find_shape
 
 Tests live next to this file in test_pptx_helpers.py and build fresh in-memory
 decks so they don't depend on the INFOR template files.
@@ -25,6 +28,7 @@ decks so they don't depend on the INFOR template files.
 from copy import deepcopy
 
 from pptx.dml.color import RGBColor
+from pptx.oxml.ns import qn
 from pptx.util import Pt
 
 
@@ -309,3 +313,72 @@ def fmt_broker_value(kind, value):
     else:
         raise ValueError(f"unknown kind {kind!r}; expected dollar/per_share/percent/volume")
     return f"({body})" if neg else body
+
+
+# ─── clone_slide ─────────────────────────────────────────────────────────────
+
+# Shape XML attributes that carry relationship IDs — must be remapped when
+# shapes are copied across slides, or pictures/charts/hyperlinks dangle.
+_RID_ATTRS = (qn("r:embed"), qn("r:link"), qn("r:id"))
+
+
+def clone_slide(prs, source_slide):
+    """Duplicate a slide, preserving shapes, layout, AND all relationships.
+
+    Copying only the shape XML is not enough — shapes that reference
+    relationships (pictures, charts, hyperlinks) carry r:embed / r:link / r:id
+    attributes whose rIds point into the source slide's rels file. Without
+    copying the rels and remapping rIds, those references dangle in the new
+    slide and PowerPoint shows a red X with "The picture can't be displayed."
+
+    The function:
+      1. Adds a new slide using the source's layout (placeholders are wiped
+         since we'll copy the source's own shapes in).
+      2. Copies every non-notes relationship from source to new slide and
+         records the old rId -> new rId mapping.
+      3. Deep-copies each source shape's XML, walks every element, and
+         rewrites r:embed / r:link / r:id attributes to the new rIds.
+
+    Use this when building a deck from the INFOR Deck Template — clone the
+    sample slide whose layout matches your content, then edit the clone.
+    """
+    new_slide = prs.slides.add_slide(source_slide.slide_layout)
+
+    # Remove placeholders the layout auto-added — we want only the source's shapes
+    for shp in list(new_slide.shapes):
+        new_slide.shapes._spTree.remove(shp._element)
+
+    # Copy every non-notes relationship and build an old -> new rId map
+    rid_map = {}
+    for rel in source_slide.part.rels.values():
+        if "notesSlide" in rel.reltype:
+            continue
+        if rel.is_external:
+            new_rid = new_slide.part.relate_to(
+                rel.target_ref, rel.reltype, is_external=True
+            )
+        else:
+            new_rid = new_slide.part.relate_to(rel.target_part, rel.reltype)
+        rid_map[rel.rId] = new_rid
+
+    # Deep-copy each shape's XML and rewrite rId attributes to the new rIds
+    for shp in source_slide.shapes:
+        new_el = deepcopy(shp._element)
+        for el in new_el.iter():
+            for attr in _RID_ATTRS:
+                if attr in el.attrib and el.attrib[attr] in rid_map:
+                    el.attrib[attr] = rid_map[el.attrib[attr]]
+        new_slide.shapes._spTree.append(new_el)
+
+    return new_slide
+
+
+def delete_slide(prs, index):
+    """Remove a slide from a presentation by zero-based index.
+
+    Used together with `clone_slide`: clone the sample slides you want, then
+    delete the originals so only the analyst-edited clones remain.
+    """
+    xml_slides = prs.slides._sldIdLst
+    slides = list(xml_slides)
+    xml_slides.remove(slides[index])

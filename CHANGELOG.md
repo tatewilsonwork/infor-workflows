@@ -4,6 +4,20 @@ All notable changes to the **infor-workflows** plugin. The version listed is the
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are YYYY-MM-DD.
 
+## [2.9.0] — 2026-05-13 ([#77](https://github.com/tatewilsonwork/infor-workflows/pull/77))
+
+### Added
+- `clone_slide()` and `delete_slide()` helpers in [`infor-workflows/scripts/pptx_helpers.py`](infor-workflows/scripts/pptx_helpers.py) — duplicate a template slide while remapping `r:embed` / `r:link` / `r:id` attributes so pictures, charts, and hyperlinks render correctly in the copy instead of showing red-X placeholders. 5 new unit tests cover the rId rewiring (30 total in `test_pptx_helpers.py`, up from 25).
+- `infor-deck-writing/references/` directory — six per-deliverable recipe files (`teaser-recipes.md`, `cim-recipes.md`, `pitch-recipes.md`, `fairness-opinion-recipes.md`, `strategic-review-recipes.md`) plus a cross-cutting `building-blocks.md`. Each loads on demand so a typical drafting request reads ~150–300 lines instead of the previous 787.
+
+### Changed
+- `deckcheck-infor` deduplicates the brand-rules block. Step 4 (Formatting Review) and the bottom "Quick Reference Card" now point at [`brand-guidelines-infor/SKILL.md`](infor-workflows/skills/brand-guidelines-infor/SKILL.md) as the source of truth instead of restating colors / fonts / layouts inline. Removes a drift risk: brand changes only need to be edited in one place.
+- `brand-guidelines-infor/references/deck-template.md` imports `clone_slide` / `delete_slide` from the shared `pptx_helpers` module instead of carrying its own ~30-line copy of the function.
+- Single-version policy bump: plugin 2.8.0 → 2.9.0; every skill's `version:` synced to 2.9.0.
+
+### Removed
+- `infor-workflows/skills/infor-deck-writing/slide-type-recipes.md` (787 lines) — split into the six files under `references/` above. Cross-references throughout the plugin updated.
+
 ## [2.8.0] — 2026-05-13 ([#76](https://github.com/tatewilsonwork/infor-workflows/pull/76), [#75](https://github.com/tatewilsonwork/infor-workflows/pull/75), [#74](https://github.com/tatewilsonwork/infor-workflows/pull/74))
 
 ### Added

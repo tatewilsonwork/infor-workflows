@@ -22,57 +22,19 @@ Reference these when deciding which slide to clone as a starting point:
 
 Open the template, **clone the sample slide whose layout matches your content**, then edit the clone's text and shapes. This preserves every master-level detail — title bar, footer line, page number placeholder, section-header proportions, table styles, bullet indentation — that you cannot cleanly reproduce from code.
 
+Use the `clone_slide` and `delete_slide` helpers from the plugin's shared module — they preserve image / chart / hyperlink relationships correctly (the naive `deepcopy`-only approach drops rIds and produces red-X picture placeholders).
+
 ```python
-import copy
+import os, sys
+sys.path.insert(0, os.environ.get("CLAUDE_PLUGIN_ROOT", "./infor-workflows") + "/scripts")
 from pptx import Presentation
-from pptx.oxml.ns import qn
+from pptx_helpers import clone_slide, delete_slide
 
 TEMPLATE = r"<path from find_template.sh 'INFOR Deck Template.pptx'>"
 
 prs = Presentation(TEMPLATE)
 
-def clone_slide(prs, source_slide):
-    """Duplicate a slide, preserving shapes, layout, AND all relationships (images, charts, hyperlinks).
-
-    Copying only the shape XML is not enough — shapes that reference relationships (pictures,
-    charts, hyperlinks) carry r:embed / r:link / r:id attributes whose rIds point into the
-    source slide's rels file. Without copying the rels and remapping rIds, those references
-    dangle in the new slide and PowerPoint shows a red X with "The picture can't be displayed."
-    """
-    new_slide = prs.slides.add_slide(source_slide.slide_layout)
-    # Remove placeholders that the layout auto-adds
-    for shp in list(new_slide.shapes):
-        new_slide.shapes._spTree.remove(shp._element)
-
-    # Copy every non-notes relationship from the source slide and build an old→new rId map
-    rid_map = {}
-    for rel in source_slide.part.rels.values():
-        if "notesSlide" in rel.reltype:
-            continue
-        if rel.is_external:
-            new_rid = new_slide.part.relate_to(rel.target_ref, rel.reltype, is_external=True)
-        else:
-            new_rid = new_slide.part.relate_to(rel.target_part, rel.reltype)
-        rid_map[rel.rId] = new_rid
-
-    # Deep-copy shape XML and rewrite r:embed / r:link / r:id attributes so they point at the new rIds
-    RID_ATTRS = (qn('r:embed'), qn('r:link'), qn('r:id'))
-    for shp in source_slide.shapes:
-        new_el = copy.deepcopy(shp._element)
-        for el in new_el.iter():
-            for attr in RID_ATTRS:
-                if attr in el.attrib and el.attrib[attr] in rid_map:
-                    el.attrib[attr] = rid_map[el.attrib[attr]]
-        new_slide.shapes._spTree.append(new_el)
-    return new_slide
-
-def delete_slide(prs, index):
-    """Remove a slide by index."""
-    xml_slides = prs.slides._sldIdLst
-    slides = list(xml_slides)
-    xml_slides.remove(slides[index])
-
-# Example: build a standard deck — cover, exec summary, content, disclaimer, contact
+# Build a standard deck — cover, exec summary, content, disclaimer, contact.
 # Clone first, then delete the sample slides at the end.
 cover        = clone_slide(prs, prs.slides[0])  # slide 1: Title Slide
 exec_summary = clone_slide(prs, prs.slides[1])  # slide 2: Executive Summary
@@ -86,6 +48,8 @@ for _ in range(9):
 
 prs.save("output.pptx")
 ```
+
+The helpers handle the relationship rewiring under the hood — see [`infor-workflows/scripts/pptx_helpers.py`](../../../scripts/pptx_helpers.py) for the implementation. The picture-rId remapping is unit-tested in [`test_pptx_helpers.py`](../../../scripts/test_pptx_helpers.py).
 
 ## Alternative: Build from Template Layouts
 
