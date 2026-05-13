@@ -6,7 +6,7 @@ description: >
   publicly traded targets at the time of acquisition (where Revenue and EBITDA are verifiable
   from filings), but a closer-comparable private target with disclosed metrics or multiples
   should be selected over a weakly comparable public one. Populates the INFOR Precedents Template.
-version: 2.5.0
+version: 2.6.0
 ---
 
 # INFOR Precedent Transactions Table — Workflow
@@ -16,6 +16,13 @@ This skill builds a precedent transactions table by researching up to 15 relevan
 Allowed tools: Read, Bash, Write, Glob, WebSearch
 
 Today's date is available from the system context (`currentDate`) — do not shell out to `date`. Template location, outputs folder, and working directory are resolved inline in Step 4.
+
+**Detailed references** (loaded on demand):
+- [`references/source-ladder.md`](references/source-ladder.md) — the 4-rung source selection ladder, stub-calc cap, "disclosed" definition, pro-forma rules
+- [`references/url-allow-list.md`](references/url-allow-list.md) — allowed source domains, acquiror-domain PR-path rule, the Step 5b Python verification gate, test cases
+- [`references/excel-writing.md`](references/excel-writing.md) — cell map, FX conversion rules, formula precedence by rung, comment formats, row trimming
+
+Pure-logic tests for the URL allow-list live in [`test_allow_list.py`](test_allow_list.py) next to this file.
 
 ---
 
@@ -41,17 +48,7 @@ Identify the **sector / business type** of the target company (e.g., wealth mana
 
 Search for up to 15 relevant M&A transactions where the **target company** is comparable to the input company.
 
-**Selection priority — comparability first, public targets as a mild tiebreaker:**
-
-The strongest precedent is a transaction whose **target business closely resembles the input company** (sector, business model, client segment, asset class, scale). Public-target deals are mildly preferred because their financials are directly verifiable from filings — but a clearly closer-comparable **private** target with disclosed metrics or multiples should be selected over a weakly comparable public one.
-
-Categories, in rough order of preference when comparability is roughly equal:
-
-1. **Publicly traded targets at the time of acquisition.** Their pre-deal annual filings (10-K, 20-F, AIF, annual MD&A) make Revenue and EBITDA directly verifiable. Default tiebreaker when business-model fit is similar.
-2. **Private targets with disclosed multiples** in the acquiror's deal press release, investor deck, or reputable financial news (e.g., "acquired at ~12x EBITDA" or "~3x Revenue").
-3. **Private targets with disclosed absolute Revenue and/or EBITDA** in the acquiror's PR or reputable news (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global).
-
-When choosing between candidates, weigh comparability (sector / business model / segment / scale) more heavily than public-vs-private status. Recency and disclosure quality are secondary tiebreakers. Do **not** include a thin or off-sector public deal just to fill the public quota when a tighter-fit private deal is available.
+**Selection priority — comparability first, public targets as a mild tiebreaker.** The strongest precedent is a transaction whose **target business closely resembles the input company** (sector, business model, client segment, asset class, scale). Public-target deals are mildly preferred because their financials are directly verifiable from filings — but a clearly closer-comparable **private** target with disclosed metrics or multiples should be selected over a weakly comparable public one.
 
 Never include a transaction where deal value (TEV) is undisclosed — a blank TEV makes the row unusable for multiple analysis.
 
@@ -62,100 +59,21 @@ Never include a transaction where deal value (TEV) is undisclosed — a blank TE
 - `"[sector] M&A [year range] disclosed multiples EBITDA revenue"`
 - `"[company name] comparable transactions precedents investment banking"`
 
-**For each candidate transaction — Revenue and EBITDA must be on an LTM (last-twelve-months) basis ending the most recent quarter before the announcement date.** Do **not** default to the last fiscal-year figure when a more recent quarter has been reported.
+**Source priority — work the 4-rung ladder top-down for each candidate.** Stop at the first rung that produces a usable figure:
 
-**Source priority — find a disclosed figure first; only calculate from filings when nothing is disclosed.**
+1. **Disclosed LTM $ figure** in the transaction's own sources (deal PR, 8-K, transcript, major news) — preferred for public AND private targets
+2. **Disclosed transaction multiple** → derive metric in-cell as `=I{row}/multiple`. Supersedes the filings-stub fallback (rung 3), not merely preferred over it
+3. **Calculated LTM stub from target filings** — public-target fallback only. Capped at 2 rows per table (the most token-expensive route)
+4. **Disclosed non-LTM private $ figure** — fallback for private targets only; period drift may be months, never years
 
-Work this ladder top-down for both public and private targets. Stop at the first rung that produces a usable figure.
+See [`references/source-ladder.md`](references/source-ladder.md) for the full rung-by-rung guidance, the stub-period formula and worked example, the stub-calc cap and selection rule (with required selection log in the response), the "disclosed" definition, and the pro-forma rules.
 
-1. **Disclosed LTM (or close-to-LTM) $ figure in the transaction's own sources — strongly preferred for public AND private targets.** Look first in the acquiror's deal press release, deal-supplement investor deck or 8-K exhibit, deal conference call / earnings call transcript discussing the transaction, or reputable financial news coverage of the transaction (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global). Many deal announcements explicitly disclose "LTM Revenue of $X" and "LTM (or Adjusted) EBITDA of $Y" — those are typically the figures the buyer used to value the deal and what an investment banker would cite. Use the disclosed figure as the cell value as-is; do not "recalculate" over it. A reasonable sanity check against filings is fine — but if the deal source says $107.9 LTM Revenue, the cell value is $107.9.
-2. **Disclosed transaction multiple → derive from TEV.** If the deal source quotes a multiple but not the absolute $ figure (e.g., "acquired at ~12.5x LTM EBITDA" or "~3.0x Revenue"), derive the metric by dividing TEV by the multiple. Write the cell as a formula referencing the TEV cell directly — e.g., `=I7/12.5` for J7 (EBITDA) or `=I7/3.0` for K7 (Revenue). **Do not multiply by `C{row}`** — column I is already converted to output currency, so the derived metric inherits that conversion. **This rung is required when available — a disclosed multiple supersedes the filings-stub fallback (rung 3), not merely preferred over it.** The multiple reflects how the buyer valued the deal. Use it for both public and private targets when no $ LTM is disclosed.
-3. **Calculated LTM from target filings — public-target fallback only.** If, and only if, neither a disclosed $ figure nor a disclosed multiple can be found in the transaction sources, calculate LTM from the target's own filings using the stub-period formula below. **At most 2 rows in the final table may use this 3-operand stub calc — see the "Stub-calc cap" sub-section below for the selection rule.**
-4. **Disclosed non-LTM period $ figure — private-target fallback.** For private targets where steps 1 and 2 fail, use whatever absolute Revenue / EBITDA figure is disclosed (e.g., FY 2023, calendar 2024). Label the period in the comment and accept that timing may drift by months, but never by years — drop the deal if the only available figure is two-plus years stale.
+**Source domain allow-list — hard gate, in prose AND in code.** URLs cited in any cell comment on column I, J, or K MUST resolve to an allow-listed domain. See [`references/url-allow-list.md`](references/url-allow-list.md) for the full list, the acquiror-domain PR-path rule, and the Python verification snippet (Step 5b). Off-list sources are blocked at save-time.
 
-There is no filings-based fallback for private targets. If steps 1, 2, and 4 all fail for a private target, leave the cell blank (or drop the deal if both Revenue and EBITDA are missing).
-
-**Do not skip a disclosed multiple — common bad reasons agents reach for the stub calc instead:**
-- The multiple says "approximately Nx" or "~Nx" — still rung 2.
-- Wanting to verify from filings — verifying is fine, but the cell value is the disclosed multiple.
-- "It's pro forma" — see the pro-forma note below.
-- Wanting the standalone number rather than the deal number — the precedents table shows what buyers paid, not target-standalone fundamentals.
-
-**"Pro forma" almost never means synergies.** In deal-source multiples, "pro forma" almost always means pro forma for divestitures or continuing operations — not pro forma for buyer synergies. Synergies are virtually always called out as a separate line item ("$X of expected run-rate cost savings"), not embedded in the headline multiple. Treat the multiple as synergy-inclusive only if the source explicitly says "including synergies," "post-synergy," or "synergized."
-
-**LTM stub-period formula — used only for step 3 (public-target fallback):**
-
-> **LTM = YTD_MRQ + FY_prior − YTD_PYQ**
-
-…where `YTD_MRQ` is year-to-date through the most recent reported quarter before announcement, `FY_prior` is the most recent completed fiscal year, and `YTD_PYQ` is the matching year-to-date stub from the prior year. The two YTD stubs must cover the **same calendar period** (Q1 vs. Q1, H1 vs. H1, 9M vs. 9M).
-
-| MRQ before announce | YTD stubs to pull |
-|---|---|
-| Q1 | Q1 current vs. Q1 prior |
-| Q2 | H1 current vs. H1 prior |
-| Q3 | 9M current vs. 9M prior |
-| Q4 | No stub calc — `LTM = FY` (use the 10-K directly) |
-
-Worked example — AvidXchange acquired by TPG / Corpay, announced May 6, 2025. If the deal press release / 8-K / Corpay investor deck disclosed an LTM figure, that figure goes in the cell directly (step 1). Only if no LTM is disclosed would you fall back to the stub calc:
-- LTM Revenue = Q1 2025 ($107.9) + FY 2024 ($438.94) − Q1 2024 ($105.6)
-- LTM EBITDA = Q1 2025 ($17.517) + FY 2024 ($84.720) − Q1 2024 ($17.665)
-
-For the stub calc, pull each stub from its own filing — the most recent 10-Q / 6-K / interim MD&A (`YTD_MRQ`), the most recent 10-K / 20-F / AIF (`FY_prior`), and the prior-year 10-Q / 6-K / interim MD&A for the same calendar quarter (`YTD_PYQ`). Apply the same EBITDA definition (Operating Income + D&A from cash flow statement, or Adjusted EBITDA if consistently disclosed) across all three stubs. If MRQ is Q4, no stub calc is needed — use the 10-K's full-year figures.
-
-**Pre-write checkpoint — before writing a 3-operand stub formula for J or K.** State in your response which deal sources you searched for a disclosed $ LTM figure and a disclosed multiple, and what you found. Required search set: the acquiror deal press release, 8-K exhibit / investor deck, and at least one of (Bloomberg, Reuters, WSJ, Globe and Mail, Financial Post, S&P Global) deal coverage. If a multiple was found but rejected, the rejection reason must be checked against the bad-reasons list above.
-
-**Stub-calc cap — at most 2 rows per table.**
-
-The 3-operand stub-calc path (rung 3) is by far the most token-expensive route to a row: it requires pulling and reading three separate filings (MRQ, FY prior, PYQ) plus reconciling EBITDA definitions across them. A table that leans heavily on stub calcs burns context that's better spent on broadening rung-1 / rung-2 search across more deals.
-
-**Cap:** at most **2 rows** in the final table may use the 3-operand stub formula `=(mrq+fy-pyq)*C{row}` in either column J or column K. A row with stub-calc on J only, K only, or both J and K counts as **one** row against the cap.
-
-**Selection rule when more than 2 stub-calc candidates exist:** rank the stub-calc candidates by comparability to the input company on sector, business model, client segment, asset class, and scale. Keep the top **2** most comparable. **Drop the remaining stub-calc candidates entirely from the table — do not replace them.** The total table simply has fewer rows. Rung 1 (disclosed $ LTM), rung 2 (disclosed multiple), and rung 4 (disclosed non-LTM private $) remain **uncapped** — only rung 3 is limited.
-
-**Filtering must happen BEFORE pulling the filings for the dropped candidates.** Identify all rung-3 candidates first, apply the comparability ranking, decide which ≤ 2 to keep, and only then fetch the MRQ / FY / PYQ filings for those kept rows. Do not compute stubs you will not write.
-
-**Selection log — required in the response.** Briefly state how many stub-calc candidates were identified, which 2 were kept, and which were dropped. Format: `X stub-calc candidates identified; kept the 2 most comparable: [Deal A], [Deal B]; dropped: [Deal C, ...].` If 2 or fewer rung-3 candidates exist in the first place, state that and skip the ranking.
-
-**Excel does the math, not you.** Whether the cell value is a single disclosed figure or a stub calc, it must live in a cell formula (see Step 5) — never pre-sum the stubs in Python and write a single number for the calculated case.
-
-**Selection criteria:**
-- Similar sector / business model to the input company
-- Announced or completed within the last 6–8 years (prefer recent deals)
-- Disclosed deal value (TEV) — **required**
-- Disclosed Revenue and/or EBITDA — required for public targets; private targets require either disclosed metrics or a disclosed multiple from which a value can be inferred
-
-**Source Domain Allow-List — hard gate, in prose AND in code:**
-
-URLs cited in any cell comment on column I, J, or K (both Format A's `Source:` line and every URL in Format B's per-stub list) **MUST** resolve to one of these allow-listed domain families. Sub-domains are OK; suffix-matching applies.
-
-- The **target's** investor relations site (any sub-domain containing `investor` or beginning `ir.`)
-- The **acquiror's** investor relations site (same matching rule)
-- The **acquiror's parent domain on its press-release path.** URLs from the `ACQUIROR_DOMAINS` set below are allow-listed **only** when the URL path contains one of: `/news`, `/press-release`, `/press-releases`, `/investor`, `/investors`, `/announcements`, `/newsroom`. This admits verbatim issuer press releases hosted on the parent corporate domain (where the IR sub-domain rule above does not match — e.g., `abc.xyz/investor/news/...`, `tpg.com/news-and-insights/...`, `permira.com/news-and-insights/announcements/...`, `cppinvestments.com/newsroom/...`) while excluding portfolio pages, blog posts, and other off-PR content from the same domains.
-
-  Initial `ACQUIROR_DOMAINS` set: `thomabravo.com`, `vistaequitypartners.com`, `permira.com`, `tpg.com`, `silverlake.com`, `franciscopartners.com`, `hf.com`, `adventinternational.com`, `cppinvestments.com`, `gic.com.sg`, `crosspointcapital.com`, `evergreencoastcapital.com`, `elliottmgmt.com`, `abc.xyz`, `google.com`, `microsoft.com`, `oracle.com`, `broadcom.com`, `cisco.com`.
-- `sec.gov` (EDGAR)
-- `sedarplus.ca`, `sedar.com` (Canadian filings)
-- `bloomberg.com`, `reuters.com`, `wsj.com`, `ft.com`, `theglobeandmail.com`, `financialpost.com`, `spglobal.com`
-- `businesswire.com`, `globenewswire.com`, `prnewswire.com` — **only** when carrying the verbatim issuer press release (not when republishing third-party deal-recap copy)
-
-Any other domain is **non-reputable** and may not be cited as the primary source for any $ figure or multiple in columns I, J, or K. Domains in `ACQUIROR_DOMAINS` are exempted **only** on PR-keyword paths (the bullet above); off-list analyst blogs and deal-recap sites remain excluded regardless of path. This explicitly excludes (non-exhaustive): mergersight.com, eresearch.com, financierworldwide.com, tipranks.com, marketscreener.com, channelfutures.com, channele2e.com, techcrunch.com, cnbc.com, cnet.com, growjo.com, last10k.com, fintel.io, mlq.ai, substack.com, medium.com, linkedin.com/pulse, and any analyst-blog or deal-recap site.
-
-If the only available source for a figure is off-list: (a) keep searching primary sources, (b) fall to a lower rung (e.g., the public-target filings stub calc), or (c) drop the deal. **Never write the cell using the off-list source.**
-
-**"Disclosed" — precise definition.** A $ figure or multiple is "disclosed" only if it appears in:
-- the target's or acquiror's deal press release;
-- an 8-K / 6-K / 40-F exhibit or investor deck filed with the announcement;
-- the deal-day conference call transcript; or
-- major news (Bloomberg, Reuters, WSJ, FT, Globe and Mail, Financial Post, S&P Global) **quoting deal-day materials**.
-
-Numbers computed post-hoc by analysis blogs (mergersight, eResearch, etc.) are **implied by a third party**, not disclosed, and do **not** satisfy rung 1 or rung 2 — even if the blog domain were somehow allow-listed, the figure itself would still be implied rather than disclosed.
-
-This allow-list is enforced programmatically before the workbook saves — see **Step 5b**. A row whose comment URL fails the check raises and blocks the save; the cell must be re-sourced from an allow-listed domain (or the row dropped) before the workbook can be written.
+**Currency:** Use the currency as stated in the original source — when EBITDA / Revenue are written as $ figures (`*C{row}` formulas), they must be in the **same currency** as TEV, matching the ISO 3-letter code entered in column B. The template's column C FX formula converts to the output currency. Multiple-derived J/K cells (`=I{row}/multiple`) are dimensionless and inherit currency from I — do not add `*C{row}`.
 
 - Do not fabricate or estimate financial metrics. If a figure cannot be verified from an allow-listed source after a thorough search, leave the cell blank.
 - Aim for at least 80% of selected transactions to have both Revenue and EBITDA populated. The mild public-target preference helps hit this, but do not sacrifice comparability to do so — a tightly-fit private deal with one disclosed metric is more useful than an off-sector public deal with both.
-
-**Currency:** Use the currency as stated in the original source — when EBITDA / Revenue are written as $ figures (`*C{row}` formulas), they must be in the **same currency** as TEV, matching the ISO 3-letter code entered in column B. The template's column C FX formula converts to the output currency, and the `*C{row}` factor applies that conversion. **Multiple-derived J/K cells (`=I{row}/multiple`) are dimensionless inputs and inherit their currency from I — currency consistency is automatic; do not add `*C{row}`.**
 
 ---
 
@@ -187,258 +105,36 @@ Confirm the copy succeeded before proceeding.
 
 Open the copied file with openpyxl. **Do NOT use `data_only=True`** — preserve all formulas.
 
-Write to the `Sheet1` sheet only. **Write up to 15 data rows, rows 7 through 21, in the specific columns listed below. Touch no other cells.**
+Write to the `Sheet1` sheet only. Up to 15 data rows (rows 7–21), specific columns only.
 
-For each populated row N (where N is between 7 and 21), write the following:
+Quick cell map:
 
-| Column | Field | Python type | Notes |
-|--------|-------|-------------|-------|
-| B | Input Currency | `str` | ISO 3-letter code, e.g. `"USD"`, `"CAD"`, `"GBP"`, `"EUR"`, `"AUD"` |
-| E | Announce Date | `datetime.date` | Use `datetime.date(YYYY, M, D)` |
-| F | Target Legal Name | `str` | Full legal name of target company |
-| G | Acquiror Legal Name | `str` | Full legal name of acquiror |
-| H | HQ Country Code | `str` | ISO 2-letter country code (e.g., `"CA"`, `"US"`, `"GB"`) |
-| I | Deal Value (TEV) | **formula string** | `f"={raw_tev}*C{row}"` — raw value in $MM of input currency. Attach a Quote + Source comment (Format A) |
-| J | EBITDA | **formula string** or unset | Disclosed $ LTM in transaction source (preferred) — `f"={ltm}*C{row}"` (e.g., `"=85.0*C7"`). **Disclosed multiple — `f"=I{row}/{multiple}"` (e.g., `"=I7/12.5"`) — no `*C{row}` because I is already in output currency.** Calculated LTM stub calc (public-target fallback) — `f"=({mrq}+{fy}-{pyq})*C{row}"` (e.g., `"=(17.517+84.720-17.665)*C7"`). FY-only / Q4 announcement — `f"={fy}*C{row}"`. Disclosed non-LTM private-target $ figure — `f"={value}*C{row}"`. Leave unset if undisclosed. Comment: Format A (Quote + Source) for 1-operand formulas; Format B (3-line stub list) for stub calc — see below |
-| K | Revenue | **formula string** or unset | Same precedence as EBITDA. For a disclosed Revenue multiple, use `f"=I{row}/{multiple}"` (e.g., `"=I7/3.0"`) — no `*C{row}`. Leave unset if undisclosed. Comment: same format rules as J |
-| N | Target Description | `str` | ≤50 characters — see description rules below |
+| Column | Field | Notes |
+|--------|-------|-------|
+| B | Input Currency | ISO 3-letter (USD/CAD/GBP/EUR/AUD) |
+| E | Announce Date | `datetime.date` |
+| F | Target Legal Name | string |
+| G | Acquiror Legal Name | string |
+| H | HQ Country Code | ISO 2-letter |
+| I | Deal Value (TEV) | formula `=raw*C{row}` + Format A comment |
+| J | EBITDA | formula by rung + Format A or B comment |
+| K | Revenue | formula by rung + Format A or B comment |
+| N | Target Description | string, ≤50 chars |
 
-**FX conversion — critical:**
+See [`references/excel-writing.md`](references/excel-writing.md) for:
+- Full cell map and FX conversion rules
+- Formula precedence per rung (rung 1 disclosed $ LTM, rung 2 disclosed multiple, rung 3 calculated stub) with code examples
+- Format A (Quote + Source) and Format B (multi-stub labeled lines) comment formats with code examples
+- Column N description rules
+- Row-trimming snippet for `n < 15` and the averages-row rewrite
 
-Cells I, J, and K are written as **formulas** that multiply the raw source-currency $MM value by the FX conversion in column C of the same row. Column C is a CapIQ array formula (`C7:C21`) that returns the rate from input currency (column B) to output currency (`$H$2`).
-
-**Disclosed-$-LTM example** (rung 1, preferred path) — row 7 is a deal whose press release / 8-K discloses LTM Revenue of CAD 880 MM and LTM EBITDA of CAD 195 MM:
-```python
-ws['B7'] = "CAD"
-ws['I7'] = "=1250*C7"
-ws['J7'] = "=195*C7"              # disclosed LTM EBITDA
-ws['K7'] = "=880*C7"              # disclosed LTM Revenue
-```
-
-**Disclosed-multiple example** (rung 2 — used when no $ LTM figure is disclosed but a multiple is) — same row, deal source quotes 12.5x LTM EBITDA and 2.8x LTM Revenue:
-```python
-ws['B7'] = "CAD"
-ws['I7'] = "=1250*C7"             # TEV in output currency after FX
-ws['J7'] = "=I7/12.5"             # EBITDA = TEV / 12.5x — no *C7 (I7 already converted)
-ws['K7'] = "=I7/2.8"              # Revenue = TEV / 2.8x — no *C7 either
-```
-
-**Calculated-stub example** (rung 3 — public-target fallback when neither $ LTM nor multiples are disclosed) — same TEV but LTM is built from filings:
-```python
-ws['B7'] = "CAD"
-ws['I7'] = "=1250*C7"
-ws['J7'] = "=(45+180-42)*C7"      # LTM EBITDA = Q1 current + FY prior - Q1 prior
-ws['K7'] = "=(220+850-205)*C7"    # LTM Revenue = same stub convention
-```
-
-When the workbook is opened in Excel with the CapIQ add-in active, C7 resolves to the FX rate and I/J/K display the values in the output currency set in `H2`. Do **not** pre-convert the values yourself, and do **not** pre-sum the LTM stubs in Python — write each stub into the formula in source currency and let Excel handle both the LTM math and the FX conversion.
-
-**Critical — FX is applied exactly once:**
-- $ LTM figures and stub-period figures are in **input currency**, so the formula multiplies by `C{row}` to convert.
-- A disclosed multiple is **dimensionless**, and `I{row}` is already in **output currency** (its own formula did the FX). Dividing `I{row}` by a multiple yields output-currency $MM directly. Adding `*C{row}` would double-apply FX. **Never write `=I7/12.5*C7`.** The multiple-derived formula is `=I7/<multiple>` — full stop.
-
-**Source comments — required on every written I / J / K cell:**
-
-If a cell is left unset because the metric is undisclosed, do not attach a comment. Otherwise pick the format by source-path:
-
-**Format A — Quote + Source.** Used for column I (TEV) and for any J/K cell whose formula has a single operand (disclosed $ LTM rung 1, disclosed multiple rung 2, FY-only / Q4, disclosed non-LTM private $ figure rung 4). Two-block format with a blank line between:
-
-```
-Quote: "<short verbatim quote from the source containing the figure or multiple>"
-
-Source: <URL>
-```
-
-- The quote must be **verbatim from the source** — do not paraphrase. Copy the sentence or clause that directly supports the figure or multiple. Keep it short (one or two clauses, typically under 200 characters).
-- Always close the quote with `"`. If the verbatim text contains a colon, em dash, or other punctuation, preserve it inside the quotes.
-- One blank line between Quote and Source.
-- The Source line is a single URL pointing to the specific document the quote was taken from.
-
-**Format B — Multi-stub labeled lines.** Used **only** for the calculated LTM stub-calc case (rung 3, 3-operand formula `=(mrq+fy-pyq)*C{row}`). One line per stub, no Quote prefix:
-
-```
-<Period> ($<Value>): <URL>
-```
-
-- 3 lines: MRQ first, then FY, then PYQ.
-- One URL per stub. If the same filing covers two stubs (e.g., a 10-Q whose period table also shows the prior-year comparable), repeat that URL on both stub lines — do not consolidate.
-
-This per-stub labeled format is preserved for the multi-source case so a reviewer can map each operand of the formula directly to its source filing.
-
-```python
-from openpyxl.comments import Comment
-
-# TEV (column I) — Format A
-ws['I7'] = "=6000*C7"
-ws['I7'].comment = Comment(
-    'Quote: "OpenText agreed to acquire Micro Focus for $6.0 billion in total enterprise value"\n'
-    '\n'
-    'Source: https://investors.opentext.com/press-releases/press-releases-details/2023/OpenText-Buys-Micro-Focus/default.aspx',
-    "Source"
-)
-
-# K (Revenue) from a disclosed multiple — Format A; formula references I, no *C{row}
-ws['K7'] = "=I7/2.3"
-ws['K7'].comment = Comment(
-    'Quote: "Total purchase price is 2.3x Micro Focus\' TTM revenues"\n'
-    '\n'
-    'Source: https://investors.opentext.com/press-releases/press-releases-details/2023/OpenText-Buys-Micro-Focus/default.aspx',
-    "Source"
-)
-
-# J (EBITDA) from a disclosed $ LTM — Format A
-ws['J7'] = "=85.0*C7"
-ws['J7'].comment = Comment(
-    'Quote: "Reported LTM Adjusted EBITDA of $85.0 million"\n'
-    '\n'
-    'Source: https://example.com/deal-press-release.htm',
-    "Source"
-)
-
-# J (EBITDA) from a calculated LTM stub — Format B (unchanged)
-ws['J7'] = "=(17.517+84.720-17.665)*C7"
-ws['J7'].comment = Comment(
-    "Q1 2025 ($17.517): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/\n"
-    "FY2024 ($84.720): https://www.globenewswire.com/news-release/2025/02/26/3032731/37161/en/AvidXchange-Announces-Fourth-Quarter-Full-Year-2024-Financial-Results.html\n"
-    "Q1 2024 ($17.665): https://www.avidxchange.com/press-releases/avidxchange-announces-first-quarter-2025-financial-results/",
-    "Source"
-)
-```
-
-Notes:
-- The second `Comment(...)` argument is the comment author and is not the comment body — Excel only displays the first argument.
-- Use `\n` between every line break and `\n\n` for the blank line between Quote and Source in Format A. In Excel, the blank line gives the comment readable separation.
-- Escape apostrophes in the Python string literal as needed (`Focus\'` inside a single-quoted string, or use a double-quoted string for the outer literal).
-
-**Do NOT touch any other column.** In particular, do not write to:
-- C7:C21 — CapIQ FX array formulas
-- L7:L21 and M7:M21 — TEV/EBITDA and TEV/Revenue ratio formulas
-- D, anything outside rows 7–21, or any cell in row 23 (averages)
-
-**Description rules (column N):**
-- Column N has a width of ~50 — descriptions that exceed this will overflow visually
-- Describe **what the company does or sells** — product, service, asset class, client segment, or business model
-- **Do not include geography** — country is already captured in column H
-- Target 35–50 characters; never exceed 50
-- No trailing punctuation; title case preferred
-- Examples:
-  - `"Diversified multi-asset & alternatives manager"` (47)
-  - `"Independent wealth advisory platform"` (37)
-  - `"Mid-market private credit manager"` (33)
-  - `"SaaS-based insurance distribution platform"` (43)
-  - `"Life and health insurance provider"` (35)
-
-**Writing missing values:** If EBITDA or Revenue is undisclosed for a transaction, **skip writing that cell entirely** — do not write `None`, `""`, or `0`. Just leave it unset so the column-L / column-M ratio formula returns `"n/a "` via `IFERROR`.
-
-**Number of rows:** Populate as many rows as you have well-sourced transactions, up to 15. Do not fabricate transactions to fill the table — fewer high-quality rows is better than padding.
-
-**Trim empty rows before saving — required when fewer than 15 transactions are populated.**
-
-After writing all rows, delete any unused data rows so the table ends at the last populated transaction and flows directly into the averages row. Visually-blank rows above the averages row are not acceptable in the deliverable.
-
-```python
-n = number_of_transactions_written         # rows 7 through 7+n-1 are populated
-if n < 15:
-    first_empty_row = 7 + n
-    rows_to_drop = 15 - n
-    ws.delete_rows(idx=first_empty_row, amount=rows_to_drop)
-```
-
-`ws.delete_rows` shifts cells below the deletion up and updates relative-reference formulas accordingly — the L/M averages row that started at row 23 moves to row `23 - rows_to_drop`, and `AVERAGE(L7:L21)` / `AVERAGE(M7:M21)` collapse to the populated range. After saving, re-open and confirm the averages row references the correct data range and is not `#REF!`. If it is, rewrite explicitly:
-
-```python
-new_avg_row = 23 - rows_to_drop
-last_data_row = 7 + n - 1
-ws.cell(row=new_avg_row, column=12).value = f'=IFERROR(AVERAGE(L7:L{last_data_row}),"n/a ")'  # column L
-ws.cell(row=new_avg_row, column=13).value = f'=IFERROR(AVERAGE(M7:M{last_data_row}),"n/a ")'  # column M
-```
-
-(The exact form of the original averages formula may differ — preserve `IFERROR(...,"n/a ")` wrapping if it was present.)
-
-If the column-C CapIQ formula in the template is a single multi-cell array spanning C7:C21, deleting rows from inside that array can produce a `#REF!` in Excel. The column-C formulas in this template are per-cell (one CIQ call per row), so `delete_rows` works cleanly — but if a `#REF!` appears in column C of a remaining row during Step 6 verification, that's the diagnosis.
+**Excel does the math, not you.** Whether the cell value is a single disclosed figure or a stub calc, it must live in a cell formula — never pre-sum the stubs in Python and write a single number for the calculated case.
 
 ---
 
-### Step 5b — URL allow-list verification
+### Step 5b — URL Allow-List Verification
 
-Before saving the workbook, programmatically verify that every URL cited in an I/J/K comment resolves to a domain on the Step 3 allow-list. This is the hard gate — a single off-list URL aborts the save. Run this snippet **between** the trim-empty-rows block above and `wb.save(PATH)`:
-
-```python
-import re
-from urllib.parse import urlparse
-
-ALLOW_DOMAINS = {
-    "sec.gov",
-    "sedarplus.ca", "sedar.com",
-    "bloomberg.com", "reuters.com", "wsj.com", "ft.com",
-    "theglobeandmail.com", "financialpost.com", "spglobal.com",
-    "businesswire.com", "globenewswire.com", "prnewswire.com",
-}
-
-ACQUIROR_DOMAINS = {
-    "thomabravo.com", "vistaequitypartners.com", "permira.com", "tpg.com",
-    "silverlake.com", "franciscopartners.com", "hf.com", "adventinternational.com",
-    "cppinvestments.com", "gic.com.sg", "crosspointcapital.com",
-    "evergreencoastcapital.com", "elliottmgmt.com",
-    "abc.xyz", "google.com", "microsoft.com", "oracle.com", "broadcom.com", "cisco.com",
-}
-PR_PATH_KEYWORDS = ("/news", "/press-release", "/press-releases",
-                    "/investor", "/investors", "/announcements", "/newsroom")
-
-URL_RE = re.compile(r"https?://\S+")
-last_data_row = 7 + n - 1   # n = number_of_transactions_written (from the trim block)
-urls_checked = 0
-
-for row in range(7, last_data_row + 1):
-    for col in ("I", "J", "K"):
-        cell = ws[f"{col}{row}"]
-        if cell.comment is None:
-            continue
-        text = cell.comment.text or ""
-        for raw_url in URL_RE.findall(text):
-            url = raw_url.rstrip(').,;]>"\'')
-            parsed = urlparse(url)
-            host = (parsed.hostname or "").lower()
-            path = (parsed.path or "").lower()
-            if not host:
-                raise ValueError(
-                    f"{col}{row}: unparseable URL {url!r}\nComment: {text!r}"
-                )
-            allow_listed = any(host == d or host.endswith("." + d) for d in ALLOW_DOMAINS)
-            ir_site = ("investor" in host) or host.startswith("ir.") or (".ir." in host)
-            acquiror_pr = (
-                any(host == d or host.endswith("." + d) for d in ACQUIROR_DOMAINS)
-                and any(kw in path for kw in PR_PATH_KEYWORDS)
-            )
-            if not (allow_listed or ir_site or acquiror_pr):
-                raise ValueError(
-                    f"{col}{row}: off-list source domain {host!r} in URL {url!r}\n"
-                    f"Comment: {text!r}"
-                )
-            urls_checked += 1
-
-print(f"URL allow-list verification: PASSED ({urls_checked} URLs checked)")
-```
-
-How the gate works:
-- Walks every cell in `I7:K{last_data_row}` that has a `.comment`.
-- Extracts every URL from the comment text via `re.findall(r"https?://\S+", text)`, stripping common trailing punctuation.
-- Suffix-matches each URL's hostname against the hard-coded `ALLOW_DOMAINS` set (so `www.sec.gov` matches `sec.gov`).
-- Additionally accepts any host containing `investor` or beginning `ir.` / containing `.ir.` as an investor-relations subdomain (target/acquiror IR sites vary in shape).
-- Additionally accepts hosts in `ACQUIROR_DOMAINS` **only when** the URL path contains a PR keyword (`/news`, `/press-release`, `/press-releases`, `/investor`, `/investors`, `/announcements`, `/newsroom`). A bare `tpg.com/portfolio/...` URL fails; `tpg.com/news-and-insights/...` passes.
-- On any URL whose host doesn't match, raises `ValueError` with the cell reference, the offending URL, and the full comment text — **the workbook does not save.** Re-source that cell from an allow-listed domain (or drop the row) and re-run from Step 5b.
-- On success, prints `URL allow-list verification: PASSED (n URLs checked)`.
-
-**Test cases — the updated check must accept all four PASS URLs and reject both FAIL URLs:**
-
-| Result | URL | Why |
-|---|---|---|
-| PASS | `https://abc.xyz/investor/news/2022/0308/` | Acquiror domain + `/investor` and `/news` in path |
-| PASS | `https://www.tpg.com/news-and-insights/new-relic-be-acquired-francisco-partners-and-tpg-65-billion` | Acquiror domain + `/news` in path |
-| PASS | `https://www.permira.com/news-and-insights/announcements/mcafee-to-be-acquired-by-an-investor-group-for-over-14-billion` | Acquiror domain + `/news` and `/announcements` in path |
-| PASS | `https://www.cppinvestments.com/newsroom/qualtrics-to-be-acquired-by-silver-lake-and-cpp-investments-for-12-5-billion/` | Acquiror domain + `/newsroom` in path |
-| FAIL | `https://www.tpg.com/portfolio/example-portco/` | Acquiror domain but no PR keyword in path |
-| FAIL | `https://mergersight.com/post/some-recap` | Off-list domain regardless of path |
+Before saving the workbook, run the URL allow-list verification snippet from [`references/url-allow-list.md`](references/url-allow-list.md). This is the hard gate — a single off-list URL aborts the save with a `ValueError` naming the cell, the URL, and the comment text.
 
 Save the workbook (`wb.save(PATH)`) only after the check passes.
 
@@ -447,28 +143,22 @@ Save the workbook (`wb.save(PATH)`) only after the check passes.
 ### Step 6 — Verify Output
 
 After saving, re-open the file and spot-check:
-1. Exactly `n` data rows remain (rows 7 through 7+n-1), each with values in B, E, F, G, H, I, and N. There should be no blank data rows between the last transaction and the averages row.
+1. Exactly `n` data rows remain (rows 7 through 7+n-1), each with values in B, E, F, G, H, I, and N. No blank data rows between the last transaction and the averages row.
 2. Dates in column E are `datetime.date` objects (not strings)
 3. Cells I, J, K start with `=` (formulas, not raw numbers). Tail check by source path:
-   - **I** — always ends with `*C{same_row}` (e.g., `=1250*C7`). Always.
-   - **J / K from disclosed $ LTM** — single operand ending `*C{same_row}` (e.g., `=85.0*C7`). ✓
-   - **J / K from disclosed multiple** — references `I{same_row}` and divides by the multiple (e.g., `=I7/12.5`). **No `*C{row}`** — column I is already in output currency. ✓
-   - **J / K from calculated stub** — three operands with arithmetic, ending `*C{same_row}` (e.g., `=(17.517+84.720-17.665)*C7`). ✓
-   - **J / K from FY-only / disclosed non-LTM private $ figure** — single operand ending `*C{same_row}`. ✓
-   - What's never valid: a pre-summed scalar where the source path was a stub calc, OR a `*C{row}` tail on a `=I{row}/multiple` formula (would double-apply FX).
-4. Every populated I / J / K cell has a `.comment`. Comment format depends on source-path:
-   - **Format A — Quote + Source.** Required for column I (TEV) and for any J/K with a 1-operand formula (disclosed $ LTM, disclosed multiple, FY-only, non-LTM private $). Comment text starts with `Quote: "`, contains a verbatim quote closed with `"`, then a blank line, then `Source: <URL>`. Verify:
-     - Starts with `Quote: "` and contains a closing `"` for the quoted text
-     - Has a blank line (i.e., `\n\n`) between Quote and Source blocks
-     - Source line starts with `Source: http`
-   - **Format B — Multi-stub labeled lines.** Required for J/K with the 3-operand stub-calc formula `=(mrq+fy-pyq)*C{row}`. Comment text is exactly 3 lines, each formatted `<Period> ($<Value>): <URL>` (MRQ, FY, PYQ). No `Quote:` prefix. Stub line count must equal formula operand count.
-   - **Format mismatch is a fail.** A `=I{row}/multiple` cell with a 3-line stub comment is wrong; a `=(a+b-c)*C{row}` cell with a Quote/Source comment is wrong.
+   - **I** — always ends with `*C{same_row}` (e.g., `=1250*C7`)
+   - **J / K from disclosed $ LTM** — single operand ending `*C{same_row}` (e.g., `=85.0*C7`) ✓
+   - **J / K from disclosed multiple** — references `I{same_row}` and divides by the multiple (e.g., `=I7/12.5`). **No `*C{row}`** — column I is already in output currency ✓
+   - **J / K from calculated stub** — three operands with arithmetic, ending `*C{same_row}` (e.g., `=(17.517+84.720-17.665)*C7`) ✓
+   - **J / K from FY-only / disclosed non-LTM private $** — single operand ending `*C{same_row}` ✓
+   - What's never valid: a pre-summed scalar where the source path was a stub calc, OR a `*C{row}` tail on a `=I{row}/multiple` formula (would double-apply FX)
+4. Every populated I / J / K cell has a `.comment`. Format A for 1-operand formulas (TEV, $ LTM, multiple, FY-only, non-LTM private $): starts with `Quote: "`, blank line, `Source: http...`. Format B for 3-operand stub-calc formulas: exactly 3 `<Period> ($<Value>): <URL>` lines. Format mismatch is a fail.
 5. Column N values are all ≤50 characters
 6. No values were written to columns C, D, L, M, or any column past N
-7. After row deletion, the averages row at `23 - rows_to_drop` references the populated data range correctly — no `#REF!` and the AVERAGE range matches `L7:L{last_data_row}` / `M7:M{last_data_row}`.
-8. Column C of the remaining data rows is intact (no `#REF!` in any populated row's C cell).
-9. **Source-rung consistency.** For each row using a 3-operand stub formula (`=(mrq+fy-pyq)*C{row}`), the response must contain an explicit log stating that no disclosed $ LTM and no disclosed multiple were found in the deal-source documents. A stub calc with no rung-1 / rung-2 search log is a fail — re-do the row with the disclosed value.
-10. **All Source URLs in I/J/K comments resolve to allow-listed domains** — or to a known acquiror domain (per `ACQUIROR_DOMAINS`) on a PR-keyword path — (re-run the Step 5b check on the saved file as a final audit).
+7. After row deletion, the averages row at `23 - rows_to_drop` references the populated data range correctly — no `#REF!` and the AVERAGE range matches `L7:L{last_data_row}` / `M7:M{last_data_row}`
+8. Column C of the remaining data rows is intact (no `#REF!` in any populated row's C cell)
+9. **Source-rung consistency.** For each row using a 3-operand stub formula, the response must contain an explicit log stating that no disclosed $ LTM and no disclosed multiple were found in the deal-source documents. A stub calc with no rung-1 / rung-2 search log is a fail — re-do the row with the disclosed value.
+10. **All Source URLs in I/J/K comments resolve to allow-listed domains** — re-run the Step 5b check on the saved file as a final audit.
 11. **Stub-calc row count.** Count rows whose J or K cell formula matches the 3-operand stub pattern `=(...+...-...)*C{row}` (a row counts **once** even if both J and K use the stub form). The count must be **≤ 2**. On failure: drop the lowest-comparability stub-calc rows until the count is ≤ 2, then re-run the Step 5b URL allow-list verification on the trimmed workbook before saving. Do not replace the dropped rows — the total table simply has fewer rows.
 
 Report any issues found and fix before delivering.
@@ -490,7 +180,7 @@ Report to the user:
 
 ## Worked Examples — Rung 2 (Disclosed Multiple)
 
-These complement the AvidXchange stub-calc example in Step 3 by showing rung 2 in action.
+These complement the AvidXchange stub-calc example in [`references/source-ladder.md`](references/source-ladder.md) by showing rung 2 in action.
 
 **Micro Focus / OpenText (announced August 25, 2022).** OpenText's deal press release quotes "6.3x Micro Focus' pro forma TTM adjusted EBITDA" and separately calls out "$400M of run-rate cost savings." The multiple is on standalone Micro Focus (pro forma for divestitures), **not** synergy-inclusive. Correct: `J{row} = "=I{row}/6.3"` with a Format A (Quote + Source) comment. Wrong: a 3-operand stub calc from FY21 + H1 stubs, even though the underlying data is available — rung 2 is required when the multiple is disclosed.
 
@@ -511,48 +201,15 @@ These complement the AvidXchange stub-calc example in Step 3 by showing rung 2 i
 | F7:F21 | Target legal name | **Write here** |
 | G7:G21 | Acquiror legal name | **Write here** |
 | H7:H21 | Target HQ country code (ISO 2-letter) | **Write here** |
-| I7:I21 | Deal Value (TEV) | **Write here as formula** `=raw*C{row}` + Quote/Source comment (Format A). |
-| J7:J21 | EBITDA (LTM) | **Write here as formula.** Preferred: `=ltm*C{row}` from disclosed $ LTM in deal source. **`=I{row}/multiple` from disclosed multiple — no `*C{row}`.** Public-target fallback: `=(mrq+fy-pyq)*C{row}` from filings. Other: `=fy*C{row}` (Q4 / private FY). Comment: Format A (Quote + Source) for 1-operand formulas; Format B (3-line stub list) for stub calc. |
-| K7:K21 | Revenue (LTM) | **Write here as formula.** Same precedence as EBITDA, including `=I{row}/multiple` for disclosed Revenue multiples. Comment: same format rules as J. |
+| I7:I21 | Deal Value (TEV) | **Write as formula** `=raw*C{row}` + Format A comment |
+| J7:J21 | EBITDA (LTM) | **Write as formula.** Preferred `=ltm*C{row}` (disclosed $ LTM). `=I{row}/multiple` (disclosed multiple, no `*C{row}`). Public-target fallback `=(mrq+fy-pyq)*C{row}`. Format A or B comment per rung |
+| K7:K21 | Revenue (LTM) | **Write as formula.** Same precedence as EBITDA. Format A or B comment per rung |
 | L7:L21 | TEV / EBITDA | **Never overwrite — formula** |
 | M7:M21 | TEV / Revenue | **Never overwrite — formula** |
 | N7:N21 | Target description (≤50 chars) | **Write here** |
 | L23, M23 | Averages of multiples | **Never overwrite — formula** |
 
-### Column Reference
-
-| Col | Header | Type | Unit |
-|-----|--------|------|------|
-| B | Input Currency | String | ISO code (USD/CAD/GBP/EUR/AUD) |
-| C | FX Conversion | Formula | CapIQ — do not write |
-| E | Announce Date | Date | — |
-| F | Target | String | — |
-| G | Acquiror | String | — |
-| H | Target HQ | String | ISO 2-letter (CA, US, GB, AU, etc.) |
-| I | TEV | Formula | `=raw*C{row}` — raw in $MM of column B currency |
-| J | EBITDA (LTM) | Formula | Preferred `=ltm*C{row}` (disclosed $ LTM) or `=I{row}/multiple` (disclosed multiple, no FX); fallback `=(mrq+fy-pyq)*C{row}` (calc stubs); also `=fy*C{row}`; blank if undisclosed |
-| K | Revenue (LTM) | Formula | Same precedence as EBITDA, incl. `=I{row}/multiple` for disclosed Revenue multiples; blank if undisclosed |
-| L | TEV / EBITDA | Formula | Auto-calculated — do not write |
-| M | TEV / Revenue | Formula | Auto-calculated — do not write |
-| N | Target Description | String | ≤50 chars |
-
-### Precedent Transaction Research Tips
-
-**Good search queries (mix of public and private deals):**
-- `"[target name] 10-K [year] revenue EBITDA"`
-- `"[target name] 20-F annual report"` (for non-US public targets)
-- `"[sector] acquisition [year range] press release"`
-- `"[acquiror] acquires [target] press release financial highlights"`
-- `"[sector] M&A transaction multiple disclosed EBITDA"`
-- `"[sector] private company acquired [year range] disclosed revenue EBITDA"`
-
-**Sourcing financial figures — preferred order (matches the Step 3 ladder):**
-1. Acquiror's deal announcement press release / 8-K exhibit — often states "LTM Revenue of $X" and "Adjusted EBITDA of $X" to justify valuation. **First place to look for both public and private targets.**
-2. Acquiror's investor presentation or deal supplement filed with the announcement
-3. Bloomberg, Reuters, Financial Post, WSJ, Globe and Mail, or S&P Global deal coverage that quotes disclosed metrics, or deal-day conference call transcripts
-4. Target's own filings — used only when the deal sources above don't disclose LTM. For a stub calc you usually need three: the most recent 10-Q / 6-K / interim MD&A (`YTD_MRQ`), the prior 10-K / 20-F / AIF (`FY_prior`), and the prior-year 10-Q / 6-K / interim MD&A for the same calendar quarter (`YTD_PYQ`). Apply the same EBITDA definition (Operating Income + D&A, or Adjusted EBITDA if consistently disclosed) across all three stubs. If MRQ = Q4, use the 10-K alone.
-
-**HQ country codes — common examples:**
+### HQ Country Codes — Common Examples
 
 | Country | Code | Country | Code |
 |---------|------|---------|------|
@@ -561,10 +218,11 @@ These complement the AvidXchange stub-calc example in Step 3 by showing rung 2 i
 | United Kingdom | GB | Germany | DE |
 | Ireland | IE | Netherlands | NL |
 
-**Handling undisclosed metrics:**
+### Handling Undisclosed Metrics
+
 - Never include a deal with no deal value — TEV must be populated for the row to be useful
-- For both public and private targets, look for a disclosed $ LTM figure in the deal sources first. If found, use it as-is — do not "recalculate" over a disclosed LTM.
-- If no $ LTM is disclosed but a transaction multiple is, derive the metric in-cell as `=I{row}/multiple`. No `*C{row}` — column I is already in output currency.
-- For public targets where neither $ LTM nor a multiple is disclosed, fall back to the stub-period filings calc — do not leave Revenue / EBITDA blank, and do not fall back to bare FY when an MRQ has been reported.
-- For private targets, write only the metrics that are directly disclosed (as a $ figure or via a multiple); leave the rest blank. Disclosed metrics may drift from a true LTM end-date by a few months, but never by years — drop the deal if the only available figure is two-plus years stale.
+- For both public and private targets, look for a disclosed $ LTM figure in the deal sources first
+- If no $ LTM is disclosed but a transaction multiple is, derive the metric in-cell as `=I{row}/multiple`. No `*C{row}`.
+- For public targets where neither $ LTM nor a multiple is disclosed, fall back to the stub-period filings calc
+- For private targets, write only the metrics that are directly disclosed; leave the rest blank
 - Aim for at least 80% of selected transactions to have both Revenue and EBITDA populated

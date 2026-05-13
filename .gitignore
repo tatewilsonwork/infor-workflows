@@ -7,3 +7,7 @@ outputs/
 # Local Claude settings
 .claude/
 
+# Python caches
+__pycache__/
+*.pyc
+
