@@ -19,7 +19,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install python-pptx openpyxl
+        run: pip install -r infor-workflows/scripts/requirements.txt
 
       - name: pptx_helpers unit tests
         run: python -m unittest infor-workflows/scripts/test_pptx_helpers.py -v

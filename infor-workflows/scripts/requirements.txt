@@ -1,0 +1,6 @@
+# Test-time dependencies for the infor-workflows plugin's shared helpers.
+# Skills load python-pptx / openpyxl at runtime under Claude Code; this file
+# pins what CI installs to run the unit tests.
+
+python-pptx>=1.0
+openpyxl>=3.1
