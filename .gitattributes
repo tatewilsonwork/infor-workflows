@@ -1,0 +1,15 @@
+# Force LF on every text file regardless of platform.
+# Stops the "LF will be replaced by CRLF the next time Git touches it"
+# warnings that show up on Windows checkouts.
+* text=auto eol=lf
+
+# Templates are binary — never try to normalize line endings on them.
+*.xlsx binary
+*.pptx binary
+*.thmx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.zip binary

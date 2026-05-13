@@ -7,7 +7,7 @@ description: >
   (never a Python-computed scalar) so the model is dynamic. Activates on /lbo-model, "LBO model",
   "leveraged buyout", "PE model", "build an LBO", "Sources and Uses", "returns analysis", or any
   request to model a sponsor-led acquisition with debt financing.
-version: 2.9.0
+version: 2.10.0
 allowed-tools: [Read, Bash, Write, Glob]
 ---
 
@@ -45,10 +45,11 @@ For inputs the user can't immediately provide (sector benchmarks, default tax ra
 
 ### Step 2 — Sanitize the Output Filename
 
-Sanitize the target company name (remove special characters, replace spaces with hyphens) and form the output path:
+Sanitize the target company name via the shared helper and form the output path:
 
-```
-./<SANITIZED_COMPANY_NAME> - LBO Model.xlsx
+```bash
+SANITIZED_COMPANY_NAME=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/sanitize_name.sh" "$COMPANY_NAME")
+OUTPUT="./$SANITIZED_COMPANY_NAME - LBO Model.xlsx"
 ```
 
 The file is written to the current working directory.

@@ -1,0 +1,85 @@
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r infor-workflows/scripts/requirements.txt
+
+      - name: pptx_helpers unit tests
+        run: python -m unittest infor-workflows/scripts/test_pptx_helpers.py -v
+
+      - name: Shell-helper tests (find_template.sh, sanitize_name.sh)
+        run: python -m unittest infor-workflows/scripts/test_shell_helpers.py -v
+
+      - name: Precedents URL allow-list test
+        run: python infor-workflows/skills/precedents-infor/test_allow_list.py
+
+      - name: Plugin + skill versions are in lock-step
+        run: |
+          set -e
+          PLUGIN_VERSION=$(python -c "import json; print(json.load(open('.claude-plugin/marketplace.json'))['plugins'][0]['version'])")
+          echo "Plugin version: $PLUGIN_VERSION"
+          MISMATCH=0
+          for f in infor-workflows/skills/*/SKILL.md; do
+            name=$(basename "$(dirname "$f")")
+            ver=$(grep -E "^version:" "$f" | head -1 | awk '{print $2}')
+            if [ "$ver" != "$PLUGIN_VERSION" ]; then
+              echo "::error file=$f::Skill $name is at version $ver, plugin is at $PLUGIN_VERSION"
+              MISMATCH=1
+            fi
+          done
+          if [ "$MISMATCH" -ne 0 ]; then
+            echo "Per the single-version policy (see CLAUDE.md), every skill's version: must match the plugin version."
+            exit 1
+          fi
+          echo "All 10 skills synced at $PLUGIN_VERSION."
+
+      - name: Every skill mentions its slash command in its description
+        run: |
+          set -e
+          MISSING=0
+          for f in infor-workflows/skills/*/SKILL.md; do
+            name=$(basename "$(dirname "$f")")
+            # Extract the description block (between the two --- frontmatter delimiters)
+            if ! awk '/^---$/{n++;next} n==1{print}' "$f" | grep -q "/$name"; then
+              echo "::error file=$f::Skill $name does not mention /$name in its description"
+              MISSING=1
+            fi
+          done
+          if [ "$MISSING" -ne 0 ]; then
+            echo "Every skill's description: must mention /<skill-name> so the router fires reliably on the slash form."
+            exit 1
+          fi
+          echo "All 10 skills have /<name> in their descriptions."
+
+      - name: Every skill has allowed-tools in frontmatter
+        run: |
+          set -e
+          MISSING=0
+          for f in infor-workflows/skills/*/SKILL.md; do
+            name=$(basename "$(dirname "$f")")
+            if ! grep -q "^allowed-tools:" "$f"; then
+              echo "::error file=$f::Skill $name is missing the allowed-tools frontmatter field"
+              MISSING=1
+            fi
+          done
+          if [ "$MISSING" -ne 0 ]; then
+            exit 1
+          fi
+          echo "All 10 skills declare allowed-tools."
