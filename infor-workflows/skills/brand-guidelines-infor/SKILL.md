@@ -253,11 +253,11 @@ Determine what is being created or reviewed:
 
 ### Step 2 — Locate Assets
 
-Locate the INFOR logo, deck template, and theme:
+Locate the INFOR logo, deck template, and theme via the plugin's shared helper:
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Logo - 1.png" 2>/dev/null | head -1
-# Repeat with "INFOR Deck Template.pptx" and "INFORFG.thmx"
+bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Logo - 1.png"
+bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Deck Template.pptx"
+bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFORFG.thmx"
 ```
 
 ### Step 3 — Build from Template

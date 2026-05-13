@@ -51,16 +51,14 @@ Wait for all required inputs before proceeding.
 
 ### Step 2 — Locate and Copy the Template
 
-Search for the earnings template:
+Resolve the earnings template via the plugin's shared helper:
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Earnings Update Template.pptx" 2>/dev/null | head -1
+bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Earnings Update Template.pptx"
 ```
 
 Sanitize the company name (remove special chars, replace spaces with hyphens) and copy:
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-TEMPLATE=$(find "${REPO_ROOT:+$REPO_ROOT/templates}" "${REPO_ROOT:+$REPO_ROOT/infor-workflows/templates}" "$HOME/.claude/plugins/infor-workflows/templates" "$HOME/AppData/Roaming/Claude/plugins/infor-workflows/templates" "$HOME" -name "INFOR Earnings Update Template.pptx" 2>/dev/null | head -1)
+TEMPLATE=$(bash "${CLAUDE_PLUGIN_ROOT:-./infor-workflows}/scripts/find_template.sh" "INFOR Earnings Update Template.pptx")
 OUTPUT="./Earnings Update - $SANITIZED_COMPANY.pptx"
 cp "$TEMPLATE" "$OUTPUT" && echo "COPY_OK" || echo "COPY_FAILED"
 ls -lh "$OUTPUT"
